@@ -1,0 +1,666 @@
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600;1,700&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500&family=Sora:wght@300;400;500;600;700;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   GLOBAL POINTER & CURSOR STABILITY (Prevents cursor flicker on icons/SVGs)
+   ========================================================================= */
+button,
+[role="button"],
+a,
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+button *,
+[role="button"] *,
+a *,
+.cursor-pointer * {
+  cursor: pointer;
+}
+
+button svg,
+[role="button"] svg,
+a svg,
+.cursor-pointer svg {
+  pointer-events: none !important;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+.cursor-not-allowed,
+.cursor-not-allowed * {
+  cursor: not-allowed !important;
+}
+
+/* =========================================================================
+   PAGE-SPECIFIC COLOR VARIABLE COMBINATIONS (DESIGN TOKENS)
+   ========================================================================= */
+
+/* Default Fallback */
+:root {
+  --theme-bg: #07090E;
+  --theme-surface: #0A0D15;
+  --theme-surface-hover: #121726;
+  --theme-border: #1E2638;
+  --theme-border-strong: #334155;
+  --theme-primary: #10B981;
+  --theme-primary-hover: #059669;
+  --theme-primary-light: rgba(16, 185, 129, 0.15);
+  --theme-secondary: #38BDF8;
+  --theme-text: #F8FAFC;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #10B981;
+
+  /* Universal Customer Semantic Color Tokens */
+  --c-primary: #0C831F;
+  --c-primary-dark: #096918;
+  --c-primary-light: #E8F7ED;
+  --c-primary-border: #16A34A;
+  --c-accent: #F7D046;
+  --c-accent-hover: #EAB308;
+  --c-danger: #DC2626;
+  --c-surface: #FFFFFF;
+  --c-surface-hover: #F8FAFC;
+  --c-bg: #F4F6F8;
+  --c-text: #1E293B;
+  --c-text-muted: #64748B;
+  --c-border: #E5E7EB;
+  --c-border-strong: #CBD5E1;
+
+  /* Warm Whitewashed Plaster & Concrete Theme Tokens */
+  --color-plaster-light: #f5f2ef;
+  --color-plaster-mid: #e3ddd4;
+  --color-plaster-shadow: #c9c1b5;
+  --color-accent-terracotta: #9d785e;
+  --color-accent-terracotta-hover: #87654d;
+  --color-text-dark: #223134;
+  --color-text-muted: #5f6c6e;
+}
+
+/* 1. Customer Dining Portal (Fresh Blinkit Luminous Theme) */
+.page-theme-customer {
+  background-color: #F4F6F8 !important;
+  color: #1E293B !important;
+  --theme-bg: #F4F6F8;
+  --theme-surface: #FFFFFF;
+  --theme-surface-hover: #F8FAFC;
+  --theme-border: #E5E7EB;
+  --theme-border-strong: #CBD5E1;
+  --theme-primary: #0C831F;
+  --theme-primary-hover: #096918;
+  --theme-primary-light: #E8F7ED;
+  --theme-secondary: #F7D046;
+  --theme-text: #1E293B;
+  --theme-text-muted: #64748B;
+  --theme-accent: #0C831F;
+
+  /* Customer Semantic Tokens */
+  --c-primary: #0C831F;
+  --c-primary-dark: #096918;
+  --c-primary-light: #E8F7ED;
+  --c-primary-border: #16A34A;
+  --c-accent: #F7D046;
+  --c-accent-hover: #EAB308;
+  --c-danger: #DC2626;
+  --c-surface: #FFFFFF;
+  --c-surface-hover: #F8FAFC;
+  --c-bg: #F4F6F8;
+  --c-text: #1E293B;
+  --c-text-muted: #64748B;
+  --c-border: #E5E7EB;
+  --c-border-strong: #CBD5E1;
+}
+
+/* 2. Kitchen Display Terminal (Industrial High-Contrast Amber / Flame Theme) */
+.page-theme-kitchen {
+  --theme-bg: #07090E;
+  --theme-surface: #0A0D15;
+  --theme-surface-hover: #121722;
+  --theme-border: #1E2638;
+  --theme-border-strong: #334155;
+  --theme-primary: #F59E0B;
+  --theme-primary-hover: #D97706;
+  --theme-primary-light: rgba(245, 158, 11, 0.15);
+  --theme-secondary: #EF4444;
+  --theme-text: #F8FAFC;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #F59E0B;
+}
+
+/* 3. Executive CEO Cockpit (Bloomberg Financial Emerald & Gold Yield) */
+.page-theme-owner {
+  --theme-bg: #080B11;
+  --theme-surface: #0E131F;
+  --theme-surface-hover: #141B2D;
+  --theme-border: #1F293D;
+  --theme-border-strong: #334155;
+  --theme-primary: #10B981;
+  --theme-primary-hover: #059669;
+  --theme-primary-light: rgba(16, 185, 129, 0.15);
+  --theme-secondary: #EAB308;
+  --theme-text: #F1F5F9;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #10B981;
+}
+
+/* 4. Admin Mission Control (Enterprise Operations Linear Indigo Theme) */
+.page-theme-admin {
+  --theme-bg: #07090E;
+  --theme-surface: #0A0D15;
+  --theme-surface-hover: #121726;
+  --theme-border: #1E293B;
+  --theme-border-strong: #334155;
+  --theme-primary: #6366F1;
+  --theme-primary-hover: #4F46E5;
+  --theme-primary-light: rgba(99, 102, 241, 0.15);
+  --theme-secondary: #818CF8;
+  --theme-text: #F8FAFC;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #6366F1;
+}
+
+/* 5. Waiter Floor Command (Tactical Cyan & Status Mosaic) */
+.page-theme-waiter {
+  --theme-bg: #07090E;
+  --theme-surface: #0A0D15;
+  --theme-surface-hover: #111827;
+  --theme-border: #1E2738;
+  --theme-border-strong: #334155;
+  --theme-primary: #06B6D4;
+  --theme-primary-hover: #0891B2;
+  --theme-primary-light: rgba(6, 182, 212, 0.15);
+  --theme-secondary: #F59E0B;
+  --theme-text: #F8FAFC;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #06B6D4;
+}
+
+/* 6. Cashier POS Terminal (Precision Banking Royal Purple Theme) */
+.page-theme-cashier {
+  --theme-bg: #07090E;
+  --theme-surface: #0A0D15;
+  --theme-surface-hover: #121626;
+  --theme-border: #1E263D;
+  --theme-border-strong: #334155;
+  --theme-primary: #8B5CF6;
+  --theme-primary-hover: #7C3AED;
+  --theme-primary-light: rgba(139, 92, 246, 0.15);
+  --theme-secondary: #10B981;
+  --theme-text: #F8FAFC;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #8B5CF6;
+}
+
+/* 7. Staff Login Terminal (High-Security Multi-Role Preset Slate) */
+.page-theme-login {
+  --theme-bg: #07090E;
+  --theme-surface: #0D121F;
+  --theme-surface-hover: #141B2D;
+  --theme-border: #1E293B;
+  --theme-border-strong: #334155;
+  --theme-primary: #10B981;
+  --theme-primary-hover: #059669;
+  --theme-primary-light: rgba(16, 185, 129, 0.15);
+  --theme-secondary: #F59E0B;
+  --theme-text: #F8FAFC;
+  --theme-text-muted: #94A3B8;
+  --theme-accent: #10B981;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* ===== BASE BODY — Poppins first (best ₹ glyph support) ===== */
+  body {
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 1.6;
+    @apply bg-[#F4F6F8] text-slate-900 antialiased;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ===== CUSTOMER PORTAL — Poppins: warm, friendly, perfect ₹ ===== */
+  .page-theme-customer {
+    font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+  }
+
+  /* ===== STAFF DASHBOARDS — Inter: compact, data-dense ===== */
+  .page-theme-kitchen,
+  .page-theme-waiter,
+  .page-theme-cashier,
+  .page-theme-admin,
+  .page-theme-owner,
+  .page-theme-login {
+    font-family: 'Inter', 'Poppins', system-ui, sans-serif;
+  }
+
+  /* ===== HEADINGS — Playfair Display: premium editorial serif (matches landing page) ===== */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', 'Sora', 'Poppins', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+  }
+
+  /* On dark staff screens: Inter headings (sharp, no-nonsense) */
+  .page-theme-kitchen h1, .page-theme-kitchen h2, .page-theme-kitchen h3,
+  .page-theme-waiter h1, .page-theme-waiter h2, .page-theme-waiter h3,
+  .page-theme-cashier h1, .page-theme-cashier h2, .page-theme-cashier h3,
+  .page-theme-admin h1, .page-theme-admin h2, .page-theme-admin h3,
+  .page-theme-owner h1, .page-theme-owner h2, .page-theme-owner h3 {
+    font-family: 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .dark {
+    background-color: #07090E;
+    color: #F8FAFC;
+  }
+
+  ::selection {
+    background-color: #0C831F;
+    color: #FFFFFF;
+  }
+
+  html.modal-open,
+  body.modal-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+    overscroll-behavior: none !important;
+  }
+}
+
+/* =============================================================
+   TYPOGRAPHY UTILITIES — project-wide
+   ============================================================= */
+
+/* font-mono on CUSTOMER pages: Poppins + tabular nums (not monospace!)
+   This is how Blinkit / Swiggy / Zomato render prices — far more
+   polished than using a monospace font for ₹ amounts */
+.page-theme-customer .font-mono,
+.page-theme-customer [class*="font-mono"] {
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif !important;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* font-mono on DARK STAFF screens: JetBrains Mono (terminal precision) */
+.page-theme-kitchen .font-mono,
+.page-theme-waiter .font-mono,
+.page-theme-cashier .font-mono,
+.page-theme-admin .font-mono,
+.page-theme-owner .font-mono,
+.page-theme-login .font-mono,
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+/* font-sans utility — Poppins on all screens */
+.font-sans {
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+}
+
+/* font-serif — editorial/pull-quotes only */
+.font-serif {
+  font-family: 'Georgia', 'Times New Roman', serif;
+}
+
+/* font-display — Playfair Display for brand/landing hero text (same as landing page) */
+.font-display {
+  font-family: 'Playfair Display', 'Sora', 'Poppins', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Adaptive Scrollbar — 100% Transparent Track (Zero Black Lines) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0C831F;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+/* Light / Customer-facing Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar,
+.customer-scrollbar::-webkit-scrollbar,
+.page-theme-customer ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.customer-scrollbar::-webkit-scrollbar-track,
+.page-theme-customer ::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.customer-scrollbar::-webkit-scrollbar-thumb,
+.page-theme-customer ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.customer-scrollbar::-webkit-scrollbar-thumb:hover,
+.page-theme-customer ::-webkit-scrollbar-thumb:hover {
+  background: rgba(12, 131, 31, 0.6);
+}
+
+.custom-scrollbar,
+.customer-scrollbar,
+.page-theme-customer {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+/* Dark Staff Terminal Scrollbars */
+.page-theme-kitchen ::-webkit-scrollbar-thumb,
+.page-theme-waiter ::-webkit-scrollbar-thumb,
+.page-theme-cashier ::-webkit-scrollbar-thumb,
+.page-theme-admin ::-webkit-scrollbar-thumb,
+.page-theme-owner ::-webkit-scrollbar-thumb,
+.page-theme-login ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.page-theme-kitchen ::-webkit-scrollbar-thumb:hover,
+.page-theme-waiter ::-webkit-scrollbar-thumb:hover,
+.page-theme-cashier ::-webkit-scrollbar-thumb:hover,
+.page-theme-admin ::-webkit-scrollbar-thumb:hover,
+.page-theme-owner ::-webkit-scrollbar-thumb:hover,
+.page-theme-login ::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
+}
+
+.page-theme-kitchen,
+.page-theme-waiter,
+.page-theme-cashier,
+.page-theme-admin,
+.page-theme-owner,
+.page-theme-login {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* Hide scrollbar for Chrome, Safari, Opera, Edge and Firefox */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Sleek custom horizontal scrollbar with breathing room and Cyan glow */
+.luxury-scrollbar-x::-webkit-scrollbar {
+  height: 3.5px;
+}
+.luxury-scrollbar-x::-webkit-scrollbar-track {
+  background: rgba(18, 21, 32, 0.75);
+  border-radius: 9999px;
+  margin-left: 12px;
+  margin-right: 12px;
+}
+.luxury-scrollbar-x::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.4);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+.luxury-scrollbar-x::-webkit-scrollbar-thumb:hover {
+  background: #38BDF8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+.luxury-scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.4) rgba(18, 21, 32, 0.75);
+}
+
+/* Blinkit Fresh Category Scrollbar */
+.blinkit-scrollbar-x::-webkit-scrollbar {
+  height: 4px;
+}
+.blinkit-scrollbar-x::-webkit-scrollbar-track {
+  background: #E5E7EB;
+  border-radius: 9999px;
+  margin-left: 8px;
+  margin-right: 8px;
+}
+.blinkit-scrollbar-x::-webkit-scrollbar-thumb {
+  background: #16A34A;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+.blinkit-scrollbar-x::-webkit-scrollbar-thumb:hover {
+  background: #0C831F;
+}
+.blinkit-scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: #16A34A #E5E7EB;
+}
+
+/* Cart Recommendations Visible Horizontal Scrollbar */
+.cart-scrollbar-x::-webkit-scrollbar {
+  height: 6px;
+}
+.cart-scrollbar-x::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 9999px;
+  margin-left: 4px;
+  margin-right: 4px;
+}
+.cart-scrollbar-x::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+.cart-scrollbar-x::-webkit-scrollbar-thumb:hover {
+  background: #0C831F;
+}
+.cart-scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F1F5F9;
+}
+
+/* Blinkit Fresh Add Button Pulse & Stepper Animation */
+@keyframes blinkit-pop {
+  0% { transform: scale(0.92); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.blinkit-stepper-pop {
+  animation: blinkit-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Glassmorphism & Card Utilities */
+.glass-panel {
+  background: rgba(22, 26, 40, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.glass-card {
+  background: rgba(30, 35, 54, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.cyan-glow {
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+}
+
+.cyan-text-gradient {
+  background: linear-gradient(135deg, #7DD3FC 0%, #38BDF8 50%, #0284C7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-4px);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.9), 0 0 25px rgba(56, 189, 248, 0.2);
+}
+
+/* Print Media Styles — Thermal Receipts, GST Tax Invoices & Luxury Table QR Stands */
+@media print {
+  @page {
+    margin: 8mm;
+    size: auto;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  body * {
+    visibility: hidden !important;
+  }
+
+  .printable-invoice,
+  .printable-invoice *,
+  .printable-qr-sheet,
+  .printable-qr-sheet * {
+    visibility: visible !important;
+  }
+
+  .printable-invoice {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  .printable-qr-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .printable-qr-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* =========================================================================
+   WARM WHITEWASHED PLASTER / CONCRETE TEXTURE UTILITIES
+   ========================================================================= */
+
+.bg-plaster {
+  background-color: var(--color-plaster-light, #f5f2ef);
+  background-image:
+    /* Subtle warm terracotta/chili organic blush in upper sections */
+    radial-gradient(ellipse 48% 36% at 86% 16%, rgba(195, 75, 55, 0.075) 0%, transparent 65%),
+    radial-gradient(ellipse 38% 32% at 12% 26%, rgba(185, 65, 48, 0.065) 0%, transparent 60%),
+    /* Cloudy uneven whitewashed plaster staining */
+    radial-gradient(ellipse 60% 50% at 15% 20%, rgba(180, 170, 155, 0.65) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, rgba(210, 200, 188, 0.72) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(180, 170, 155, 0.5) 0%, transparent 70%),
+    /* Pure procedural noise with microscopic organic red spice flecks */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch' result='noise'/%3E%3CfeColorMatrix in='noise' type='matrix' values='0 0 0 0 0.6  0 0 0 0 0.56  0 0 0 0 0.5  0 0 0 0 0.9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3Ccircle cx='42' cy='68' r='1.3' fill='%23b83a28' opacity='0.35'/%3E%3Ccircle cx='188' cy='42' r='1.1' fill='%23c24430' opacity='0.38'/%3E%3Ccircle cx='235' cy='182' r='1.5' fill='%239e3022' opacity='0.28'/%3E%3Ccircle cx='86' cy='214' r='0.9' fill='%23b53e2c' opacity='0.32'/%3E%3Ccircle cx='154' cy='135' r='1.2' fill='%23a43626' opacity='0.25'/%3E%3Ccircle cx='272' cy='94' r='1.0' fill='%23c0422e' opacity='0.3'/%3E%3C/svg%3E");
+  background-blend-mode: normal, normal, normal, normal, normal, multiply;
+  background-size: cover, cover, cover, cover, cover, 260px 260px;
+}
+
+.bg-plaster-subtle {
+  background-color: #faf8f5;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 20% 20%, rgba(210,200,188,0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(210,200,188,0.3) 0%, transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch' result='noise'/%3E%3CfeColorMatrix in='noise' type='matrix' values='0 0 0 0 0.6  0 0 0 0 0.56  0 0 0 0 0.5  0 0 0 0 0.45 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-blend-mode: normal, normal, multiply;
+  background-size: cover, cover, 260px 260px;
+}
+
+.vignette-plaster {
+  box-shadow: inset 0 0 180px 40px rgba(0, 0, 0, 0.06);
+}
+
+.font-script {
+  font-family: 'Alex Brush', 'Caveat', cursive;
+}
+
+.font-serif-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+@keyframes qr-scan-laser {
+  0% {
+    top: 6%;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 94%;
+    opacity: 0.3;
+  }
+}
+
+.animate-qr-laser {
+  animation: qr-scan-laser 2.2s ease-in-out infinite alternate;
+}

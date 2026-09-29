@@ -68,7 +68,7 @@ app.use(
       return callback(new Error(`CORS: Origin '${origin}' not allowed`));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-dev-secret'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-dev-secret', 'x-staff-secret'],
     credentials: true,
     maxAge: 86400 // 24 hours pre-flight caching
   })

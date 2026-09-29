@@ -7,6 +7,10 @@ import Table from '../models/Table.js';
 import User from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
+// In-memory migration flags — prevents repeated full-collection scans per process lifetime
+let _orderIdsMigrated = false;
+let _invoiceNumbersMigrated = false;
+
 // Chronological sequential order ID generator: ORD-1, ORD-2, ORD-3...
 export const getNextOrderId = async () => {
   const orders = await Order.find({ orderId: { $exists: true, $ne: null } })
@@ -43,10 +47,12 @@ export const getNextOrderId = async () => {
 export const generateOrderId = () => 'ORD-1';
 
 // Auto-migrate legacy random hex order IDs (e.g. ORD-E7E98D) to chronological sequential numbers (ORD-1, ORD-2...)
+// Guarded by an in-memory flag so the full-collection scan only runs ONCE per process, not on every request.
 export const normalizeOrderIds = async () => {
+  if (_orderIdsMigrated) return; // Already ran this process — skip full scan
   try {
     const allOrders = await Order.find().sort({ createdAt: 1 });
-    if (!allOrders || allOrders.length === 0) return;
+    if (!allOrders || allOrders.length === 0) { _orderIdsMigrated = true; return; }
 
     const hasLegacyHex = allOrders.some(o => o.orderId && !/^ORD-\d+$/i.test(o.orderId));
     if (hasLegacyHex) {
@@ -58,6 +64,7 @@ export const normalizeOrderIds = async () => {
       }
       console.log(`[Order ID Migration] Successfully migrated ${sorted.length} legacy order IDs to sequential ORD-1..ORD-${seq - 1}`);
     }
+    _orderIdsMigrated = true; // Mark done for this process lifetime
   } catch (err) {
     console.warn('[Order ID Migration] Warning during order ID migration:', err.message);
   }
@@ -91,7 +98,9 @@ export const getNextInvoiceNumber = async () => {
 export const generateInvoiceNumber = () => 'INV-1';
 
 // Auto-migrate legacy random hex invoices (e.g. INV-9BBAAF) to chronological sequential numbers (INV-1, INV-2...)
+// Guarded by an in-memory flag so the full-collection scan only runs ONCE per process, not on every request.
 export const normalizeInvoiceNumbers = async () => {
+  if (_invoiceNumbersMigrated) return; // Already ran this process — skip full scan
   try {
     const paidOrders = await Order.find({
       $or: [
@@ -136,9 +145,11 @@ export const normalizeInvoiceNumbers = async () => {
       }
       console.log(`[Invoice Migration] Successfully migrated ${sortedKeys.length} legacy invoices to sequential INV-1..INV-${seq - 1}`);
     }
+    _invoiceNumbersMigrated = true; // Mark done for this process lifetime
   } catch (err) {
     console.warn('[Invoice Migration] Warning during invoice migration:', err.message);
   }
+  _invoiceNumbersMigrated = true;
 };
 
 // @desc    DEV UTILITY: Purge all orders & reset table statuses
@@ -763,10 +774,24 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
   });
 });
 
+// Lightweight staff authorization check for unprotected write operations.
+// Passes if: (a) a valid JWT user is attached (staff/owner logged in), OR
+//            (b) the request sends the correct x-staff-secret header (kitchen/waiter tablets).
+// Blocks external actors (bots, public internet) who know a table number from cancelling/paying.
+const isStaffAuthorized = (req) => {
+  if (req.user) return true; // JWT user attached by protect() middleware (optional path)
+  const secret = req.headers['x-staff-secret'];
+  return !!secret && !!process.env.STAFF_SECRET && secret === process.env.STAFF_SECRET;
+};
+
 // @desc    Cancel whole order
 // @route   PUT /api/orders/:orderId/cancel
-// @access  Public / Staff
+// @access  Staff / Kitchen (JWT or x-staff-secret header)
 export const cancelOrder = asyncHandler(async (req, res) => {
+  if (!isStaffAuthorized(req)) {
+    return res.status(403).json({ success: false, message: 'Staff authorization required to cancel orders.' });
+  }
+
   const { reason, cancelledBy } = req.body;
   const targetOrderId = req.params.orderId;
 
@@ -830,8 +855,12 @@ export const getOrderById = asyncHandler(async (req, res) => {
 
 // @desc    Pay & Settle Table Bill
 // @route   POST /api/orders/pay-table
-// @access  Public / Staff
+// @access  Staff / POS (JWT or x-staff-secret header)
 export const payTableBill = asyncHandler(async (req, res) => {
+  if (!isStaffAuthorized(req)) {
+    return res.status(403).json({ success: false, message: 'Staff authorization required to settle bills.' });
+  }
+
   const { tableId, paymentMethod } = req.body;
   const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
   const isObjId = String(tableId).match(/^[0-9a-fA-F]{24}$/);

@@ -38,6 +38,11 @@ apiClient.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Inject staff secret for kitchen/waiter tablet operations (cancel, pay-table)
+    const staffSecret = (import.meta as any).env?.VITE_STAFF_SECRET;
+    if (staffSecret && config.headers) {
+      config.headers['x-staff-secret'] = staffSecret;
+    }
     return config;
   },
   (error) => Promise.reject(error)

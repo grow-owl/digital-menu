@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  X, User, Utensils, Clock, History, Heart, Tag, BookOpen, HelpCircle, LogIn, LogOut, Edit2, Star, FileText, ChevronRight, Sparkles, ShieldCheck, Bell, Zap, Award, Phone
+  X, User, Utensils, Clock, LogOut, Edit2, FileText, ChevronRight, ShieldCheck, Bell, Phone
 } from 'lucide-react';
 import { useAuthStore } from '../../store/use-auth-store';
 import { useOrderStore } from '../../store/use-order-store';
@@ -18,16 +18,7 @@ interface CustomerSidebarProps {
   onClose: () => void;
   tableId: string;
   onOpenAuth: () => void;
-  onOpenCart: () => void;
-  onOpenHistory: () => void;
-  onOpenWishlist?: () => void;
-  onOpenReservations?: () => void;
-  onOpenOffers: () => void;
-  onOpenGallery: () => void;
-  onOpenFaq: () => void;
   onOpenProfile: () => void;
-  onOpenFeedback?: () => void;
-  onOpenLoyalty?: () => void;
 }
 
 export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
@@ -36,14 +27,6 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
   tableId,
   onOpenAuth,
   onOpenProfile,
-  onOpenCart,
-  onOpenHistory,
-  onOpenWishlist,
-  onOpenOffers,
-  onOpenGallery,
-  onOpenFaq,
-  onOpenFeedback,
-  onOpenLoyalty,
 }) => {
   useBodyScrollLock(isOpen);
   useBackHandler(isOpen, onClose);
@@ -80,16 +63,6 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
 
   const links = [
     {
-      label: 'View Table Cart',
-      badge: cartCount > 0 ? `${cartCount} Items` : undefined,
-      badgeColor: 'bg-[#0C831F] text-white font-black',
-      icon: <Utensils className="w-4 h-4 text-[#0C831F]" />,
-      action: () => {
-        onClose();
-        onOpenCart();
-      },
-    },
-    {
       label: 'Live Order Tracker',
       badge: activeOrderId ? 'LIVE' : undefined,
       badgeColor: 'bg-emerald-100 text-emerald-800 border border-emerald-300 animate-pulse font-mono',
@@ -110,47 +83,6 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
       icon: <FileText className="w-4 h-4 text-rose-600" />,
       action: () => {
         handleRequestBill();
-      },
-    },
-    {
-      label: 'Rate Dining Experience',
-      icon: <Star className="w-4 h-4 text-amber-500 fill-amber-500" />,
-      action: () => {
-        if (onOpenFeedback) onOpenFeedback();
-      },
-    },
-    {
-      label: 'Order History',
-      icon: <History className="w-4 h-4 text-slate-600" />,
-      action: () => {
-        onClose();
-        onOpenHistory();
-      },
-    },
-    {
-      label: 'Offers & Coupons',
-      badge: 'OFFERS',
-      badgeColor: 'bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono',
-      icon: <Tag className="w-4 h-4 text-[#0C831F]" />,
-      action: () => {
-        onClose();
-        onOpenOffers();
-      },
-    },
-    {
-      label: 'Restaurant Story & Gallery',
-      icon: <BookOpen className="w-4 h-4 text-slate-600" />,
-      action: () => {
-        onClose();
-        onOpenGallery();
-      },
-    },
-    {
-      label: 'FAQs & Dining Support',
-      icon: <HelpCircle className="w-4 h-4 text-slate-600" />,
-      action: () => {
-        onClose();
-        onOpenFaq();
       },
     },
   ];

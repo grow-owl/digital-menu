@@ -18,7 +18,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 180,
     rating: 4.96,
-    reviewCount: 390,
     preparationTimeMinutes: 5,
   },
   {
@@ -36,7 +35,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 210,
     rating: 4.94,
-    reviewCount: 260,
     preparationTimeMinutes: 5,
   },
   {
@@ -56,7 +54,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 240,
     rating: 4.98,
-    reviewCount: 480,
     preparationTimeMinutes: 6,
   },
   {
@@ -74,7 +71,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 230,
     rating: 4.92,
-    reviewCount: 220,
     preparationTimeMinutes: 5,
   },
 
@@ -95,7 +91,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 280,
     rating: 4.94,
-    reviewCount: 380,
     preparationTimeMinutes: 5,
   },
   {
@@ -113,7 +108,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 290,
     rating: 4.92,
-    reviewCount: 240,
     preparationTimeMinutes: 5,
   },
   {
@@ -130,7 +124,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 275,
     rating: 4.90,
-    reviewCount: 195,
     preparationTimeMinutes: 5,
   },
   {
@@ -149,7 +142,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 300,
     rating: 4.96,
-    reviewCount: 320,
     preparationTimeMinutes: 5,
   },
   {
@@ -166,7 +158,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 285,
     rating: 4.91,
-    reviewCount: 175,
     preparationTimeMinutes: 5,
   },
 
@@ -186,7 +177,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 390,
     rating: 4.92,
-    reviewCount: 280,
     preparationTimeMinutes: 5,
   },
   {
@@ -203,7 +193,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 320,
     rating: 4.88,
-    reviewCount: 190,
     preparationTimeMinutes: 5,
   },
   {
@@ -220,7 +209,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 310,
     rating: 4.87,
-    reviewCount: 160,
     preparationTimeMinutes: 5,
   },
   {
@@ -239,7 +227,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 350,
     rating: 4.96,
-    reviewCount: 420,
     preparationTimeMinutes: 5,
   },
   {
@@ -258,7 +245,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 450,
     rating: 4.97,
-    reviewCount: 610,
     preparationTimeMinutes: 5,
   },
   {
@@ -276,7 +262,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 440,
     rating: 4.95,
-    reviewCount: 360,
     preparationTimeMinutes: 5,
   },
   {
@@ -295,7 +280,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 460,
     rating: 4.97,
-    reviewCount: 520,
     preparationTimeMinutes: 5,
   },
   {
@@ -313,7 +297,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 380,
     rating: 4.93,
-    reviewCount: 290,
     preparationTimeMinutes: 5,
   },
   {
@@ -330,7 +313,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 360,
     rating: 4.90,
-    reviewCount: 210,
     preparationTimeMinutes: 5,
   },
 
@@ -350,7 +332,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 420,
     rating: 4.94,
-    reviewCount: 310,
     preparationTimeMinutes: 5,
   },
   {
@@ -370,7 +351,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 480,
     rating: 4.98,
-    reviewCount: 450,
     preparationTimeMinutes: 6,
   },
   {
@@ -388,7 +368,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 430,
     rating: 4.95,
-    reviewCount: 330,
     preparationTimeMinutes: 5,
   },
   {
@@ -406,7 +385,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 440,
     rating: 4.93,
-    reviewCount: 290,
     preparationTimeMinutes: 5,
   },
   {
@@ -425,7 +403,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 390,
     rating: 4.96,
-    reviewCount: 340,
     preparationTimeMinutes: 6,
   },
   {
@@ -442,7 +419,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 360,
     rating: 4.91,
-    reviewCount: 220,
     preparationTimeMinutes: 5,
   },
   {
@@ -459,7 +435,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 370,
     rating: 4.92,
-    reviewCount: 210,
     preparationTimeMinutes: 5,
   },
   {
@@ -477,7 +452,6 @@ export const MATCHA_BOBA_SHAKES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 340,
     rating: 4.94,
-    reviewCount: 270,
     preparationTimeMinutes: 5,
   },
 ];

@@ -17,7 +17,6 @@ import {
   nosqlSanitizer,
   authRateLimiter,
   orderRateLimiter,
-  feedbackRateLimiter,
   generalRateLimiter
 } from './middleware/securityMiddleware.js';
 
@@ -25,11 +24,8 @@ import {
 import menuRoutes from './routes/menuRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
-import couponRoutes from './routes/couponRoutes.js';
-import contentRoutes from './routes/contentRoutes.js';
 import tableRoutes from './routes/tableRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
-import loyaltyRoutes from './routes/loyaltyRoutes.js';
 
 // Connect to MongoDB (non-blocking initialization)
 connectDB().catch((err) => {
@@ -113,18 +109,14 @@ app.use(async (req, res, next) => {
 // 5. Rate Limiting Protection on Sensitive Endpoints
 app.use('/api/auth/register', authRateLimiter);
 app.use('/api/auth/login', authRateLimiter);
-app.use('/api/loyalty/feedback-reward', feedbackRateLimiter);
 app.use('/api', generalRateLimiter);
 
 // 6. API Routes
 app.use('/api', menuRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api/coupons', couponRoutes);
-app.use('/api/content', contentRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/loyalty', loyaltyRoutes);
 
 // Health check endpoint
 app.get(['/', '/api/health'], (req, res) => {
@@ -151,7 +143,7 @@ const PORT = process.env.PORT || 5000;
 let server;
 if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (accessible on LAN) with Enterprise Security`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 

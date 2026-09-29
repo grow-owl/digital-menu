@@ -16,7 +16,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 140,
     rating: 4.80,
-    reviewCount: 210,
     preparationTimeMinutes: 2,
   },
   {
@@ -34,7 +33,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 145,
     rating: 4.93,
-    reviewCount: 320,
     preparationTimeMinutes: 3,
   },
   {
@@ -52,7 +50,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 45,
     rating: 4.91,
-    reviewCount: 380,
     preparationTimeMinutes: 3,
   },
   {
@@ -69,7 +66,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 110,
     rating: 4.86,
-    reviewCount: 160,
     preparationTimeMinutes: 2,
   },
   {
@@ -87,7 +83,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 85,
     rating: 4.92,
-    reviewCount: 230,
     preparationTimeMinutes: 4,
   },
   {
@@ -106,7 +101,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 90,
     rating: 4.96,
-    reviewCount: 510,
     preparationTimeMinutes: 4,
   },
   {
@@ -125,7 +119,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 120,
     rating: 4.94,
-    reviewCount: 340,
     preparationTimeMinutes: 4,
   },
   {
@@ -143,7 +136,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 110,
     rating: 4.93,
-    reviewCount: 280,
     preparationTimeMinutes: 4,
   },
   {
@@ -160,7 +152,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 105,
     rating: 4.90,
-    reviewCount: 220,
     preparationTimeMinutes: 4,
   },
   {
@@ -178,7 +169,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 95,
     rating: 4.95,
-    reviewCount: 420,
     preparationTimeMinutes: 4,
   },
 
@@ -198,7 +188,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 220,
     rating: 4.92,
-    reviewCount: 310,
     preparationTimeMinutes: 4,
   },
   {
@@ -217,7 +206,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 260,
     rating: 4.98,
-    reviewCount: 650,
     preparationTimeMinutes: 4,
   },
   {
@@ -234,7 +222,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 230,
     rating: 4.88,
-    reviewCount: 180,
     preparationTimeMinutes: 4,
   },
   {
@@ -252,7 +239,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 240,
     rating: 4.91,
-    reviewCount: 220,
     preparationTimeMinutes: 4,
   },
   {
@@ -269,7 +255,6 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 210,
     rating: 4.87,
-    reviewCount: 190,
     preparationTimeMinutes: 4,
   },
 ];

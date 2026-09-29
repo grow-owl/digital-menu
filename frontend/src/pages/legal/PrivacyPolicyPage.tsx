@@ -62,7 +62,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             <ul className="list-disc pl-5 space-y-1.5 text-slate-300">
               <li><strong>Table Session Data:</strong> Your designated dining table identifier to route food orders to the kitchen display.</li>
               <li><strong>Order Items and Notes:</strong> Dishes chosen, customization requests, and preparation preferences.</li>
-              <li><strong>Contact Information (Optional):</strong> Mobile number provided for digital bill receipts, SMS alerts, or loyalty bonus rewards.</li>
+              <li><strong>Contact Information (Optional):</strong> Mobile number provided for digital bill receipts and SMS alerts.</li>
               <li><strong>Payment Records:</strong> Transaction reference IDs and payment status (UPI, debit/credit cards, cash). We do not store raw card numbers or banking passwords.</li>
             </ul>
           </section>
@@ -76,7 +76,6 @@ export const PrivacyPolicyPage: React.FC = () => {
             <ul className="list-disc pl-5 space-y-1.5 text-slate-300">
               <li>Directing your tickets to the kitchen prep line and dispatching food to the right table.</li>
               <li>Generating itemized tax invoices and processing bill settlements.</li>
-              <li>Maintaining loyalty reward points and membership benefits when opted in.</li>
               <li>Addressing customer service queries or food safety concerns.</li>
             </ul>
           </section>

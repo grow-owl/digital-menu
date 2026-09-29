@@ -63,7 +63,6 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
 
   // Filters & Interactivity
   const [searchTable, setSearchTable] = useState('');
-  const [selectedZone, setSelectedZone] = useState<'ALL' | 'VIP' | 'MAIN'>('ALL');
   const [copiedTable, setCopiedTable] = useState<string | number | null>(null);
   const [rotatingTable, setRotatingTable] = useState<string | number | null>(null);
 
@@ -116,13 +115,9 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
   // Filtered Tables
   const filteredTables = useMemo(() => {
     return tables.filter((t) => {
-      const matchesSearch = !searchTable.trim() || String(t.tableNumber).includes(searchTable.trim());
-      const isVip = Number(t.tableNumber) === 10;
-      if (selectedZone === 'VIP') return matchesSearch && isVip;
-      if (selectedZone === 'MAIN') return matchesSearch && !isVip;
-      return matchesSearch;
+      return !searchTable.trim() || String(t.tableNumber).includes(searchTable.trim());
     });
-  }, [tables, searchTable, selectedZone]);
+  }, [tables, searchTable]);
 
   if (!isOpen) return null;
 
@@ -557,24 +552,6 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                   className="w-full pl-9 pr-3 py-2 bg-[#0D121F] border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 font-mono focus:outline-none focus:border-emerald-500"
                 />
               </div>
-
-              {/* Zone Filter Buttons */}
-              <div className="flex items-center bg-[#0D121F] border border-slate-800 rounded-xl p-0.5 shrink-0">
-                {(['ALL', 'VIP', 'MAIN'] as const).map((z) => (
-                  <button
-                    key={z}
-                    type="button"
-                    onClick={() => setSelectedZone(z)}
-                    className={`px-2.5 py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                      selectedZone === z
-                        ? 'bg-emerald-500 text-slate-950 font-black'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {z === 'ALL' ? 'All' : z === 'VIP' ? 'VIP' : 'Main'}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Active Settings Summary Pill */}
@@ -611,7 +588,6 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                   type="button"
                   onClick={() => {
                     setSearchTable('');
-                    setSelectedZone('ALL');
                   }}
                   className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
@@ -644,14 +620,8 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                         <span className={`text-[10px] tracking-widest font-black uppercase font-serif ${themeStyle.accentText}`}>
                           ✦ {config.brandName.toUpperCase()} ✦
                         </span>
-                        <span
-                          className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                            isVip
-                              ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40'
-                              : 'bg-white/10 text-slate-300 border border-white/20'
-                          }`}
-                        >
-                          {isVip ? 'VIP Suite' : `Cap: ${table.capacity || 4}`}
+                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-white/10 text-slate-300 border border-white/20">
+                          {`Cap: ${table.capacity || 4}`}
                         </span>
                       </div>
 
@@ -664,7 +634,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                             TABLE {table.tableNumber}
                           </div>
                           <div className="text-[10px] opacity-75 font-mono mt-0.5">
-                            {isVip ? 'Exclusive Dining Salon' : 'Main Dining Terrace'}
+                            Dine &amp; Dispatch
                           </div>
                         </div>
 
@@ -872,7 +842,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                     TABLE {table.tableNumber}
                   </div>
                   <div className="text-[11px] font-mono font-bold text-slate-700 uppercase mt-0.5">
-                    {isVip ? 'Exclusive VIP Salon' : `Main Dining • ${table.capacity || 4} Guests`}
+                    {`Table ${table.tableNumber}`}
                   </div>
                 </div>
 

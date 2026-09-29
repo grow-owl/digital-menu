@@ -51,10 +51,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     // Operations Section
     const opsItems = [];
     if (isOwner || isChef) {
-      opsItems.push({ name: 'Kitchen KDS', shortName: 'KDS', path: '/kitchen', icon: ChefHat, accent: 'text-amber-400', activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-300' });
+      opsItems.push({ name: 'Kitchen', shortName: 'Kitchen', path: '/kitchen', icon: ChefHat, accent: 'text-amber-400', activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-300' });
     }
     if (isOwner || isWaiter) {
-      opsItems.push({ name: 'Waiter Floor Map', shortName: 'Floor', path: '/waiter', icon: Layers, accent: 'text-cyan-400', activeBg: 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' });
+      opsItems.push({ name: 'Waiter', shortName: 'Waiter', path: '/waiter', icon: Layers, accent: 'text-cyan-400', activeBg: 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' });
     }
 
     if (opsItems.length > 0) {
@@ -88,14 +88,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
     if (location.pathname.startsWith('/kitchen')) {
       return { 
-        label: 'INDUSTRIAL KDS', 
+        label: 'KITCHEN', 
         badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
         themeClass: 'page-theme-kitchen'
       };
     }
     if (location.pathname.startsWith('/waiter')) {
       return { 
-        label: 'FLOOR COMMAND', 
+        label: 'WAITER', 
         badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
         themeClass: 'page-theme-waiter'
       };
@@ -285,19 +285,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Right: Quick Search, Clock & Portal Direct Actions */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              onClick={() => setIsCommandOpen(true)}
-              className="px-2.5 sm:px-3 py-1.5 bg-theme-bg border border-theme-border hover:border-theme-border-strong rounded-xl text-xs text-theme-muted flex items-center space-x-2 transition-colors cursor-pointer shadow-sm"
-            >
-              <Search className="w-3.5 h-3.5 text-theme-muted" />
-              <span className="hidden sm:inline text-theme-text/80">Quick Command</span>
-              <kbd className="bg-theme-surface px-1.5 py-0.5 rounded text-[9px] font-mono border border-theme-border text-theme-muted">
-                Ctrl+K
-              </kbd>
-            </button>
-
+          {/* Right: Clock & Portal Direct Actions */}
+          <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
             <div className="px-3 py-1.5 bg-theme-bg border border-theme-border rounded-xl text-xs font-mono text-theme-primary items-center space-x-1.5 hidden md:flex">
               <Activity className="w-3.5 h-3.5 text-theme-primary" />
               <span>{currentTime}</span>
@@ -378,7 +367,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         )}
 
         {/* Main Content Workspace — Page controls its own scroll */}
-        <main className="flex-1 min-h-0 overflow-hidden bg-theme-bg">
+        <main className="flex-1 min-h-0 overflow-hidden bg-theme-bg flex flex-col">
           {children}
         </main>
       </div>

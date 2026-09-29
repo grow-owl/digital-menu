@@ -19,7 +19,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 120,
     rating: 4.95,
-    reviewCount: 320,
     preparationTimeMinutes: 5,
   },
   {
@@ -37,7 +36,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 45,
     rating: 4.85,
-    reviewCount: 180,
     preparationTimeMinutes: 4,
   },
   {
@@ -54,7 +52,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 5,
     rating: 4.88,
-    reviewCount: 140,
     preparationTimeMinutes: 4,
   },
   {
@@ -72,7 +69,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 65,
     rating: 4.92,
-    reviewCount: 210,
     preparationTimeMinutes: 5,
   },
   {
@@ -91,7 +87,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 110,
     rating: 4.94,
-    reviewCount: 290,
     preparationTimeMinutes: 4,
   },
 
@@ -111,7 +106,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 140,
     rating: 4.91,
-    reviewCount: 410,
     preparationTimeMinutes: 5,
   },
   {
@@ -130,7 +124,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 220,
     rating: 4.96,
-    reviewCount: 560,
     preparationTimeMinutes: 4,
   },
   {
@@ -147,7 +140,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 5,
     rating: 4.82,
-    reviewCount: 160,
     preparationTimeMinutes: 3,
   },
   {
@@ -164,7 +156,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 10,
     rating: 4.84,
-    reviewCount: 190,
     preparationTimeMinutes: 3,
   },
   {
@@ -181,7 +172,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 10,
     rating: 4.89,
-    reviewCount: 220,
     preparationTimeMinutes: 3,
   },
   {
@@ -199,7 +189,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 70,
     rating: 4.93,
-    reviewCount: 240,
     preparationTimeMinutes: 4,
   },
   {
@@ -218,7 +207,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 260,
     rating: 4.96,
-    reviewCount: 380,
     preparationTimeMinutes: 5,
   },
   {
@@ -236,7 +224,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 290,
     rating: 4.94,
-    reviewCount: 310,
     preparationTimeMinutes: 5,
   },
   {
@@ -254,7 +241,6 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 190,
     rating: 4.97,
-    reviewCount: 340,
     preparationTimeMinutes: 3,
   },
 ];

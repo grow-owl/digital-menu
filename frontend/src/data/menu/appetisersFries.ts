@@ -17,7 +17,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 320,
     rating: 4.88,
-    reviewCount: 360,
     preparationTimeMinutes: 6,
   },
   {
@@ -36,7 +35,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 2,
     calories: 340,
     rating: 4.96,
-    reviewCount: 520,
     preparationTimeMinutes: 6,
   },
   {
@@ -55,7 +53,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 480,
     rating: 4.95,
-    reviewCount: 460,
     preparationTimeMinutes: 8,
   },
 
@@ -75,7 +72,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 330,
     rating: 4.89,
-    reviewCount: 240,
     preparationTimeMinutes: 8,
   },
   {
@@ -94,7 +90,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 360,
     rating: 4.93,
-    reviewCount: 310,
     preparationTimeMinutes: 8,
   },
   {
@@ -112,7 +107,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 350,
     rating: 4.91,
-    reviewCount: 220,
     preparationTimeMinutes: 8,
   },
   {
@@ -129,7 +123,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 340,
     rating: 4.88,
-    reviewCount: 190,
     preparationTimeMinutes: 8,
   },
   {
@@ -148,7 +141,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 2,
     calories: 420,
     rating: 4.95,
-    reviewCount: 370,
     preparationTimeMinutes: 10,
   },
   {
@@ -168,7 +160,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 430,
     rating: 4.96,
-    reviewCount: 440,
     preparationTimeMinutes: 10,
   },
   {
@@ -188,7 +179,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 3,
     calories: 460,
     rating: 4.97,
-    reviewCount: 490,
     preparationTimeMinutes: 12,
   },
   {
@@ -209,7 +199,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 2,
     calories: 510,
     rating: 4.98,
-    reviewCount: 530,
     preparationTimeMinutes: 12,
   },
   {
@@ -228,7 +217,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 380,
     rating: 4.91,
-    reviewCount: 260,
     preparationTimeMinutes: 8,
   },
   {
@@ -248,7 +236,6 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 420,
     rating: 4.94,
-    reviewCount: 290,
     preparationTimeMinutes: 10,
   },
 ];

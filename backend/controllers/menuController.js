@@ -165,7 +165,6 @@ export const createMenuItem = asyncHandler(async (req, res) => {
     preparationTimeMinutes: Number(preparationTimeMinutes) || 15,
     calories: Number(calories) || 250,
     rating: 4.8,
-    reviewCount: 42,
     ingredients: ingredients || [],
     allergens: allergens || [],
     customizationGroups: customizationGroups || []

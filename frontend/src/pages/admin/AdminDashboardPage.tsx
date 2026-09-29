@@ -211,16 +211,10 @@ export const AdminDashboardPage: React.FC = () => {
       const tax = Math.round(subtotal * 0.05);
       const total = subtotal + tax;
 
-      let zone = 'Main Hall';
-      if (tableNum > 12 && tableNum <= 16) zone = 'VIP Lounge';
-      if (tableNum > 16 && tableNum <= 24) zone = 'Outdoor Garden';
-      if (tableNum > 24) zone = 'Family Section';
-
       const tableInDb = allTables.find((t) => Number(t.tableNumber) === tableNum);
 
       result.push({
         tableNumber: tableNum,
-        zone: tableInDb?.zone || zone,
         guestCount: tableInDb?.guestCount || 2,
         orders,
         items: allItems,
@@ -444,58 +438,31 @@ export const AdminDashboardPage: React.FC = () => {
   const inStockCount = menuItems.filter((d) => d.isAvailable !== false).length;
 
   return (
-    <div className="page-theme-admin h-full overflow-y-auto p-3 sm:p-6 font-sans text-theme-text bg-theme-bg">
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-24">
+    <div className="page-theme-admin h-full overflow-y-auto p-2 sm:p-6 font-sans text-theme-text bg-theme-bg">
+      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-6 pb-24">
         {/* ─────────────────────────────────────────────────────────────
             TOP HEADER BANNER (Mobile-Responsive Header)
         ───────────────────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-theme-surface border border-theme-border p-4 sm:p-5 rounded-2xl shadow-xl">
-          <div className="flex items-center space-x-3">
-            <div className="p-3 bg-theme-primary/10 border border-theme-primary/30 rounded-xl shadow-inner shrink-0">
-              <TrendingUp className="w-6 h-6 text-theme-primary" />
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-theme-surface border border-theme-border p-3 sm:p-5 rounded-2xl shadow-xl">
+          <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
             <div className="min-w-0">
-              <div className="flex items-center space-x-2">
-                <h1 className="font-serif text-lg sm:text-2xl font-black tracking-wide text-white truncate">
-                  ADMIN &amp; RESTAURANT CONTROL
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <h1 className="font-serif text-base sm:text-2xl font-black tracking-wide text-white truncate">
+                  ADMIN PANEL
                 </h1>
-                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase shrink-0">
-                  LIVE
-                </span>
               </div>
-              <p className="text-xs text-theme-muted mt-0.5 truncate">
-                Billing, Financials, Recipe Catalog &amp; Daily Availability
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-end overflow-x-auto pb-0.5 sm:pb-0">
             <button
               onClick={() => fetchData(true)}
               disabled={isLoading}
-              className="px-3 py-2 bg-theme-bg hover:bg-theme-surface border border-theme-border text-xs text-slate-200 rounded-xl font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-theme-bg hover:bg-theme-surface border border-theme-border text-[11px] sm:text-xs text-slate-200 rounded-xl font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm shrink-0"
               title="Refresh live data"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-theme-primary ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden xs:inline">Refresh</span>
-            </button>
-
-            <button
-              onClick={() => setIsQrModalOpen(true)}
-              className="px-3 py-2 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/40 text-indigo-300 font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
-              title="View and print table QR code stands"
-            >
-              <QrCode className="w-3.5 h-3.5" />
-              <span>QR Stands</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/menu')}
-              className="px-3 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 font-bold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
-              title="Preview Customer Menu Side without QR"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Customer Menu</span>
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -503,46 +470,46 @@ export const AdminDashboardPage: React.FC = () => {
         {/* ─────────────────────────────────────────────────────────────
             THE 4 NAVIGATION TABS (Strictly 4 Parts, Mobile Swipeable)
         ───────────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 custom-scrollbar border-b border-theme-border">
+        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain pb-1.5 border-b border-theme-border pr-2">
           <button
             onClick={() => setActiveTab('TABLE_BILLING')}
-            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border flex items-center space-x-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'TABLE_BILLING'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
                 : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
             }`}
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span>1. Table Billing ({activeTablesBillingData.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('BILLING_HISTORY')}
-            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border flex items-center space-x-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'BILLING_HISTORY'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
                 : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
             }`}
           >
-            <DollarSign className="w-4 h-4" />
-            <span>2. Billing History &amp; Totals</span>
+            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span>2. Billing History</span>
           </button>
 
           <button
             onClick={() => setActiveTab('MENU_MANAGEMENT')}
-            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border flex items-center space-x-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'MENU_MANAGEMENT'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
                 : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
             }`}
           >
-            <ChefHat className="w-4 h-4" />
+            <ChefHat className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span>3. Menu Items ({menuItems.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('DAILY_AVAILABILITY')}
-            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all border flex items-center space-x-2 cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'DAILY_AVAILABILITY'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
                 : outOfStockCount > 0
@@ -550,7 +517,7 @@ export const AdminDashboardPage: React.FC = () => {
                 : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
             }`}
           >
-            <CheckCircle2 className="w-4 h-4" />
+            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span>4. Today's Availability</span>
             {outOfStockCount > 0 && (
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-rose-500 text-white font-black">
@@ -558,6 +525,7 @@ export const AdminDashboardPage: React.FC = () => {
               </span>
             )}
           </button>
+          <div className="w-2 shrink-0" />
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
@@ -569,21 +537,13 @@ export const AdminDashboardPage: React.FC = () => {
               <div>
                 <h2 className="font-serif text-base sm:text-lg font-bold text-white flex items-center space-x-2">
                   <Receipt className="w-5 h-5 text-theme-primary" />
-                  <span>Live Table Billing &amp; Checkout</span>
+                  <span>Table Billing</span>
                 </h2>
-                <p className="text-xs text-theme-muted mt-0.5">
-                  Select any active dining table to review itemized orders, collect payment via UPI / Card / Cash, and generate instant tax invoice.
-                </p>
               </div>
 
               <div className="flex items-center space-x-2 text-xs font-mono">
                 <span className="px-2.5 py-1 rounded-lg bg-theme-bg border border-theme-border text-slate-300">
                   Active Tables: <strong className="text-theme-primary">{activeTablesBillingData.length}</strong>
-                </span>
-                <span className="px-2.5 py-1 rounded-lg bg-theme-bg border border-theme-border text-slate-300">
-                  Total Active: <strong className="text-emerald-400">
-                    ₹{activeTablesBillingData.reduce((s, t) => s + t.total, 0).toLocaleString('en-IN')}
-                  </strong>
                 </span>
               </div>
             </div>
@@ -608,9 +568,6 @@ export const AdminDashboardPage: React.FC = () => {
                         <div className="flex items-center space-x-2">
                           <span className="font-serif font-black text-xl text-white">
                             Table {tbl.tableNumber}
-                          </span>
-                          <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded-full font-bold">
-                            {tbl.zone}
                           </span>
                         </div>
                         <span className="text-xs font-mono font-bold text-slate-400 flex items-center gap-1">
@@ -713,23 +670,6 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="flex items-center justify-between text-[11px] font-mono text-theme-muted pt-1 border-t border-theme-border">
                   <span>{financialTotals.monthOrdersCount} Orders This Month</span>
                   <span className="text-sky-400 font-bold">{new Date().toLocaleString('default', { month: 'long' })}</span>
-                </div>
-              </div>
-
-              {/* Card 3: Total Billed of Whole (All-Time) */}
-              <div className="p-4 sm:p-5 bg-theme-surface border border-purple-500/40 rounded-2xl shadow-xl space-y-2 relative overflow-hidden">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="font-bold text-purple-400 uppercase tracking-wider">TOTAL BILLED (WHOLE / ALL-TIME)</span>
-                  <div className="p-2 bg-purple-500/20 text-purple-300 rounded-xl">
-                    <TrendingUp className="w-4 h-4" />
-                  </div>
-                </div>
-                <p className="font-serif text-2xl sm:text-3xl font-black text-white">
-                  ₹{financialTotals.wholeTotalBilled.toLocaleString('en-IN')}
-                </p>
-                <div className="flex items-center justify-between text-[11px] font-mono text-theme-muted pt-1 border-t border-theme-border">
-                  <span>{financialTotals.wholeOrdersCount} Lifetime Invoices</span>
-                  <span className="text-purple-400 font-bold">100% Verified</span>
                 </div>
               </div>
             </div>
@@ -933,9 +873,6 @@ export const AdminDashboardPage: React.FC = () => {
                   <ChefHat className="w-5 h-5 text-theme-primary" />
                   <span>Menu Recipe Catalog ({filteredMenuItems.length} Items)</span>
                 </h2>
-                <p className="text-xs text-theme-muted mt-0.5">
-                  Add new dishes, update prices &amp; descriptions, or delete items from the menu.
-                </p>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -1068,49 +1005,62 @@ export const AdminDashboardPage: React.FC = () => {
         ───────────────────────────────────────────────────────────── */}
         {activeTab === 'DAILY_AVAILABILITY' && (
           <div className="space-y-4 sm:space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-theme-surface border border-theme-border p-4 sm:p-5 rounded-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-theme-surface border border-theme-border p-3.5 sm:p-5 rounded-2xl">
               <div>
                 <h2 className="font-serif text-base sm:text-lg font-bold text-white flex items-center space-x-2">
-                  <CheckCircle2 className="w-5 h-5 text-theme-primary" />
+                  <CheckCircle2 className="w-5 h-5 text-theme-primary shrink-0" />
                   <span>Daily Menu Availability Manager</span>
                 </h2>
-                <p className="text-xs text-theme-muted mt-0.5">
-                  Single-tick switch to immediately mark dishes available or out-of-stock for today's service. Updates guest digital menu instantly.
-                </p>
               </div>
 
-              {/* Status Counters */}
-              <div className="flex items-center space-x-2 text-xs font-mono">
-                <span className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold">
-                  ✓ Available Today: {inStockCount}
-                </span>
-                <span className={`px-3 py-1.5 rounded-xl font-bold border ${
+              {/* Status Counters — Responsive 2-Col Grid on Mobile, Inline on Desktop */}
+              <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:space-x-2 font-mono text-xs">
+                <div className="flex items-center justify-between sm:justify-start px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold gap-2">
+                  <span className="text-[11px] sm:text-xs">✓ Available</span>
+                  <span className="font-mono font-black text-xs sm:text-sm px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300">
+                    {inStockCount}
+                  </span>
+                </div>
+                <div className={`flex items-center justify-between sm:justify-start px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl font-bold border gap-2 ${
                   outOfStockCount > 0
                     ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 animate-pulse'
-                    : 'bg-theme-bg border-theme-border text-slate-400'
+                    : 'bg-theme-bg/80 border-theme-border text-slate-400'
                 }`}>
-                  ✕ Not Available: {outOfStockCount}
-                </span>
+                  <span className="text-[11px] sm:text-xs">✕ Out of Stock</span>
+                  <span className="font-mono font-black text-xs sm:text-sm px-1.5 py-0.5 rounded bg-black/30">
+                    {outOfStockCount}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Quick Filter Tabs & Search */}
-            <div className="flex flex-col sm:flex-row gap-2.5">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2.5">
               <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   value={availSearchQuery}
                   onChange={(e) => setAvailSearchQuery(e.target.value)}
-                  placeholder="Quick search dishes to toggle availability..."
-                  className="w-full pl-9 pr-3 py-2 bg-theme-surface border border-theme-border rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-theme-primary font-mono"
+                  placeholder="Quick search dishes..."
+                  className="w-full pl-9 pr-8 py-2 bg-theme-surface border border-theme-border rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-theme-primary font-mono"
                 />
+                {availSearchQuery && (
+                  <button
+                    onClick={() => setAvailSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
 
-              <div className="flex space-x-1.5 overflow-x-auto pb-1 sm:pb-0">
+              {/* Horizontal Scrollable Rail on Mobile without Ugly Grey Scrollbar */}
+              <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain pb-0.5 sm:pb-0 pr-3">
                 <button
                   onClick={() => setAvailFilter('ALL')}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold font-mono transition-all border cursor-pointer whitespace-nowrap ${
+                  className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold font-mono transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
                     availFilter === 'ALL'
                       ? 'bg-theme-primary text-black border-theme-primary font-black shadow-sm'
                       : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
@@ -1120,7 +1070,7 @@ export const AdminDashboardPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setAvailFilter('OUT_OF_STOCK')}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold font-mono transition-all border cursor-pointer whitespace-nowrap ${
+                  className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold font-mono transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
                     availFilter === 'OUT_OF_STOCK'
                       ? 'bg-rose-500 text-white border-rose-400 font-black shadow-sm'
                       : outOfStockCount > 0
@@ -1128,11 +1078,11 @@ export const AdminDashboardPage: React.FC = () => {
                       : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
                   }`}
                 >
-                  🔴 Not Available Today ({outOfStockCount})
+                  🔴 Not Available ({outOfStockCount})
                 </button>
                 <button
                   onClick={() => setAvailFilter('IN_STOCK')}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold font-mono transition-all border cursor-pointer whitespace-nowrap ${
+                  className={`px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold font-mono transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
                     availFilter === 'IN_STOCK'
                       ? 'bg-emerald-500 text-black border-emerald-400 font-black shadow-sm'
                       : 'bg-theme-surface text-slate-400 border-theme-border hover:text-white'
@@ -1140,6 +1090,7 @@ export const AdminDashboardPage: React.FC = () => {
                 >
                   🟢 Available Today ({inStockCount})
                 </button>
+                <div className="w-2 shrink-0" />
               </div>
             </div>
 
@@ -1240,7 +1191,7 @@ export const AdminDashboardPage: React.FC = () => {
                   <Receipt className="w-5 h-5 text-theme-primary" />
                   <span>Settle Bill: Table {selectedTableForBilling.tableNumber}</span>
                 </h3>
-                <p className="text-xs text-theme-muted">{selectedTableForBilling.zone} • {selectedTableForBilling.guestCount} Guests</p>
+                <p className="text-xs text-theme-muted">{selectedTableForBilling.guestCount} Guests</p>
               </div>
               <button
                 onClick={() => setSelectedTableForBilling(null)}

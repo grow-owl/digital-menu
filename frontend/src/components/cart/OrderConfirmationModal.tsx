@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CartItem, Coupon } from '../../types/menu.types';
+import { CartItem } from '../../types/menu.types';
 import { Coffee, ShieldCheck, X, Clock, Loader2, Phone, User as UserIcon, Sparkles, CheckCircle2, Edit2 } from 'lucide-react';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../hooks/useBackHandler';
@@ -11,9 +11,7 @@ interface OrderConfirmationModalProps {
   tableId: string;
   isOpen: boolean;
   items: CartItem[];
-  appliedCoupon: Coupon | null;
   subtotal: number;
-  discount: number;
   gstAmount: number;
   grandTotal: number;
   onConfirm: (phone?: string, name?: string) => Promise<void> | void;
@@ -24,9 +22,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
   tableId,
   isOpen,
   items,
-  appliedCoupon,
   subtotal,
-  discount,
   gstAmount,
   grandTotal,
   onConfirm,
@@ -236,13 +232,6 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
             <span>Subtotal</span>
             <span className="font-mono text-slate-700">₹{subtotal.toFixed(2)}</span>
           </div>
-
-          {appliedCoupon && (
-            <div className="flex justify-between text-[#9d785e] font-bold">
-              <span>Coupon Discount ({appliedCoupon.code})</span>
-              <span className="font-mono">-₹{discount.toFixed(2)}</span>
-            </div>
-          )}
 
           <div className="flex justify-between text-slate-500">
             <span>GST (5%)</span>

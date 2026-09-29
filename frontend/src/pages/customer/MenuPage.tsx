@@ -9,7 +9,6 @@ import { MenuBrandHeader } from '../../components/menu/MenuBrandHeader';
 import { MenuDishesGrid } from '../../components/menu/MenuDishesGrid';
 import { MenuFloatingActions } from '../../components/menu/MenuFloatingActions';
 import { MenuFloatingCartBar } from '../../components/menu/MenuFloatingCartBar';
-import { MenuCustomerModals } from '../../components/menu/MenuCustomerModals';
 import { DishDetailModal } from '../../components/menu/DishDetailModal';
 import { CartDrawer } from '../../components/cart/CartDrawer';
 import { CustomerSidebar } from '../../components/customer/CustomerSidebar';
@@ -49,12 +48,6 @@ export const MenuPage: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isOffersOpen, setIsOffersOpen] = useState(false);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [isFaqOpen, setIsFaqOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isLoyaltyOpen, setIsLoyaltyOpen] = useState(false);
 
   // Status & Dynamic Scroll State
   const [isLoading, setIsLoading] = useState(true);
@@ -303,13 +296,6 @@ export const MenuPage: React.FC = () => {
         tableId={tableId}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
-        onOpenCart={() => setIsCartOpen(true)}
-        onOpenHistory={() => setIsHistoryOpen(true)}
-        onOpenOffers={() => setIsOffersOpen(true)}
-        onOpenGallery={() => setIsGalleryOpen(true)}
-        onOpenFaq={() => setIsFaqOpen(true)}
-        onOpenFeedback={() => setIsFeedbackOpen(true)}
-        onOpenLoyalty={() => setIsLoyaltyOpen(true)}
       />
 
       {/* Auth & Profile Modals */}
@@ -322,24 +308,6 @@ export const MenuPage: React.FC = () => {
       <CustomerProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
-      />
-
-      {/* Customer Experience Modals */}
-      <MenuCustomerModals
-        isLoyaltyOpen={isLoyaltyOpen}
-        onCloseLoyalty={() => setIsLoyaltyOpen(false)}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        isHistoryOpen={isHistoryOpen}
-        onCloseHistory={() => setIsHistoryOpen(false)}
-        isOffersOpen={isOffersOpen}
-        onCloseOffers={() => setIsOffersOpen(false)}
-        isGalleryOpen={isGalleryOpen}
-        onCloseGallery={() => setIsGalleryOpen(false)}
-        isFaqOpen={isFaqOpen}
-        onCloseFaq={() => setIsFaqOpen(false)}
-        isFeedbackOpen={isFeedbackOpen}
-        onCloseFeedback={() => setIsFeedbackOpen(false)}
-        activeOrderId={activeOrderId}
       />
     </div>
   );

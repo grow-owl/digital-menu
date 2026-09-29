@@ -50,7 +50,6 @@ export interface MenuItem {
   spiceLevel?: number; // 0 (None), 1 (Mild), 2 (Medium), 3 (Spicy)
   calories?: number;
   rating?: number;
-  reviewCount?: number;
   preparationTimeMinutes: number;
   ingredients?: string[];
   allergens?: string[];
@@ -71,13 +70,4 @@ export interface CartItem {
   addonNames?: string[];
   selectedCustomizations?: CartCustomization[];
   specialNotes?: string;
-}
-
-export interface Coupon {
-  code: string;
-  title: string;
-  discountAmount: number;
-  discountPercentage?: number;
-  minOrderAmount: number;
-  description: string;
 }

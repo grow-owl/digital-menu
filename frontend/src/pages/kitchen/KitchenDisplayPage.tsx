@@ -217,19 +217,18 @@ export const KitchenDisplayPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────────
           TOP STATION CONTROL BAR (Compact, Glare-Resistant, Full Width)
       ───────────────────────────────────────────────────────────────── */}
-      <div className="bg-theme-surface/95 backdrop-blur-md border-b border-theme-border px-3 sm:px-6 py-2.5 space-y-2.5 flex-shrink-0 z-20 shadow-sm">
+      <div className="bg-theme-surface/95 backdrop-blur-md border-b border-theme-border px-3 sm:px-6 pt-3 pb-3.5 sm:py-3.5 space-y-3 flex-shrink-0 z-20 shadow-sm">
         {/* Row 1: Station Identity, Live Station Clock, Audio Alarm & Sync */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center space-x-2.5 min-w-0">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+          <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-theme-primary/10 border border-theme-primary/30 flex items-center justify-center flex-shrink-0">
               <ChefHat className="w-4 h-4 text-theme-primary" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center space-x-1.5">
                 <h1 className="font-serif text-sm sm:text-base font-black text-white tracking-wide truncate">
-                  KITCHEN DISPLAY
+                  KITCHEN
                 </h1>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping flex-shrink-0" />
               </div>
               <p className="text-[10px] text-emerald-400 font-mono font-bold hidden sm:block">LIVE • 3s Stream • MAIN PASS</p>
             </div>
@@ -273,71 +272,76 @@ export const KitchenDisplayPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 2: Queue Filter Tabs & Live Station Metrics */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto custom-scrollbar pb-1.5 pt-0.5">
-          {/* Filter Pills */}
-          <button
-            onClick={() => setFilterStatus('ALL')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              filterStatus === 'ALL'
-                ? 'bg-slate-800 text-white border-slate-600 shadow-md font-black'
-                : 'bg-theme-bg text-slate-400 border-slate-800 hover:text-white'
-            }`}
-          >
-            <span>All Active</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-900 border border-slate-800 font-bold">
-              {activeCount}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setFilterStatus('received')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              filterStatus === 'received'
-                ? 'bg-blue-600 text-white border-blue-400 shadow-md font-black'
-                : 'bg-theme-bg text-blue-400 border-blue-500/30 hover:bg-blue-500/10'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>New Incoming</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-950/60 border border-blue-800 text-blue-300 font-bold">
-              {receivedCount}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setFilterStatus('preparing')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              filterStatus === 'preparing'
-                ? 'bg-amber-600 text-white border-amber-400 shadow-md font-black'
-                : 'bg-theme-bg text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>Cooking Now</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-950/60 border border-amber-800 text-amber-300 font-bold">
-              {preparingCount}
-            </span>
-          </button>
-
-          <div className="h-4 w-px bg-theme-border flex-shrink-0 mx-1" />
-
-          {/* Quick Metrics Badges */}
-          <div className="flex items-center space-x-1.5 text-[11px] font-mono whitespace-nowrap">
-            <span className="px-2 py-1 rounded-lg bg-theme-bg border border-theme-border text-slate-300 font-bold">
-              Orders: <strong className="text-white font-mono">{activeCount}</strong>
-            </span>
-            <span className="px-2 py-1 rounded-lg bg-theme-bg border border-blue-500/30 text-blue-400 font-bold">
-              New: <strong className="font-mono">{receivedCount}</strong>
-            </span>
-            <span className="px-2 py-1 rounded-lg bg-theme-bg border border-amber-500/30 text-amber-400 font-bold">
-              Cooking: <strong className="font-mono">{preparingCount}</strong>
-            </span>
-            {overdueCount > 0 && (
-              <span className="px-2 py-1 rounded-lg bg-rose-950/30 border border-rose-500/60 text-rose-400 font-bold animate-pulse">
-                Overdue: <strong className="font-mono">{overdueCount}</strong>
+        {/* Row 2: Queue Filter Tabs (Top) & Live Station Metrics (Neeche on Mobile, Inline on Desktop) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+          {/* Filter Pills — 3 equal columns on mobile so all 3 fit without scrolling */}
+          <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:space-x-1.5 py-0.5">
+            <button
+              onClick={() => setFilterStatus('ALL')}
+              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
+                filterStatus === 'ALL'
+                  ? 'bg-slate-800 text-white border-slate-600 shadow-md font-black'
+                  : 'bg-theme-bg text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              <span className="sm:hidden">All</span>
+              <span className="hidden sm:inline">All Active</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-900 border border-slate-800 font-bold">
+                {activeCount}
               </span>
-            )}
+            </button>
+
+            <button
+              onClick={() => setFilterStatus('received')}
+              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
+                filterStatus === 'received'
+                  ? 'bg-blue-600 text-white border-blue-400 shadow-md font-black'
+                  : 'bg-theme-bg text-blue-400 border-blue-500/30 hover:bg-blue-500/10'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span className="sm:hidden">New</span>
+              <span className="hidden sm:inline">New Incoming</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-950/60 border border-blue-800 text-blue-300 font-bold">
+                {receivedCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setFilterStatus('preparing')}
+              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
+                filterStatus === 'preparing'
+                  ? 'bg-amber-600 text-white border-amber-400 shadow-md font-black'
+                  : 'bg-theme-bg text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5 shrink-0" />
+              <span className="sm:hidden">Cooking</span>
+              <span className="hidden sm:inline">Cooking Now</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-950/60 border border-amber-800 text-amber-300 font-bold">
+                {preparingCount}
+              </span>
+            </button>
+          </div>
+
+          {/* Quick Metrics Badges — Dedicated Bottom Row on Mobile, Inline on Desktop */}
+          <div className="w-full sm:w-auto mt-2.5 pt-2.5 border-t border-slate-800/80 sm:border-t-0 sm:pt-0 sm:mt-0 sm:border-l sm:border-slate-800 sm:pl-3 pb-0.5">
+            <div className={`grid ${overdueCount > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 w-full sm:w-auto sm:flex sm:items-center sm:space-x-2 text-xs font-mono whitespace-nowrap`}>
+              <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-theme-border text-slate-300 font-bold text-center text-[11px] sm:text-xs">
+                Orders: <strong className="text-white font-mono">{activeCount}</strong>
+              </span>
+              <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-blue-500/30 text-blue-400 font-bold text-center text-[11px] sm:text-xs">
+                New: <strong className="font-mono">{receivedCount}</strong>
+              </span>
+              <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-amber-500/30 text-amber-400 font-bold text-center text-[11px] sm:text-xs">
+                Cooking: <strong className="font-mono">{preparingCount}</strong>
+              </span>
+              {overdueCount > 0 && (
+                <span className="px-1.5 py-2 sm:py-1.5 rounded-xl bg-rose-950/30 border border-rose-500/60 text-rose-400 font-bold animate-pulse text-center text-[11px] sm:text-xs">
+                  Late: <strong className="font-mono">{overdueCount}</strong>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -345,19 +349,19 @@ export const KitchenDisplayPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────────
           MAIN PANEL: High-Contrast Aviation Ticket Grid (Full Screen Width)
       ───────────────────────────────────────────────────────────────── */}
-      <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+      <main className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-6">
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
-          <div className="flex items-center space-x-3">
-            <Flame className="w-5 h-5 text-amber-400 animate-pulse" />
-            <h2 className="font-serif text-lg font-bold text-white tracking-wide">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse shrink-0" />
+            <h2 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide truncate">
               {filterStatus === 'ALL'
                 ? 'Live Cooking Pass'
                 : filterStatus === 'received'
                 ? 'New Incoming Orders'
                 : 'Active Cooking Line'}
             </h2>
-            <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-mono text-xs font-bold">
+            <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[11px] sm:text-xs font-bold shrink-0">
               {filteredTickets.length} Tickets
             </span>
           </div>
@@ -370,13 +374,13 @@ export const KitchenDisplayPage: React.FC = () => {
 
         {/* Tickets Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div key={n} className="h-64 bg-slate-900/60 rounded-2xl animate-pulse border border-slate-800" />
             ))}
           </div>
         ) : filteredTickets.length === 0 ? (
-          <div className="py-16 sm:py-24 text-center space-y-4 bg-[#0A0D15] rounded-3xl border border-slate-800 p-6 sm:p-8 max-w-md mx-auto shadow-2xl">
+          <div className="py-16 sm:py-24 text-center space-y-4 bg-[#0A0D15] rounded-3xl border border-slate-800 p-4 sm:p-8 max-w-md mx-auto shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-amber-400">
               <ChefHat className="w-8 h-8" />
             </div>
@@ -386,7 +390,7 @@ export const KitchenDisplayPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {filteredTickets.map((ticket) => {
               const elapsedSecs = getElapsedSeconds(ticket.createdAt);
               const timerFormatted = formatTimer(elapsedSecs);
@@ -405,7 +409,7 @@ export const KitchenDisplayPage: React.FC = () => {
               return (
                 <div
                   key={ticket.id}
-                  className={`bg-[#0A0D15] border rounded-2xl p-4 sm:p-5 space-y-3.5 sm:space-y-4 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden ${
+                  className={`bg-[#0A0D15] border rounded-2xl p-3 sm:p-5 space-y-3 sm:space-y-4 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden ${
                     ticket.status === 'preparing'
                       ? isAllChecked
                         ? 'border-emerald-500 ring-2 ring-emerald-500/30'

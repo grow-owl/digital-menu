@@ -16,11 +16,7 @@ export interface OrderPayload {
   tax: number;
   discount: number;
   total: number;
-  appliedCoupon?: string;
   sessionId?: string;
-  pointsRedeemed?: number;
-  pointsDiscount?: number;
-  pointsEarned?: number;
 }
 
 export const orderService = {

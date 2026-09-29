@@ -1,5 +1,4 @@
 import User from '../models/User.js';
-import LoyaltyTransaction from '../models/LoyaltyTransaction.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import {
   generateAccessToken,
@@ -30,22 +29,8 @@ export const registerUser = asyncHandler(async (req, res) => {
   const user = await User.create({
     name: name.trim(),
     phone: cleanPhone,
-    password,
-    loyaltyPoints: 100, // 100 PTS Welcome Bonus
-    lifetimePoints: 100,
-    loyaltyTier: 'STANDARD'
+    password
   });
-
-  // Record welcome bonus transaction in loyalty audit log
-  await LoyaltyTransaction.create({
-    userId: user._id,
-    customerPhone: user.phone,
-    type: 'WELCOME_BONUS',
-    points: 100,
-    balanceAfter: 100,
-    description: 'Siliguri Chai Adda Welcome Dining Gift (+100 PTS)',
-    metadata: { reason: 'New Account Registration' }
-  }).catch(err => console.error('Failed to log welcome loyalty tx:', err));
 
   const accessToken = generateAccessToken(user._id);
   const refreshToken = generateRefreshToken(user._id);
@@ -58,9 +43,6 @@ export const registerUser = asyncHandler(async (req, res) => {
       phone: user.phone,
       role: 'CUSTOMER',
       status: user.status || 'Standard',
-      loyaltyPoints: user.loyaltyPoints,
-      lifetimePoints: user.lifetimePoints,
-      loyaltyTier: user.loyaltyTier,
       token: accessToken,
       accessToken,
       refreshToken,
@@ -69,10 +51,7 @@ export const registerUser = asyncHandler(async (req, res) => {
         name: user.name,
         phone: user.phone,
         role: 'CUSTOMER',
-        status: user.status || 'Standard',
-        loyaltyPoints: user.loyaltyPoints,
-        lifetimePoints: user.lifetimePoints,
-        loyaltyTier: user.loyaltyTier,
+        status: user.status || 'Standard'
       }
     }
   });
@@ -125,21 +104,8 @@ export const phoneLogin = asyncHandler(async (req, res) => {
       phone: cleanDigits,
       password: 'aura@' + cleanDigits,
       role: 'customer',
-      status: 'Standard',
-      loyaltyPoints: 100,
-      lifetimePoints: 100,
-      loyaltyTier: 'STANDARD'
+      status: 'Standard'
     });
-
-    await LoyaltyTransaction.create({
-      userId: user._id,
-      customerPhone: cleanDigits,
-      type: 'WELCOME_BONUS',
-      points: 100,
-      balanceAfter: 100,
-      description: 'Siliguri Chai Adda Welcome Dining Gift (+100 PTS)',
-      metadata: { reason: 'Mobile Quick Login / Instant Enrollment' }
-    }).catch(err => console.error('Failed to log welcome loyalty tx:', err));
   } else if (name && typeof name === 'string' && name.trim() && user.name.startsWith('Diner-')) {
     user.name = name.trim();
     await user.save();
@@ -163,17 +129,13 @@ export const phoneLogin = asyncHandler(async (req, res) => {
       accessToken,
       refreshToken,
       isNewUser,
-      welcomeBonus,
       user: {
         _id: user._id,
         name: user.name,
         phone: user.phone,
         email: user.email,
         role: roleUpper,
-        status: user.status || 'Standard',
-        loyaltyPoints: user.loyaltyPoints || 0,
-        lifetimePoints: user.lifetimePoints || 0,
-        loyaltyTier: user.loyaltyTier || 'STANDARD'
+        status: user.status || 'Standard'
       }
     }
   });
@@ -222,10 +184,7 @@ export const loginUser = asyncHandler(async (req, res) => {
           phone: user.phone,
           email: user.email,
           role: roleUpper,
-          status: user.status,
-          loyaltyPoints: user.loyaltyPoints || 0,
-          lifetimePoints: user.lifetimePoints || 0,
-          loyaltyTier: user.loyaltyTier || 'STANDARD'
+          status: user.status
         }
       }
     });
@@ -266,10 +225,7 @@ export const loginUser = asyncHandler(async (req, res) => {
           phone: user.phone,
           email: user.email,
           role: roleUpper,
-          status: user.status,
-          loyaltyPoints: user.loyaltyPoints || 0,
-          lifetimePoints: user.lifetimePoints || 0,
-          loyaltyTier: user.loyaltyTier || 'STANDARD'
+          status: user.status
         }
       }
     });
@@ -303,10 +259,7 @@ export const getMe = asyncHandler(async (req, res) => {
       phone: user.phone,
       email: user.email,
       role: roleUpper,
-      status: user.status || 'Standard',
-      loyaltyPoints: user.loyaltyPoints || 0,
-      lifetimePoints: user.lifetimePoints || 0,
-      loyaltyTier: user.loyaltyTier || 'STANDARD'
+      status: user.status || 'Standard'
     }
   });
 });
@@ -348,9 +301,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       phone: user.phone,
-      status: user.status,
-      loyaltyPoints: user.loyaltyPoints || 0,
-      loyaltyTier: user.loyaltyTier || 'STANDARD'
+      status: user.status
     }
   });
 });

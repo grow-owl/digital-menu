@@ -1,24 +1,14 @@
-import React, { useState } from 'react';
-import { Star, Tag, Zap, Check, Sparkles, MapPin, Award, Clock, Coffee } from 'lucide-react';
+import React from 'react';
+import { MapPin, Clock, Coffee, Sparkles } from 'lucide-react';
 
 
 interface CustomerHeroBannerProps {
   tableId?: string;
-  zoneName?: string;
 }
 
 export const CustomerHeroBanner: React.FC<CustomerHeroBannerProps> = ({
   tableId = '10',
-  zoneName = 'Main Dining',
 }) => {
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2500);
-  };
-
   return (
     // Hidden on mobile screens per user specification; authoritative luxury hero for tablet and desktop
     <div className="hidden md:block px-3 sm:px-6 lg:px-8 pt-3 sm:pt-4 max-w-[1560px] mx-auto">
@@ -59,53 +49,8 @@ export const CustomerHeroBanner: React.FC<CustomerHeroBannerProps> = ({
             <span>Siliguri, West Bengal, India</span>
             <span className="text-slate-300">•</span>
             <span className="text-emerald-900 font-bold bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300">
-              Table {tableId} ({zoneName})
+              Table {tableId}
             </span>
-          </div>
-
-          {/* Active Dining Offers & Coupon Strip */}
-          <div className="pt-1 flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider font-mono">
-              Active Offers:
-            </span>
-
-            {/* Offer 1 */}
-            <button
-              onClick={() => handleCopyCode('WELCOME100')}
-              className="inline-flex items-center space-x-1.5 text-emerald-900 font-black bg-emerald-100/90 hover:bg-emerald-200 px-3 py-1.5 rounded-xl border border-emerald-300 text-xs font-mono shadow-xs active:scale-95 transition-all cursor-pointer"
-              title="Tap to copy WELCOME100"
-            >
-              {copiedCode === 'WELCOME100' ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-[#0C831F]" />
-                  <span>COPIED!</span>
-                </>
-              ) : (
-                <>
-                  <Tag className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>WELCOME100 (-₹100)</span>
-                </>
-              )}
-            </button>
-
-            {/* Offer 2 */}
-            <button
-              onClick={() => handleCopyCode('CHAI200')}
-              className="inline-flex items-center space-x-1.5 text-amber-900 font-black bg-amber-100/90 hover:bg-amber-200 px-3 py-1.5 rounded-xl border border-amber-300 text-xs font-mono shadow-xs active:scale-95 transition-all cursor-pointer"
-              title="Tap to copy CHAI200"
-            >
-              {copiedCode === 'CHAI200' ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-amber-700" />
-                  <span>COPIED!</span>
-                </>
-              ) : (
-                <>
-                  <Tag className="w-3.5 h-3.5 text-amber-700" />
-                  <span>CHAI200 (-₹200 on &gt;₹1000)</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
 

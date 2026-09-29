@@ -8,14 +8,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, enum: ['owner', 'chef', 'waiter', 'customer'], default: 'customer' },
   status: { type: String, enum: ['VIP', 'Standard'], default: 'Standard' },
-  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem' }],
-  loyaltyPoints: { type: Number, default: 0, min: 0 },
-  lifetimePoints: { type: Number, default: 0, min: 0 },
-  loyaltyTier: { 
-    type: String, 
-    enum: ['STANDARD', 'SILVER', 'GOLD', 'PLATINUM'], 
-    default: 'STANDARD' 
-  }
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'MenuItem' }]
 }, { timestamps: true });
 
 // Pre-save middleware to hash password

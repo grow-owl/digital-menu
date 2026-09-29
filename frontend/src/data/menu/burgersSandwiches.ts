@@ -17,7 +17,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 380,
     rating: 4.88,
-    reviewCount: 280,
     preparationTimeMinutes: 8,
   },
   {
@@ -35,7 +34,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 410,
     rating: 4.90,
-    reviewCount: 250,
     preparationTimeMinutes: 8,
   },
   {
@@ -55,7 +53,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 490,
     rating: 4.94,
-    reviewCount: 380,
     preparationTimeMinutes: 10,
   },
   {
@@ -75,7 +72,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 2,
     calories: 550,
     rating: 4.96,
-    reviewCount: 340,
     preparationTimeMinutes: 12,
   },
 
@@ -95,7 +91,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 460,
     rating: 4.89,
-    reviewCount: 310,
     preparationTimeMinutes: 10,
   },
   {
@@ -115,7 +110,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 530,
     rating: 4.95,
-    reviewCount: 490,
     preparationTimeMinutes: 12,
   },
   {
@@ -135,7 +129,6 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 680,
     rating: 4.97,
-    reviewCount: 410,
     preparationTimeMinutes: 15,
   },
 ];

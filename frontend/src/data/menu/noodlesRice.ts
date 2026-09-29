@@ -17,7 +17,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 360,
     rating: 4.89,
-    reviewCount: 390,
     preparationTimeMinutes: 10,
   },
   {
@@ -36,7 +35,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 410,
     rating: 4.92,
-    reviewCount: 340,
     preparationTimeMinutes: 10,
   },
   {
@@ -56,7 +54,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 460,
     rating: 4.95,
-    reviewCount: 520,
     preparationTimeMinutes: 12,
   },
   {
@@ -76,7 +73,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 490,
     rating: 4.96,
-    reviewCount: 470,
     preparationTimeMinutes: 12,
   },
   {
@@ -96,7 +92,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 540,
     rating: 4.97,
-    reviewCount: 410,
     preparationTimeMinutes: 12,
   },
 
@@ -116,7 +111,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 0,
     calories: 380,
     rating: 4.90,
-    reviewCount: 310,
     preparationTimeMinutes: 10,
   },
   {
@@ -136,7 +130,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 480,
     rating: 4.96,
-    reviewCount: 580,
     preparationTimeMinutes: 12,
   },
   {
@@ -156,7 +149,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 520,
     rating: 4.95,
-    reviewCount: 430,
     preparationTimeMinutes: 12,
   },
   {
@@ -177,7 +169,6 @@ export const NOODLES_RICE_ITEMS: MenuItem[] = [
     spiceLevel: 1,
     calories: 560,
     rating: 4.98,
-    reviewCount: 490,
     preparationTimeMinutes: 14,
   },
 ];

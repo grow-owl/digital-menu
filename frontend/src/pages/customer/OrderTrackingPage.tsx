@@ -16,7 +16,6 @@ import { useTableStore } from '../../store/use-table-store';
 import { useToast } from '../../components/feedback/ToastContainer';
 import { orderService } from '../../services/order.service';
 import { menuService } from '../../services/menu.service';
-import { loyaltyService } from '../../services/loyalty.service';
 import { MenuItem } from '../../types/menu.types';
 import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
 
@@ -39,9 +38,6 @@ interface OrderData {
   subtotal: number;
   tax: number;
   discount: number;
-  pointsRedeemed?: number;
-  pointsDiscount?: number;
-  pointsEarned?: number;
   total: number;
   status: 'received' | 'preparing' | 'ready' | 'completed' | 'served' | 'cancelled';
   paymentStatus?: string;

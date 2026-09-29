@@ -5,58 +5,10 @@ import MenuItem from '../models/MenuItem.js';
 import TableSession from '../models/TableSession.js';
 import Table from '../models/Table.js';
 import User from '../models/User.js';
-import LoyaltyTransaction from '../models/LoyaltyTransaction.js';
-import { calculateTier, getTierMultiplier } from './loyaltyController.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const generateOrderId = () => `ORD-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 export const generateInvoiceNumber = () => `INV-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-
-// Helper: Award Loyalty Points when an order is settled/paid
-export const awardLoyaltyPointsForOrder = async (order) => {
-  try {
-    if (!order || order.pointsCredited || !order.customerPhone) return;
-    const cleanPhone = String(order.customerPhone).trim();
-    if (!cleanPhone) return;
-
-    const user = await User.findOne({ phone: cleanPhone });
-    if (!user) return;
-
-    const netDiningBase = Math.max(0, (order.subtotal || 0) - (order.discount || 0) - (order.pointsDiscount || 0));
-    const tierMultiplier = getTierMultiplier(user.loyaltyTier || 'STANDARD');
-    const ptsEarned = Math.floor((netDiningBase / 10) * tierMultiplier);
-
-    if (ptsEarned > 0) {
-      user.loyaltyPoints = (user.loyaltyPoints || 0) + ptsEarned;
-      user.lifetimePoints = (user.lifetimePoints || 0) + ptsEarned;
-      user.loyaltyTier = calculateTier(user.lifetimePoints);
-      await user.save();
-
-      await LoyaltyTransaction.create({
-        userId: user._id,
-        customerPhone: cleanPhone,
-        orderId: order.orderId,
-        type: 'EARNED_DINING',
-        points: ptsEarned,
-        balanceAfter: user.loyaltyPoints,
-        description: `Dining Reward (+${ptsEarned} PTS) on Invoice #${order.invoiceNumber || order.orderId} (₹${order.total})`,
-        metadata: {
-          orderId: order.orderId,
-          invoiceNumber: order.invoiceNumber,
-          billTotal: order.total,
-          tier: user.loyaltyTier,
-          multiplier: tierMultiplier
-        }
-      }).catch(e => console.error('Failed to log loyalty credit tx:', e));
-
-      order.pointsEarned = ptsEarned;
-      order.pointsCredited = true;
-      await order.save();
-    }
-  } catch (err) {
-    console.error('Error awarding loyalty points for order:', err);
-  }
-};
 
 // @desc    DEV UTILITY: Purge all orders & reset table statuses
 // @route   POST /api/orders/dev/purge-all
@@ -108,10 +60,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     tax, 
     discount, 
     total, 
-    appliedCoupon, 
-    sessionId,
-    pointsRedeemed,
-    pointsDiscount
+    sessionId
   } = req.body;
   
   if (!customerPhone || typeof customerPhone !== 'string') {
@@ -143,25 +92,10 @@ export const createOrder = asyncHandler(async (req, res) => {
       phone: cleanCustomerPhone,
       password: 'aura@' + cleanCustomerPhone,
       role: 'customer',
-      status: 'Standard',
-      loyaltyPoints: 100,
-      lifetimePoints: 100,
-      loyaltyTier: 'STANDARD'
+      status: 'Standard'
     }).catch(err => {
       console.warn('Customer auto-create warning:', err.message);
     });
-
-    if (customerUser) {
-      await LoyaltyTransaction.create({
-        userId: customerUser._id,
-        customerPhone: cleanCustomerPhone,
-        type: 'WELCOME_BONUS',
-        points: 100,
-        balanceAfter: 100,
-        description: 'Siliguri Chai Adda Welcome Dining Gift (+100 PTS)',
-        metadata: { reason: 'First Order Auto-Enrollment' }
-      }).catch(err => console.error('Failed to log welcome loyalty tx:', err));
-    }
   } else if (customerName && typeof customerName === 'string' && customerName.trim() && customerUser.name && customerUser.name.startsWith('Diner-')) {
     customerUser.name = customerName.trim();
     await customerUser.save().catch(e => console.warn('Name update warn:', e.message));
@@ -216,40 +150,8 @@ export const createOrder = asyncHandler(async (req, res) => {
     };
   });
 
-  let verifiedRedeemed = 0;
-  let verifiedPtsDiscount = 0;
-  const requestedRedeemed = parseInt(pointsRedeemed, 10) || 0;
-
-  if (requestedRedeemed > 0) {
-    if (!customerPhone) {
-      return res.status(400).json({ success: false, message: 'Customer phone number is required to redeem loyalty points.' });
-    }
-    const cleanPhone = String(customerPhone).trim();
-    const user = await User.findOne({ phone: cleanPhone });
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Customer account not found for loyalty points redemption.' });
-    }
-    if ((user.loyaltyPoints || 0) < requestedRedeemed) {
-      return res.status(400).json({
-        success: false,
-        message: `Insufficient loyalty points balance. Available: ${user.loyaltyPoints} PTS, requested: ${requestedRedeemed} PTS.`
-      });
-    }
-    const calculatedDiscount = Math.round(requestedRedeemed * 0.5 * 100) / 100;
-    const maxAllowedDiscount = Math.round(verifiedSubtotal * 0.5 * 100) / 100;
-    if (calculatedDiscount > maxAllowedDiscount) {
-      return res.status(400).json({
-        success: false,
-        message: `Loyalty discount cannot exceed 50% of the food subtotal (Max allowed: ₹${maxAllowedDiscount}).`
-      });
-    }
-    verifiedRedeemed = requestedRedeemed;
-    verifiedPtsDiscount = calculatedDiscount;
-  }
-
   const computedTax = Math.round(verifiedSubtotal * 0.05 * 100) / 100;
-  const verifiedCouponDiscount = Math.min(verifiedSubtotal, Math.max(0, parseFloat(discount) || 0));
-  const calculatedTotal = Math.max(0, Math.round((verifiedSubtotal + computedTax - verifiedCouponDiscount - verifiedPtsDiscount) * 100) / 100);
+  const calculatedTotal = Math.max(0, Math.round((verifiedSubtotal + computedTax) * 100) / 100);
 
   const clientQrToken = req.body.qrToken;
   let physicalTable = null;
@@ -294,14 +196,10 @@ export const createOrder = asyncHandler(async (req, res) => {
     existingOrder.items.push(...verifiedNewItems);
     existingOrder.subtotal = (existingOrder.subtotal || 0) + verifiedSubtotal;
     existingOrder.tax = (existingOrder.tax || 0) + computedTax;
-    existingOrder.discount = (existingOrder.discount || 0) + verifiedCouponDiscount;
-    existingOrder.pointsRedeemed = (existingOrder.pointsRedeemed || 0) + verifiedRedeemed;
-    existingOrder.pointsDiscount = (existingOrder.pointsDiscount || 0) + verifiedPtsDiscount;
     existingOrder.total = (existingOrder.total || 0) + calculatedTotal;
     
     if (cleanCustomerPhone) existingOrder.customerPhone = cleanCustomerPhone;
     if (customerName) existingOrder.customerName = customerName;
-    if (appliedCoupon) existingOrder.appliedCoupon = appliedCoupon;
     
     existingOrder.status = 'preparing';
     await existingOrder.save();
@@ -315,33 +213,9 @@ export const createOrder = asyncHandler(async (req, res) => {
       items: verifiedNewItems,
       subtotal: verifiedSubtotal,
       tax: computedTax,
-      discount: verifiedCouponDiscount,
-      pointsRedeemed: verifiedRedeemed,
-      pointsDiscount: verifiedPtsDiscount,
       total: calculatedTotal,
-      appliedCoupon,
       status: 'received'
     });
-  }
-
-  if (verifiedRedeemed > 0 && customerPhone) {
-    const cleanPhone = String(customerPhone).trim();
-    const user = await User.findOne({ phone: cleanPhone });
-    if (user) {
-      user.loyaltyPoints = Math.max(0, (user.loyaltyPoints || 0) - verifiedRedeemed);
-      await user.save();
-
-      await LoyaltyTransaction.create({
-        userId: user._id,
-        customerPhone: cleanPhone,
-        orderId: order.orderId,
-        type: 'REDEEMED_ORDER',
-        points: -verifiedRedeemed,
-        balanceAfter: user.loyaltyPoints,
-        description: `Redeemed ${verifiedRedeemed} PTS (-₹${verifiedPtsDiscount}) at Checkout for Order #${order.orderId}`,
-        metadata: { pointsDiscount: verifiedPtsDiscount, orderId: order.orderId }
-      }).catch(err => console.error('Failed to log redemption loyalty tx:', err));
-    }
   }
 
   if (physicalTable) {
@@ -485,48 +359,6 @@ export const refundOrder = asyncHandler(async (req, res) => {
 
   await order.save();
 
-  if (order.customerPhone && (order.pointsEarned || 0) > 0) {
-    try {
-      const cleanPhone = String(order.customerPhone).trim();
-      const user = await User.findOne({ phone: cleanPhone });
-      if (user) {
-        const refundRatio = Math.min(1, requestedAmount / (order.total || 1));
-        const ptsDeduct = Math.round((order.pointsEarned || 0) * refundRatio);
-        if (ptsDeduct > 0) {
-          user.loyaltyPoints = Math.max(0, (user.loyaltyPoints || 0) - ptsDeduct);
-          await user.save();
-          await LoyaltyTransaction.create({
-            userId: user._id,
-            customerPhone: user.phone,
-            orderId: order.orderId,
-            type: 'REFUND_DEDUCTION',
-            points: -ptsDeduct,
-            balanceAfter: user.loyaltyPoints,
-            description: `Points reversed (-${ptsDeduct} PTS) due to ₹${requestedAmount} refund on Order #${order.orderId}`,
-            metadata: { requestedAmount, invoiceNumber: order.invoiceNumber }
-          }).catch(e => console.error('Refund deduction tx err:', e));
-        }
-
-        if (isFullRefund && (order.pointsRedeemed || 0) > 0) {
-          user.loyaltyPoints = (user.loyaltyPoints || 0) + order.pointsRedeemed;
-          await user.save();
-          await LoyaltyTransaction.create({
-            userId: user._id,
-            customerPhone: user.phone,
-            orderId: order.orderId,
-            type: 'ORDER_CANCEL_RESTORE',
-            points: order.pointsRedeemed,
-            balanceAfter: user.loyaltyPoints,
-            description: `Restored ${order.pointsRedeemed} redeemed points due to 100% refund on Order #${order.orderId}`,
-            metadata: { orderId: order.orderId }
-          }).catch(e => console.error('Refund points restore tx err:', e));
-        }
-      }
-    } catch (loyaltyErr) {
-      console.error('Error during refund loyalty reconciliation:', loyaltyErr);
-    }
-  }
-
   res.json({
     success: true,
     data: order,
@@ -593,10 +425,6 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   }
 
   await order.save();
-
-  if (order.paymentStatus === 'PAID' || order.status === 'completed') {
-    await awardLoyaltyPointsForOrder(order);
-  }
 
   res.json({ data: order });
 });
@@ -672,13 +500,11 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
   const newSubtotal = activeItems.reduce((acc, it) => acc + (it.price * (it.quantity || 1)), 0);
   const newTax = Math.round(newSubtotal * 0.05 * 100) / 100;
   const discount = Math.min(newSubtotal, order.discount || 0);
-  const pointsDiscount = Math.min(newSubtotal, order.pointsDiscount || 0);
-  const newTotal = Math.max(0, Math.round((newSubtotal + newTax - discount - pointsDiscount) * 100) / 100);
+  const newTotal = Math.max(0, Math.round((newSubtotal + newTax - discount) * 100) / 100);
 
   order.subtotal = newSubtotal;
   order.tax = newTax;
   order.discount = discount;
-  order.pointsDiscount = pointsDiscount;
   order.total = newTotal;
 
   const allCancelled = order.items.every(it => it.status === 'cancelled');
@@ -687,29 +513,6 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
     order.cancelReason = `All dishes cancelled: ${defaultReason}`;
     order.cancelledAt = new Date();
     order.cancelledBy = actor;
-
-    if (order.customerPhone && (order.pointsRedeemed || 0) > 0) {
-      try {
-        const cleanPhone = String(order.customerPhone).trim();
-        const user = await User.findOne({ phone: cleanPhone });
-        if (user) {
-          user.loyaltyPoints = (user.loyaltyPoints || 0) + order.pointsRedeemed;
-          await user.save();
-          await LoyaltyTransaction.create({
-            userId: user._id,
-            customerPhone: cleanPhone,
-            orderId: order.orderId,
-            type: 'ORDER_CANCEL_RESTORE',
-            points: order.pointsRedeemed,
-            balanceAfter: user.loyaltyPoints,
-            description: `Restored ${order.pointsRedeemed} redeemed points due to cancellation of Order #${order.orderId}`,
-            metadata: { orderId: order.orderId, cancelReason: defaultReason }
-          }).catch(e => console.error('Failed to log cancel points restore:', e));
-        }
-      } catch (err) {
-        console.error('Error restoring points for cancelled order:', err);
-      }
-    }
   }
 
   await order.save();
@@ -756,29 +559,6 @@ export const cancelOrder = asyncHandler(async (req, res) => {
   }
 
   await order.save();
-
-  if (order.customerPhone && (order.pointsRedeemed || 0) > 0) {
-    try {
-      const cleanPhone = String(order.customerPhone).trim();
-      const user = await User.findOne({ phone: cleanPhone });
-      if (user) {
-        user.loyaltyPoints = (user.loyaltyPoints || 0) + order.pointsRedeemed;
-        await user.save();
-        await LoyaltyTransaction.create({
-          userId: user._id,
-          customerPhone: cleanPhone,
-          orderId: order.orderId,
-          type: 'ORDER_CANCEL_RESTORE',
-          points: order.pointsRedeemed,
-          balanceAfter: user.loyaltyPoints,
-          description: `Restored ${order.pointsRedeemed} redeemed points due to cancellation of Order #${order.orderId}`,
-          metadata: { orderId: order.orderId, cancelReason: defaultReason }
-        }).catch(e => console.error('Failed to log cancel points restore:', e));
-      }
-    } catch (err) {
-      console.error('Error restoring cancelled order points:', err);
-    }
-  }
 
   if (order.tableId) {
     const cleanNum = String(order.tableId).match(/\d+/)?.[0];
@@ -852,7 +632,6 @@ export const payTableBill = asyncHandler(async (req, res) => {
     ord.paidAt = new Date();
     ord.invoiceNumber = invoiceNumber;
     await ord.save();
-    await awardLoyaltyPointsForOrder(ord);
   }
 
   await Table.updateMany(

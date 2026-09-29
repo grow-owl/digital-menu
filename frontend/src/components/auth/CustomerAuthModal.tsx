@@ -37,9 +37,9 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({ isOpen, on
       setAuth(data.user, data.token || data.accessToken, tableId, data.refreshToken);
 
       if (data.isNewUser) {
-        showToast(`Welcome to Siliguri Chai Adda Club, ${data.user.name}! 🎁 +100 Loyalty Coins added to your account.`, 'success');
+        showToast(`Welcome to Siliguri Chai Adda, ${data.user.name}!`, 'success');
       } else {
-        showToast(`Welcome back, ${data.user.name}! (${data.user.loyaltyPoints || 0} Coins Available)`, 'success');
+        showToast(`Welcome back, ${data.user.name}!`, 'success');
       }
       onClose();
     } catch (error: any) {
@@ -73,13 +73,13 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({ isOpen, on
         </div>
 
         {/* Benefits badge */}
-        <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl space-y-1.5 text-xs text-amber-900">
-          <div className="flex items-center gap-1.5 font-bold text-amber-800">
-            <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0" />
-            <span>+100 Coins Welcome Dining Bonus</span>
+        <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl space-y-1.5 text-xs text-emerald-900">
+          <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+            <Sparkles className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>Digital Dining Experience</span>
           </div>
-          <p className="text-[11px] text-amber-700 leading-tight">
-            Earn loyalty cashback on this meal, track live dish preparation, and settle bills digitally.
+          <p className="text-[11px] text-emerald-700 leading-tight">
+            Order directly from your table, track live kitchen preparation, and settle bills seamlessly.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({ isOpen, on
 
         <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Your number is used strictly for dining service &amp; loyalty coins.</span>
+          <span>Your number is used strictly for dining service and order updates.</span>
         </div>
       </div>
     </div>

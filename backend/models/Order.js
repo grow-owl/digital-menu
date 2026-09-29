@@ -38,12 +38,7 @@ const orderSchema = new mongoose.Schema({
   subtotal: { type: Number, required: true },
   tax: { type: Number, required: true },
   discount: { type: Number, default: 0 },
-  pointsRedeemed: { type: Number, default: 0 },
-  pointsDiscount: { type: Number, default: 0 },
-  pointsEarned: { type: Number, default: 0 },
-  pointsCredited: { type: Boolean, default: false },
   total: { type: Number, required: true },
-  appliedCoupon: { type: String },
   paymentStatus: {
     type: String,
     enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED'],

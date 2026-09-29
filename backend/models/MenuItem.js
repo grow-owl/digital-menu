@@ -22,7 +22,6 @@ const menuItemSchema = new mongoose.Schema({
   preparationTimeMinutes: { type: Number, required: true },
   calories: { type: Number },
   rating: { type: Number },
-  reviewCount: { type: Number },
   
   ingredients: [{ type: String }],
   allergens: [{ type: String }],

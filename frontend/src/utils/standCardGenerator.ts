@@ -251,7 +251,7 @@ export const generateStandCardCanvas = async (
   // Table Capacity / Zone
   ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#D4D4D8' : '#94A3B8';
   ctx.font = '500 20px "Inter", monospace, sans-serif';
-  const zone = Number(tableNum) === 10 ? 'VIP SUITE' : (table.capacity ? `MAIN DINING • ${table.capacity} GUESTS` : 'MAIN DINING ROOM');
+  const zone = table.capacity ? `SEATS ${table.capacity} GUESTS` : 'FINE DINING';
   ctx.fillText(zone, width / 2, plaqueY + 94);
 
   // 7. Render High-Resolution QR Code in White Container
@@ -547,9 +547,7 @@ export const generateBoardPosterCanvas = async (
   ctx.font = 'bold 70px "Cinzel", Georgia, serif';
   ctx.fillText(`TABLE ${tableNum}`, width / 2, plaqueY + 80);
 
-  ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#D4D4D8' : '#94A3B8';
-  ctx.font = '600 24px "Inter", sans-serif';
-  const zoneText = Number(tableNum) === 10 ? 'VIP EXECUTIVE SUITE' : (table.capacity ? `MAIN DINING HALL • SEATS ${table.capacity} GUESTS` : 'MAIN DINING HALL');
+  const zoneText = table.capacity ? `SEATS ${table.capacity} GUESTS` : 'DINE & DISPATCH';
   ctx.fillText(zoneText, width / 2, plaqueY + 120);
 
   // Center Big QR Container

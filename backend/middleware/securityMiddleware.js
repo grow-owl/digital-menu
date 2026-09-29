@@ -92,22 +92,6 @@ const orderRateLimiter = rateLimit({
 });
 
 /**
- * Rate Limiter for Feedback Points Claiming
- * Max 20 submissions per 30 minutes
- */
-const feedbackRateLimiter = rateLimit({
-  windowMs: 30 * 60 * 1000,
-  max: 20,
-  skip: () => process.env.NODE_ENV !== 'production',
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Maximum feedback reward claims reached for this session. Thank you for your feedback!'
-  }
-});
-
-/**
  * General API Rate Limiter
  * Max 1000 requests per 15 minutes
  */
@@ -127,6 +111,5 @@ export {
   nosqlSanitizer,
   authRateLimiter,
   orderRateLimiter,
-  feedbackRateLimiter,
   generalRateLimiter
 };

@@ -44,6 +44,7 @@ import {
   FileText,
   CreditCard,
   Sliders,
+  ArrowLeft,
 } from 'lucide-react';
 
 // Default initial dataset of tables with rich zone info (Tables 1 to 30)
@@ -79,7 +80,6 @@ export const QrGeneratorPage: React.FC = () => {
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedZoneFilter, setSelectedZoneFilter] = useState<string>('ALL');
 
   // Interactive Action States
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -158,15 +158,9 @@ export const QrGeneratorPage: React.FC = () => {
   const filteredTables = useMemo(() => {
     return tables.filter((t) => {
       const strNum = String(t.tableNumber);
-      const matchesSearch = !searchQuery.trim() || strNum.includes(searchQuery.trim());
-      const num = Number(t.tableNumber);
-      if (selectedZoneFilter === 'VIP') return matchesSearch && num === 10;
-      if (selectedZoneFilter === 'MAIN') return matchesSearch && num >= 1 && num <= 9;
-      if (selectedZoneFilter === 'TERRACE') return matchesSearch && (num === 11 || strNum.toLowerCase().includes('terrace'));
-      if (selectedZoneFilter === 'BAR') return matchesSearch && (num === 12 || strNum.toLowerCase().includes('bar'));
-      return matchesSearch;
+      return !searchQuery.trim() || strNum.includes(searchQuery.trim());
     });
-  }, [tables, searchQuery, selectedZoneFilter]);
+  }, [tables, searchQuery]);
 
   // ─────────────────────────────────────────────────────────────
   // Action Handlers
@@ -220,13 +214,10 @@ export const QrGeneratorPage: React.FC = () => {
     const targetCount = Math.max(1, Math.min(100, count));
     const newTablesList: TableResponse[] = Array.from({ length: targetCount }, (_, i) => {
       const num = i + 1;
-      const isVip = num === 10;
-      const isTerrace = num === 11;
-      const isBar = num === 12;
       return {
         _id: `tbl-${num}`,
         tableNumber: num,
-        capacity: isVip ? 12 : isBar ? 2 : isTerrace ? 4 : (num % 2 === 0 ? 6 : 4),
+        capacity: num % 4 === 0 ? 6 : num % 2 === 0 ? 4 : 2,
         status: 'AVAILABLE' as any,
         qrCodeToken: `tok_aura_tbl_${String(num).padStart(2, '0')}_secure`,
       };
@@ -305,22 +296,6 @@ export const QrGeneratorPage: React.FC = () => {
       window.print();
     }, 180);
   };
-
-  // Add Custom Table
-  const handleAddNewTable = () => {
-    const nextNum = tables.length > 0 ? Math.max(...tables.map((t) => Number(t.tableNumber) || 0)) + 1 : 1;
-    const newT: TableResponse = {
-      _id: `tbl-${Date.now()}`,
-      tableNumber: nextNum,
-      capacity: 4,
-      status: 'AVAILABLE' as any,
-      qrCodeToken: `tok_aura_tbl_${nextNum}_custom_${Math.random().toString(36).substring(2, 6)}`,
-    };
-    setTables((prev) => [...prev, newT]);
-    setSelectedTableNumber(nextNum);
-    showToast(`Table ${nextNum} added successfully!`, 'success');
-  };
-
   // Delete Table
   const handleDeleteTable = (num: number | string) => {
     if (tables.length <= 1) {
@@ -392,7 +367,7 @@ export const QrGeneratorPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           SCREEN UI (Hidden during window.print())
       ───────────────────────────────────────────────────────────── */}
-      <div className="min-h-full bg-[#050811] text-slate-100 flex flex-col font-sans pb-16 no-print">
+      <div className="h-full overflow-y-auto overscroll-contain bg-[#050811] text-slate-100 flex flex-col font-sans pb-24 no-print custom-scrollbar">
         
         {/* Top Sticky Header */}
         <header className="sticky top-0 z-30 bg-[#070B16]/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -405,13 +380,7 @@ export const QrGeneratorPage: React.FC = () => {
                 <h1 className="font-serif text-base sm:text-xl font-bold text-white tracking-wide">
                   Table QR &amp; Stand Studio
                 </h1>
-                <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold rounded-full">
-                  All {tables.length} Tables Active
-                </span>
               </div>
-              <p className="text-[11px] text-slate-400 truncate max-w-md sm:max-w-xl">
-                Automatic QR codes for every table. 1-click downloads, live customizer, and direct board printing.
-              </p>
             </div>
           </div>
 
@@ -441,105 +410,28 @@ export const QrGeneratorPage: React.FC = () => {
                 {batchProgress ? `${batchProgress.current}/${batchProgress.total}` : 'Download All Stands'}
               </span>
             </button>
-
-            <button
-              onClick={handleAddNewTable}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-              title="Add a new custom dining table"
-            >
-              <Plus className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Add Table</span>
-            </button>
           </div>
         </header>
 
-        {/* Bulk Table Generator & Quick Setup Bar */}
-        <div className="bg-[#080D1A] border-b border-slate-800 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
-            <span className="text-slate-400 font-semibold">Quick Setup Total Tables:</span>
-            {[6, 10, 12, 16, 20, 24, 30].map((count) => (
-              <button
-                key={count}
-                onClick={() => handleGenerateBulkTables(count)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                  tables.length === count
-                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black shadow-sm'
-                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                {count} Tables
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-slate-400">Custom Count:</span>
+        {/* Custom Table Count Setup Bar */}
+        <div className="bg-[#080D1A] border-b border-slate-800 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-slate-400 font-medium">Custom Count:</span>
             <input
               type="number"
               min={1}
               max={100}
               value={bulkCount}
               onChange={(e) => setBulkCount(Number(e.target.value) || 1)}
-              className="w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white text-center font-bold focus:outline-none focus:border-emerald-500"
+              className="w-20 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white text-center font-bold focus:outline-none focus:border-emerald-500 font-mono"
             />
             <button
               onClick={() => handleGenerateBulkTables(bulkCount)}
-              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-300 rounded-lg text-xs font-bold cursor-pointer"
+              className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm"
             >
               Set
             </button>
           </div>
-        </div>
-
-        {/* Studio Sub-Navigation Tabs */}
-        <div className="bg-[#090E1D] border-b border-slate-800/80 px-3 sm:px-6 py-2 flex items-center space-x-2 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveTab('ALL_GRID')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer shrink-0 border ${
-              activeTab === 'ALL_GRID'
-                ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300 shadow-sm'
-                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Grid className="w-3.5 h-3.5" />
-            <span>All Tables Grid ({tables.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('SINGLE_INSPECTOR')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer shrink-0 border ${
-              activeTab === 'SINGLE_INSPECTOR'
-                ? 'bg-amber-500/20 border-amber-400/60 text-amber-300 shadow-sm'
-                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-            <span>Live Inspector &amp; Single Table Customizer</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('BATCH_PRINT')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer shrink-0 border ${
-              activeTab === 'BATCH_PRINT'
-                ? 'bg-sky-500/20 border-sky-400/60 text-sky-300 shadow-sm'
-                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Printer className="w-3.5 h-3.5" />
-            <span>Print Station &amp; Sticker Sheets</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('SETTINGS')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer shrink-0 border ${
-              activeTab === 'SETTINGS'
-                ? 'bg-purple-500/20 border-purple-400/60 text-purple-300 shadow-sm'
-                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Settings className="w-3.5 h-3.5" />
-            <span>Venue Domain &amp; Wi-Fi Setup</span>
-          </button>
         </div>
 
         {/* ─────────────────────────────────────────────────────────────
@@ -547,69 +439,29 @@ export const QrGeneratorPage: React.FC = () => {
         ───────────────────────────────────────────────────────────── */}
         {activeTab === 'ALL_GRID' && (
           <div className="p-3 sm:p-6 space-y-6 max-w-7xl mx-auto w-full">
-            {/* Search & Zone Filter Bar */}
-            <div className="bg-[#0B1020] border border-slate-800 rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-lg">
-              <div className="flex items-center space-x-2 flex-1 max-w-md">
-                <div className="relative w-full">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search table number (e.g. 1, 10, VIP)..."
-                    className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Zone Chips */}
-              <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
-                {[
-                  { id: 'ALL', label: `All Tables (${tables.length})` },
-                  { id: 'VIP', label: 'VIP' },
-                  { id: 'MAIN', label: 'Main Hall' },
-                  { id: 'TERRACE', label: 'Terrace' },
-                  { id: 'BAR', label: 'Bar' },
-                ].map((chip) => (
+            {/* Search Bar */}
+            <div className="bg-[#0B1020] border border-slate-800 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 shadow-lg">
+              <div className="relative w-full max-w-md">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search table number (e.g. 1, 10)..."
+                  className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono"
+                />
+                {searchQuery && (
                   <button
-                    key={chip.id}
-                    onClick={() => setSelectedZoneFilter(chip.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
-                      selectedZoneFilter === chip.id
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-sm'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                    }`}
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs cursor-pointer"
                   >
-                    {chip.label}
+                    Clear
                   </button>
-                ))}
+                )}
               </div>
-
-              {/* Quick Theme Selector */}
-              <div className="flex items-center space-x-2">
-                <select
-                  value={config.themeStyle}
-                  onChange={(e) => {
-                    const saved = saveVenueConfig({ themeStyle: e.target.value as any });
-                    setConfig(saved);
-                  }}
-                  className="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-400 font-semibold cursor-pointer"
-                >
-                  <option value="EMERALD_GOLD">Theme: Emerald Gold</option>
-                  <option value="ROYAL_NOIR">Theme: Royal Noir</option>
-                  <option value="SUNSET_AMBER">Theme: Sunset Amber</option>
-                  <option value="CYBER_NEON">Theme: Cyber Neon</option>
-                  <option value="MINIMAL_IVORY">Theme: Minimal Ivory (Print)</option>
-                </select>
-              </div>
+              <span className="text-xs text-slate-400 font-mono hidden sm:inline">
+                Showing {filteredTables.length} {filteredTables.length === 1 ? 'Table' : 'Tables'}
+              </span>
             </div>
 
             {/* Table Cards Grid */}
@@ -617,7 +469,6 @@ export const QrGeneratorPage: React.FC = () => {
               {filteredTables.map((table) => {
                 const token = table.qrCodeToken || (table as any).qrToken || `tok_${table.tableNumber}`;
                 const dineUrl = computeTableDineUrl(token, config);
-                const isVip = Number(table.tableNumber) === 10;
                 const qrImgUrl = qrCache[String(table.tableNumber)];
 
                 return (
@@ -632,15 +483,7 @@ export const QrGeneratorPage: React.FC = () => {
                           <span className="font-serif font-black text-lg sm:text-xl text-white tracking-wide">
                             Table {table.tableNumber}
                           </span>
-                          {isVip && (
-                            <span className="px-2 py-0.5 bg-amber-500/20 border border-amber-400/50 text-amber-300 font-mono text-[10px] font-bold rounded-full">
-                              VIP
-                            </span>
-                          )}
                         </div>
-                        <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-2 py-0.5 rounded-lg border border-slate-800">
-                          {table.capacity || 4} Guests
-                        </span>
                       </div>
 
                       {/* Mini Live QR Preview Container */}
@@ -670,7 +513,7 @@ export const QrGeneratorPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Card Actions (Download, Print, Edit, Rotate) */}
+                    {/* Card Actions (Download, Rotate) */}
                     <div className="space-y-2 pt-2 border-t border-slate-800/80">
                       {/* Primary Download Stand Button */}
                       <button
@@ -686,48 +529,6 @@ export const QrGeneratorPage: React.FC = () => {
                         )}
                         <span>Download Stand Card</span>
                       </button>
-
-                      {/* Secondary Action Grid */}
-                      <div className="grid grid-cols-4 gap-1.5">
-                        <button
-                          onClick={() => handleDownloadSingle(table, 'POSTER')}
-                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold flex flex-col items-center justify-center transition-colors cursor-pointer"
-                          title="Download Large Board Poster PNG"
-                        >
-                          <Layers className="w-3.5 h-3.5 text-sky-400 mb-0.5" />
-                          <span>Poster</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleDownloadSingle(table, 'STICKER')}
-                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold flex flex-col items-center justify-center transition-colors cursor-pointer"
-                          title="Download Square Sticker PNG"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 text-amber-400 mb-0.5" />
-                          <span>Sticker</span>
-                        </button>
-
-                        <button
-                          onClick={() => triggerPrint('STAND_SINGLE', table.tableNumber)}
-                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold flex flex-col items-center justify-center transition-colors cursor-pointer"
-                          title="Direct Print Single Stand Card"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-emerald-400 mb-0.5" />
-                          <span>Print</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setSelectedTableNumber(table.tableNumber);
-                            setActiveTab('SINGLE_INSPECTOR');
-                          }}
-                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-[10px] font-bold flex flex-col items-center justify-center transition-colors cursor-pointer"
-                          title="Open in Live Single Inspector"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-purple-400 mb-0.5" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
 
                       {/* Token Regenerate & Delete Footer */}
                       <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
@@ -767,6 +568,16 @@ export const QrGeneratorPage: React.FC = () => {
               
               {/* Preview Format Selector & Zoom Controls */}
               <div className="w-full bg-[#0B1020] border border-slate-800 rounded-2xl p-2.5 mb-4 flex items-center justify-between gap-2 flex-wrap shadow-lg">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setActiveTab('ALL_GRID')}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shrink-0"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Back to Tables</span>
+                  </button>
+                </div>
+
                 <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
                   {[
                     { id: 'STAND', label: 'Acrylic Stand (4x6")', icon: Layers },
@@ -840,9 +651,7 @@ export const QrGeneratorPage: React.FC = () => {
                           TABLE {activeFocusTable.tableNumber}
                         </div>
                         <div className="text-[10px] font-mono text-slate-300 uppercase tracking-widest mt-0.5">
-                          {Number(activeFocusTable.tableNumber) === 10
-                            ? 'VIP EXECUTIVE SUITE'
-                            : `MAIN DINING • ${activeFocusTable.capacity || 4} GUESTS`}
+                          {`SEATS ${activeFocusTable.capacity || 4} GUESTS`}
                         </div>
                       </div>
 
@@ -1008,7 +817,7 @@ export const QrGeneratorPage: React.FC = () => {
                 >
                   {tables.map((t) => (
                     <option key={t.tableNumber} value={t.tableNumber}>
-                      Table {t.tableNumber} ({t.capacity || 4} Guests • {Number(t.tableNumber) === 10 ? 'VIP Suite' : 'Main Hall'})
+                      Table {t.tableNumber}
                     </option>
                   ))}
                 </select>
@@ -1525,7 +1334,7 @@ export const QrGeneratorPage: React.FC = () => {
                   <div className="border-2 border-black rounded-2xl py-3 px-8 my-4 bg-gray-100 w-full">
                     <div className="font-serif font-black text-4xl">TABLE {t.tableNumber}</div>
                     <div className="text-xs font-mono font-bold tracking-wider mt-1 text-gray-700">
-                      {Number(t.tableNumber) === 10 ? 'VIP EXECUTIVE SUITE' : `MAIN DINING HALL • ${t.capacity || 4} GUESTS`}
+                      {`SEATS ${t.capacity || 4} GUESTS`}
                     </div>
                   </div>
 

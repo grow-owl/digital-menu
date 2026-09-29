@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCartStore } from '../../store/use-cart-store';
-import { couponService } from '../../services/coupon.service';
 import { orderService } from '../../services/order.service';
-import { Coupon, MenuItem } from '../../types/menu.types';
+import { MenuItem } from '../../types/menu.types';
 import { OrderConfirmationModal } from './OrderConfirmationModal';
 import { DishDetailModal } from '../menu/DishDetailModal';
 import { ShoppingBag, X, Plus, Minus, Trash2, Tag, Utensils, Edit2, Sparkles, Gift, Zap, Flame, Leaf, Star, ChefHat, ChevronLeft, ChevronRight, Check, ArrowRight, Award, Phone, CheckCircle2, Coffee, Clock, Loader2 } from 'lucide-react';
@@ -46,8 +45,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const user = useAuthStore((state) => state.user);
   const { activeSessionId } = useTableStore();
 
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [couponCode, setCouponCode] = useState('');
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [guestPhone, setGuestPhone] = useState(user?.phone || '');
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
@@ -170,42 +167,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   }, [items, removeItem, showToast]);
 
   const subtotal = getSubtotal();
-
-  // Automatic Coupon Revocation Guard if subtotal drops below required threshold
-  useEffect(() => {
-    if (appliedCoupon && subtotal < appliedCoupon.minOrderAmount) {
-      const revokedCode = appliedCoupon.code;
-      setAppliedCoupon(null);
-      showToast(`Revoked coupon "${revokedCode}": Subtotal dropped below ₹${appliedCoupon.minOrderAmount}`, 'info');
-    }
-  }, [subtotal, appliedCoupon, showToast]);
-
-  const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-
-  const taxableSubtotal = Math.max(0, subtotal - discount);
-  const gstAmount = taxableSubtotal * 0.05; // 5% Indian GST
-  const grandTotal = taxableSubtotal + gstAmount;
-
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
-    try {
-      const coupon = await couponService.validateCoupon(couponCode);
-      if (subtotal < coupon.minOrderAmount) {
-        showToast(`Minimum order amount of ₹${coupon.minOrderAmount} required for ${coupon.code}`, 'error');
-        return;
-      }
-      setAppliedCoupon(coupon);
-      setCouponCode('');
-      showToast(`Applied coupon "${coupon.code}" (-₹${coupon.discountAmount})`, 'success');
-    } catch (error: any) {
-      showToast(error.response?.data?.message || 'Invalid coupon', 'error');
-    }
-  };
-
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    showToast('Coupon removed', 'info');
-  };
+  const gstAmount = subtotal * 0.05; // 5% Indian GST
+  const grandTotal = subtotal + gstAmount;
 
   const handleConfirmSubmit = async (phoneOverride?: string, nameOverride?: string) => {
     try {
@@ -240,11 +203,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         })),
         subtotal,
         tax: gstAmount,
-        discount,
-        pointsRedeemed: 0,
-        pointsDiscount: 0,
+        discount: 0,
         total: grandTotal,
-        appliedCoupon: appliedCoupon?.code,
         sessionId: activeSessionId || undefined,
       });
 
@@ -571,13 +531,6 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <span className="font-mono text-slate-900 font-bold">₹{subtotal.toFixed(2)}</span>
                   </div>
 
-                  {appliedCoupon && (
-                    <div className="flex justify-between text-c-primary font-bold">
-                      <span>Coupon Discount</span>
-                      <span className="font-mono">-₹{discount.toFixed(2)}</span>
-                    </div>
-                  )}
-
                   <div className="flex justify-between">
                     <span>GST (5%)</span>
                     <span className="font-mono">₹{gstAmount.toFixed(2)}</span>
@@ -695,9 +648,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         tableId={tableId}
         isOpen={isConfirmOpen}
         items={items}
-        appliedCoupon={appliedCoupon}
         subtotal={subtotal}
-        discount={discount}
         gstAmount={gstAmount}
         grandTotal={grandTotal}
         onConfirm={handleConfirmSubmit}

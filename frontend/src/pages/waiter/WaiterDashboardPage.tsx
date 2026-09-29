@@ -5,12 +5,9 @@ import { tableService } from '../../services/table.service';
 import { orderService } from '../../services/order.service';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
-import { TableQrStandsModal } from '../../components/tables/TableQrStandsModal';
-
 interface TableState {
   _id: string;
   tableNumber: number;
-  zone?: string;
   capacity: number;
   status: 'available' | 'occupied' | 'billing' | 'cleaning';
   guestCount?: number;
@@ -34,9 +31,8 @@ export const WaiterDashboardPage: React.FC = () => {
   const { showToast } = useToast();
 
   // Waiter Dispatch Sidebar Tabs
-  const [activeTab, setActiveTab] = useState<'TABLE_STATUS' | 'WAITER_CALLS' | 'FOOD_READY' | 'BILL_REQUESTS'>('TABLE_STATUS');
+  const [activeTab, setActiveTab] = useState<'TABLE_STATUS' | 'WAITER_CALLS' | 'FOOD_READY'>('TABLE_STATUS');
 
-  const [selectedZone, setSelectedZone] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchTableQuery, setSearchTableQuery] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -46,7 +42,6 @@ export const WaiterDashboardPage: React.FC = () => {
   const [tables, setTables] = useState<TableState[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTable, setSelectedTable] = useState<TableState | null>(null);
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Lock background body scroll when table modal is open
   useBodyScrollLock(selectedTable !== null);
@@ -111,11 +106,6 @@ export const WaiterDashboardPage: React.FC = () => {
       // Construct complete array of 30 tables (Table 1 through Table 30)
       const full30TableList: TableState[] = Array.from({ length: 30 }, (_, index) => {
         const num = index + 1;
-        let zone = 'Main Hall';
-        if (num > 12 && num <= 16) zone = 'VIP Lounge';
-        if (num > 16 && num <= 24) zone = 'Outdoor Garden';
-        if (num > 24) zone = 'Family Section';
-
         const existingTable = tableData.find((t: any) => Number(t.tableNumber) === num);
         const statusVal = (existingTable?.status || 'available') as 'available' | 'occupied' | 'billing' | 'cleaning';
 
@@ -169,7 +159,6 @@ export const WaiterDashboardPage: React.FC = () => {
         return {
           _id: existingTable?._id || `temp-table-${num}`,
           tableNumber: num,
-          zone,
           capacity: existingTable?.capacity || (num % 4 === 0 ? 6 : num % 2 === 0 ? 4 : 2),
           status: ['available', 'occupied', 'billing', 'cleaning'].includes(computedStatus) ? computedStatus : 'available',
           guestCount: isTableActive ? (existingTable?.guestCount || 2) : 0,
@@ -462,8 +451,7 @@ export const WaiterDashboardPage: React.FC = () => {
 
   // Filter Tables
   const filteredTables = tables.filter((t) => {
-    const matchesZone = selectedZone === 'ALL' || t.zone === selectedZone;
-    const matchesSearch = searchTableQuery === '' || String(t.tableNumber).includes(searchTableQuery);
+    const matchesSearch = searchTableQuery.trim() === '' || String(t.tableNumber).includes(searchTableQuery.trim());
     
     let matchesStatus = true;
     if (statusFilter === 'READY') matchesStatus = t.orderStatus === 'ready';
@@ -472,36 +460,33 @@ export const WaiterDashboardPage: React.FC = () => {
     else if (statusFilter === 'AVAILABLE') matchesStatus = t.status === 'available';
     else if (statusFilter === 'CLEANING') matchesStatus = t.status === 'cleaning';
 
-    return matchesZone && matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const activePendingAlerts = alerts.filter((a) => a.status === 'PENDING');
   const readyToServeTables = tables.filter((t) => t.orderStatus === 'ready');
-  const billingTables = tables.filter((t) => t.status === 'billing');
 
   const totalTables = tables.length; // 30
   const availableCount = tables.filter((t) => t.status === 'available').length;
   const occupiedCount = tables.filter((t) => t.status === 'occupied').length;
-  const billingCount = tables.filter((t) => t.status === 'billing').length;
 
   return (
     <div className="page-theme-waiter flex flex-col h-full min-h-0 w-full font-sans text-theme-text bg-theme-bg overflow-hidden">
       {/* ─────────────────────────────────────────────────────────────────
           COMPACT TOP CONTROL & DISPATCH RAIL (Full Width, Mobile-First)
       ───────────────────────────────────────────────────────────────── */}
-      <div className="bg-theme-surface/95 backdrop-blur-md border-b border-theme-border px-3 sm:px-6 py-2.5 space-y-2.5 flex-shrink-0 z-20 shadow-sm">
+      <div className="bg-theme-surface/95 backdrop-blur-md border-b border-theme-border px-3 sm:px-6 py-3 sm:py-3.5 space-y-2.5 flex-shrink-0 z-20 shadow-sm">
         {/* Row 1: Station Title, Stats Summary, Quick Actions */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center space-x-2.5 min-w-0">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+          <div className="flex items-center space-x-2 sm:space-x-2.5 min-w-0">
             <div className="w-8 h-8 rounded-xl bg-theme-primary/10 border border-theme-primary/30 flex items-center justify-center flex-shrink-0">
               <Utensils className="w-4 h-4 text-theme-primary" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center space-x-1.5">
                 <h1 className="font-serif text-sm sm:text-base font-black text-theme-text tracking-wide truncate">
-                  FLOOR PASS
+                  WAITER
                 </h1>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
               </div>
               <p className="text-[10px] text-theme-muted font-mono hidden sm:block">Tactical 30-Table Realtime Grid</p>
             </div>
@@ -534,161 +519,76 @@ export const WaiterDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Row 2: Queue Tabs + Quick Status Filters (Horizontal Swipeable Rail) */}
-        <div className="flex items-center space-x-1.5 overflow-x-auto custom-scrollbar pb-1.5 pt-0.5">
+        {/* Row 2: Queue Tabs */}
+        <div className="flex items-center justify-between pt-0.5">
           {/* Main Dispatch Queues */}
-          <button
-            onClick={() => setActiveTab('TABLE_STATUS')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              activeTab === 'TABLE_STATUS'
-                ? 'bg-theme-primary text-black border-theme-primary shadow-md font-black'
-                : 'bg-theme-bg text-theme-muted border-theme-border hover:text-theme-text'
-            }`}
-          >
-            <Grid className="w-3.5 h-3.5" />
-            <span>Tables</span>
-            <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-black/20 font-black">30</span>
-          </button>
+          <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain py-0.5">
+            <button
+              onClick={() => setActiveTab('TABLE_STATUS')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer shrink-0 ${
+                activeTab === 'TABLE_STATUS'
+                  ? 'bg-theme-primary text-black border-theme-primary shadow-md font-black'
+                  : 'bg-theme-bg text-theme-muted border-theme-border hover:text-theme-text'
+              }`}
+            >
+              <Grid className="w-3.5 h-3.5 shrink-0" />
+              <span>Tables</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-black/20 font-black">30</span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('FOOD_READY')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              activeTab === 'FOOD_READY'
-                ? 'bg-cyan-500 text-black border-cyan-400 shadow-md font-black'
-                : readyToServeTables.length > 0
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 animate-pulse font-bold'
-                : 'bg-theme-bg text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10'
-            }`}
-          >
-            <Flame className={`w-3.5 h-3.5 ${readyToServeTables.length > 0 ? 'animate-spin text-cyan-300' : ''}`} />
-            <span>Ready Pass</span>
-            {readyToServeTables.length > 0 && (
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-cyan-900/60 font-black text-cyan-200">
-                {readyToServeTables.length}
-              </span>
-            )}
-          </button>
+            <button
+              onClick={() => setActiveTab('FOOD_READY')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer shrink-0 ${
+                activeTab === 'FOOD_READY'
+                  ? 'bg-cyan-500 text-black border-cyan-400 shadow-md font-black'
+                  : readyToServeTables.length > 0
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 animate-pulse font-bold'
+                  : 'bg-theme-bg text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10'
+              }`}
+            >
+              <Flame className={`w-3.5 h-3.5 shrink-0 ${readyToServeTables.length > 0 ? 'animate-spin text-cyan-300' : ''}`} />
+              <span>Ready Pass</span>
+              {readyToServeTables.length > 0 && (
+                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-cyan-900/60 font-black text-cyan-200">
+                  {readyToServeTables.length}
+                </span>
+              )}
+            </button>
 
-          <button
-            onClick={() => setActiveTab('WAITER_CALLS')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              activeTab === 'WAITER_CALLS'
-                ? 'bg-rose-500 text-white border-rose-400 shadow-md font-black'
-                : activePendingAlerts.length > 0
-                ? 'bg-rose-500/20 text-rose-300 border-rose-400 animate-pulse font-bold'
-                : 'bg-theme-bg text-rose-400 border-rose-500/30 hover:bg-rose-500/10'
-            }`}
-          >
-            <Bell className={`w-3.5 h-3.5 ${activePendingAlerts.length > 0 ? 'animate-bounce text-rose-300' : ''}`} />
-            <span>Calls</span>
-            {activePendingAlerts.length > 0 && (
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-rose-900/60 font-black text-rose-200">
-                {activePendingAlerts.length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('BILL_REQUESTS')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer ${
-              activeTab === 'BILL_REQUESTS'
-                ? 'bg-purple-500 text-white border-purple-400 shadow-md font-black'
-                : billingCount > 0
-                ? 'bg-purple-500/20 text-purple-300 border-purple-400 animate-pulse font-bold'
-                : 'bg-theme-bg text-purple-400 border-purple-500/30 hover:bg-purple-500/10'
-            }`}
-          >
-            <Receipt className="w-3.5 h-3.5" />
-            <span>Bills</span>
-            {billingCount > 0 && (
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-purple-900/60 font-black text-purple-200">
-                {billingCount}
-              </span>
-            )}
-          </button>
-
-          {/* Table QR Stand Generator & Print Manager */}
-          <button
-            onClick={() => setIsQrModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 cursor-pointer shadow-sm"
-            title="View & Print Table QR Code Stands"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>QR Stands</span>
-          </button>
-
-          <div className="h-4 w-px bg-theme-border flex-shrink-0 mx-1" />
-
-          {/* Inline Status Filter Pills (when on TABLE_STATUS) */}
-          {activeTab === 'TABLE_STATUS' && (
-            <>
-              <button
-                onClick={() => setStatusFilter('ALL')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors border cursor-pointer ${
-                  statusFilter === 'ALL'
-                    ? 'bg-theme-surface-hover text-theme-text border-theme-border-strong font-black'
-                    : 'bg-theme-bg text-theme-muted border-theme-border'
-                }`}
-              >
-                All ({totalTables})
-              </button>
-              <button
-                onClick={() => setStatusFilter('AVAILABLE')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors border cursor-pointer ${
-                  statusFilter === 'AVAILABLE'
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400 font-black'
-                    : 'bg-theme-bg text-emerald-400/80 border-theme-border'
-                }`}
-              >
-                Free ({availableCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter('OCCUPIED')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors border cursor-pointer ${
-                  statusFilter === 'OCCUPIED'
-                    ? 'bg-amber-500/20 text-amber-300 border-amber-400 font-black'
-                    : 'bg-theme-bg text-amber-400/80 border-theme-border'
-                }`}
-              >
-                Dine ({occupiedCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter('BILLING')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors border cursor-pointer ${
-                  statusFilter === 'BILLING'
-                    ? 'bg-purple-500/20 text-purple-300 border-purple-400 font-black'
-                    : 'bg-theme-bg text-purple-400/80 border-theme-border'
-                }`}
-              >
-                Bill ({billingCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter('CLEANING')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-colors border cursor-pointer ${
-                  statusFilter === 'CLEANING'
-                    ? 'bg-slate-700/60 text-slate-200 border-slate-500 font-black'
-                    : 'bg-theme-bg text-slate-400 border-theme-border'
-                }`}
-              >
-                Clean
-              </button>
-            </>
-          )}
+            <button
+              onClick={() => setActiveTab('WAITER_CALLS')}
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 border cursor-pointer shrink-0 ${
+                activeTab === 'WAITER_CALLS'
+                  ? 'bg-rose-500 text-white border-rose-400 shadow-md font-black'
+                  : activePendingAlerts.length > 0
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-400 animate-pulse font-bold'
+                  : 'bg-theme-bg text-rose-400 border-rose-500/30 hover:bg-rose-500/10'
+              }`}
+            >
+              <Bell className={`w-3.5 h-3.5 shrink-0 ${activePendingAlerts.length > 0 ? 'animate-bounce text-rose-300' : ''}`} />
+              <span>Calls</span>
+              {activePendingAlerts.length > 0 && (
+                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-rose-900/60 font-black text-rose-200">
+                  {activePendingAlerts.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content Workspace — Page controls its own scroll */}
-      <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-4 min-w-0">
+      <main className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-5 space-y-3 sm:space-y-4 min-w-0">
         {/* Top Banner Alert on Main Content */}
         {(readyToServeTables.length > 0 || activePendingAlerts.length > 0) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
             {readyToServeTables.length > 0 && (
               <div
                 onClick={() => setActiveTab('FOOD_READY')}
-                className="p-3 sm:p-4 bg-cyan-500/10 border border-cyan-400/50 hover:border-cyan-400 rounded-2xl flex items-center justify-between shadow-lg cursor-pointer transition-all hover:scale-[1.01]"
+                className="p-2.5 sm:p-4 bg-cyan-500/10 border border-cyan-400/50 hover:border-cyan-400 rounded-2xl flex items-center justify-between shadow-lg cursor-pointer transition-all hover:scale-[1.01]"
               >
-                <div className="flex items-center space-x-3">
-                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-bounce" />
+                <div className="flex items-center space-x-2.5 sm:space-x-3">
+                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-bounce shrink-0" />
                   <div>
                     <span className="font-bold text-[11px] text-cyan-300 uppercase tracking-wider block">
                       Hot Food Pickup Alert!
@@ -698,7 +598,7 @@ export const WaiterDashboardPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 bg-cyan-500 text-black font-black text-xs uppercase rounded-xl shadow-md">
+                <span className="px-2.5 py-1 bg-cyan-500 text-black font-black text-xs uppercase rounded-xl shadow-md shrink-0">
                   Serve &rarr;
                 </span>
               </div>
@@ -707,10 +607,10 @@ export const WaiterDashboardPage: React.FC = () => {
             {activePendingAlerts.length > 0 && (
               <div
                 onClick={() => setActiveTab('WAITER_CALLS')}
-                className="p-3 sm:p-4 bg-rose-500/10 border border-rose-500/50 hover:border-rose-400 rounded-2xl flex items-center justify-between shadow-lg cursor-pointer transition-all hover:scale-[1.01]"
+                className="p-2.5 sm:p-4 bg-rose-500/10 border border-rose-500/50 hover:border-rose-400 rounded-2xl flex items-center justify-between shadow-lg cursor-pointer transition-all hover:scale-[1.01]"
               >
-                <div className="flex items-center space-x-3">
-                  <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400 animate-bounce" />
+                <div className="flex items-center space-x-2.5 sm:space-x-3">
+                  <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400 animate-bounce shrink-0" />
                   <div>
                     <span className="font-bold text-[11px] text-rose-300 uppercase tracking-wider block">
                       Customer Call Alert!
@@ -720,7 +620,7 @@ export const WaiterDashboardPage: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 bg-rose-500 text-white font-black text-xs uppercase rounded-xl shadow-md">
+                <span className="px-2.5 py-1 bg-rose-500 text-white font-black text-xs uppercase rounded-xl shadow-md shrink-0">
                   View &rarr;
                 </span>
               </div>
@@ -731,52 +631,83 @@ export const WaiterDashboardPage: React.FC = () => {
         {/* TAB 1: 30-TABLE FLOOR GRID */}
         {activeTab === 'TABLE_STATUS' && (
           <div className="space-y-3 sm:space-y-4">
-            {/* Zone Filter Chips & Quick Table Search */}
-            <div className="bg-theme-surface border border-theme-border rounded-2xl p-2.5 sm:p-3.5 shadow-sm space-y-2.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                {/* Zone Filter Chips */}
-                <div className="flex items-center space-x-1.5 overflow-x-auto pb-1.5 custom-scrollbar">
-                  {['ALL', 'Main Hall', 'VIP Lounge', 'Outdoor Garden', 'Family Section'].map((zone) => (
-                    <button
-                      key={zone}
-                      onClick={() => setSelectedZone(zone)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all uppercase whitespace-nowrap border cursor-pointer ${
-                        selectedZone === zone
-                          ? 'bg-theme-primary text-black border-theme-primary font-black shadow-sm'
-                          : 'bg-theme-bg text-theme-muted border-theme-border hover:text-theme-text'
-                      }`}
-                    >
-                      {zone}
-                    </button>
-                  ))}
-                </div>
+            {/* Quick Table Search & Status Filter Pills */}
+            <div className="bg-theme-surface border border-theme-border rounded-2xl p-2.5 sm:p-3 shadow-sm space-y-2.5">
+              <div className="relative w-full">
+                <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchTableQuery}
+                  onChange={(e) => setSearchTableQuery(e.target.value)}
+                  placeholder="Search Table # (e.g. 5, 12, 28)..."
+                  className="w-full pl-9 pr-8 py-2 bg-theme-bg border border-theme-border rounded-xl text-xs text-theme-text placeholder:text-theme-muted/60 focus:outline-none focus:border-theme-primary font-mono transition-colors"
+                />
+                {searchTableQuery && (
+                  <button
+                    onClick={() => setSearchTableQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-text text-xs p-1"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
-                {/* Table Search */}
-                <div className="relative w-full sm:w-56">
-                  <Search className="w-3.5 h-3.5 text-theme-muted absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    value={searchTableQuery}
-                    onChange={(e) => setSearchTableQuery(e.target.value)}
-                    placeholder="Search Table #..."
-                    className="w-full pl-8 pr-3 py-1.5 bg-theme-bg border border-theme-border rounded-xl text-xs text-theme-text placeholder:text-theme-muted/50 focus:outline-none focus:border-theme-primary font-mono"
-                  />
-                </div>
+              {/* Status Filter Buttons Below Search Bar */}
+              <div className="grid grid-cols-4 gap-2 pt-0.5">
+                <button
+                  onClick={() => setStatusFilter('ALL')}
+                  className={`py-2 px-1 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-colors border cursor-pointer text-center ${
+                    statusFilter === 'ALL'
+                      ? 'bg-theme-primary text-black border-theme-primary font-black shadow-sm'
+                      : 'bg-theme-bg text-theme-muted border-theme-border hover:text-theme-text'
+                  }`}
+                >
+                  All ({totalTables})
+                </button>
+                <button
+                  onClick={() => setStatusFilter('AVAILABLE')}
+                  className={`py-2 px-1 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-colors border cursor-pointer text-center ${
+                    statusFilter === 'AVAILABLE'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400 font-black'
+                      : 'bg-theme-bg text-emerald-400/80 border-theme-border hover:text-emerald-300'
+                  }`}
+                >
+                  Free ({availableCount})
+                </button>
+                <button
+                  onClick={() => setStatusFilter('OCCUPIED')}
+                  className={`py-2 px-1 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-colors border cursor-pointer text-center ${
+                    statusFilter === 'OCCUPIED'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-400 font-black'
+                      : 'bg-theme-bg text-amber-400/80 border-theme-border hover:text-amber-300'
+                  }`}
+                >
+                  Dine ({occupiedCount})
+                </button>
+                <button
+                  onClick={() => setStatusFilter('CLEANING')}
+                  className={`py-2 px-1 sm:px-2.5 rounded-xl text-[11px] sm:text-xs font-bold whitespace-nowrap transition-colors border cursor-pointer text-center ${
+                    statusFilter === 'CLEANING'
+                      ? 'bg-slate-700/60 text-slate-200 border-slate-500 font-black'
+                      : 'bg-theme-bg text-slate-400 border-theme-border hover:text-slate-300'
+                  }`}
+                >
+                  Clean
+                </button>
               </div>
             </div>
 
-            {/* 30 Table Grid — Compact, Mobile-First (2 cols on phones, up to 6 on ultra-wide) */}
+            {/* 30 Table Grid — Compact, Mobile-First (1 col on <=350px phones, 2 cols on >=360px, up to 6 on desktop) */}
             <div className="space-y-2.5">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-mono font-bold text-theme-muted uppercase tracking-wider">
-                  Tables Grid ({filteredTables.length}/30)
-                </span>
-                <span className="text-[11px] font-mono text-theme-primary font-bold">
-                  Tap card for detail / actions
+              <div className="flex items-center justify-between px-1 gap-2">
+                <span className="text-xs font-mono font-bold text-theme-muted uppercase tracking-wider whitespace-nowrap shrink-0">
+                  <span className="sm:hidden">Tables ({filteredTables.length}/30)</span>
+                  <span className="hidden sm:inline">Tables Grid ({filteredTables.length}/30)</span>
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
                 {filteredTables.map((table) => {
                   const pendingAlert = activePendingAlerts.find(
                     (a) => String(a.tableId) === String(table.tableNumber) || Number(a.tableId) === table.tableNumber
@@ -841,11 +772,7 @@ export const WaiterDashboardPage: React.FC = () => {
                               <Sparkles className="w-3 h-3 text-amber-300" />
                               <span>{getCleaningTimeRemaining(table.cleaningStartedAt)}</span>
                             </span>
-                          ) : (
-                            <span className="text-[9px] font-mono opacity-70 truncate max-w-[65px]">
-                              {table.zone?.split(' ')[0]}
-                            </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
 
@@ -1058,9 +985,6 @@ export const WaiterDashboardPage: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="font-serif font-black text-aura-ivory text-2xl">Table {tbl.tableNumber}</span>
-                          <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">
-                            {tbl.zone}
-                          </span>
                         </div>
 
                         <p className="text-xs text-emerald-300 font-bold flex items-center space-x-1.5">
@@ -1097,54 +1021,6 @@ export const WaiterDashboardPage: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 4: BILL REQUESTS */}
-        {activeTab === 'BILL_REQUESTS' && (
-          <div className="bg-aura-container border border-aura-border/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 space-y-4 sm:space-y-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-aura-border/60 pb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-amber-500/20 border border-amber-500/40 rounded-2xl">
-                  <Receipt className="w-6 h-6 text-amber-400 animate-pulse" />
-                </div>
-                <div>
-                  <h2 className="font-serif text-xl font-bold text-aura-ivory">Tables Awaiting Checkout Bill</h2>
-                  <p className="text-xs text-aura-slate">Tables that requested final bill calculation</p>
-                </div>
-              </div>
-              <span className="px-3.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold text-xs">
-                {billingTables.length} Tables Billing
-              </span>
-            </div>
-
-            {billingTables.length === 0 ? (
-              <div className="py-16 text-center text-aura-slate text-xs space-y-3 bg-aura-obsidian/40 border border-aura-border/40 rounded-2xl">
-                <Clock className="w-12 h-12 mx-auto text-aura-slate/40" />
-                <p className="text-sm font-semibold text-aura-ivory">No Checkout Requests!</p>
-                <p className="text-xs text-aura-slate">No tables currently requesting checkout bills.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {billingTables.map((tbl) => (
-                  <div key={tbl._id} className="p-5 bg-aura-obsidian border border-amber-500/40 rounded-2xl flex flex-col justify-between space-y-4 shadow-xl">
-                    <div className="space-y-2 font-mono">
-                      <span className="font-serif font-black text-aura-ivory text-2xl">Table {tbl.tableNumber}</span>
-                      <p className="text-sm text-amber-300 font-bold">
-                        Bill Total: ₹{(tbl.orderTotal || 0).toLocaleString('en-IN')}
-                      </p>
-                      <span className="text-[10px] text-aura-slate block">{tbl.zone}</span>
-                    </div>
-
-                    <button
-                      onClick={() => setSelectedTable(tbl)}
-                      className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-aura-obsidian font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer"
-                    >
-                      View Details & Pay
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </main>
 
       {/* Table Detail Modal / Mobile Bottom Sheet */}
@@ -1176,7 +1052,6 @@ export const WaiterDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-theme-muted">{selectedTable.zone}</p>
                   <div className="flex items-center space-x-3 text-xs font-mono">
                     <span className="text-theme-muted">
                       <span className="text-theme-text font-bold">Max:</span> {selectedTable.capacity} seats
@@ -1466,13 +1341,6 @@ export const WaiterDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Table QR Stand Cards Modal */}
-      <TableQrStandsModal
-        isOpen={isQrModalOpen}
-        onClose={() => setIsQrModalOpen(false)}
-        tables={tables as any}
-        onRefreshTables={fetchFloorState}
-      />
     </div>
   );
 };

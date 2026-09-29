@@ -28,6 +28,11 @@ export const authService = {
   async updateProfile(userId: string, name: string, phone: string): Promise<User> {
     const response = await apiClient.put<ApiResponse<User>>('/auth/profile', { userId, name, phone });
     return response.data.data;
+  },
+
+  async verifyTerminal(passcode: string): Promise<{ success: boolean; authorized: boolean }> {
+    const response = await apiClient.post<ApiResponse<{ success: boolean; authorized: boolean }>>('/auth/verify-terminal', { passcode });
+    return response.data as any;
   }
 };
 

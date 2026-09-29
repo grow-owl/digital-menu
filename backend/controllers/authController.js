@@ -363,3 +363,34 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Verify Terminal Access Passcode (Server-side validation)
+// @route   POST /api/auth/verify-terminal
+// @access  Public
+export const verifyTerminalKey = asyncHandler(async (req, res) => {
+  const { passcode } = req.body;
+  if (!passcode || typeof passcode !== 'string') {
+    return res.status(400).json({ success: false, message: 'Access code is required.' });
+  }
+
+  const validKey = process.env.TERMINAL_ACCESS_KEY ? process.env.TERMINAL_ACCESS_KEY.trim().toUpperCase() : null;
+  if (!validKey) {
+    return res.status(500).json({ success: false, message: 'Terminal access key is not configured on the server.' });
+  }
+
+  const inputKey = passcode.trim().toUpperCase();
+
+  if (inputKey === validKey) {
+    return res.json({
+      success: true,
+      authorized: true,
+      message: 'Terminal authorized successfully.'
+    });
+  } else {
+    return res.status(401).json({
+      success: false,
+      authorized: false,
+      message: 'Invalid access code. Please contact your restaurant manager.'
+    });
+  }
+});
+

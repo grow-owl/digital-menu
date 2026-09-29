@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { useAuthStore } from '../../store/use-auth-store';
@@ -16,28 +16,50 @@ export const LoginPage: React.FC = () => {
   const terminalKeyParam = searchParams.get('terminalKey') || searchParams.get('stationKey');
 
   const [isTerminalAuthorized, setIsTerminalAuthorized] = useState<boolean>(() => {
-    if (terminalKeyParam && ['AURA2026', '8888', 'AURA'].includes(terminalKeyParam.toUpperCase())) {
-      localStorage.setItem('aura_terminal_authorized', 'true');
-      return true;
-    }
     return localStorage.getItem('aura_terminal_authorized') === 'true';
   });
+
+  useEffect(() => {
+    if (terminalKeyParam) {
+      authService.verifyTerminal(terminalKeyParam.trim().toUpperCase())
+        .then((res) => {
+          if (res?.authorized || res?.success) {
+            localStorage.setItem('aura_terminal_authorized', 'true');
+            setIsTerminalAuthorized(true);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [terminalKeyParam]);
 
   const [showPasscodeForm, setShowPasscodeForm] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState('');
   const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [isVerifyingTerminal, setIsVerifyingTerminal] = useState(false);
 
-  const handleUnlockTerminal = (e: React.FormEvent) => {
+  const handleUnlockTerminal = async (e: React.FormEvent) => {
     e.preventDefault();
-    const clean = passcodeInput.trim().toUpperCase();
-    if (clean === 'AURA2026' || clean === '8888' || clean === 'AURA' || clean === 'STAFF') {
-      localStorage.setItem('aura_terminal_authorized', 'true');
-      setIsTerminalAuthorized(true);
-      setShowPasscodeForm(false);
-      setPasscodeInput('');
-      setPasscodeError(null);
-    } else {
-      setPasscodeError('Invalid Master Passcode. (Hint: Default is AURA2026)');
+    const cleanInput = passcodeInput.trim();
+    if (!cleanInput) return;
+
+    setIsVerifyingTerminal(true);
+    setPasscodeError(null);
+
+    try {
+      const res = await authService.verifyTerminal(cleanInput);
+      if (res?.authorized || res?.success) {
+        localStorage.setItem('aura_terminal_authorized', 'true');
+        setIsTerminalAuthorized(true);
+        setShowPasscodeForm(false);
+        setPasscodeInput('');
+        setPasscodeError(null);
+      } else {
+        setPasscodeError('Invalid access code. Please contact your restaurant manager.');
+      }
+    } catch (err: any) {
+      setPasscodeError(err?.response?.data?.message || 'Invalid access code. Please contact your restaurant manager.');
+    } finally {
+      setIsVerifyingTerminal(false);
     }
   };
 
@@ -293,7 +315,7 @@ export const LoginPage: React.FC = () => {
                 ) : (
                   <form onSubmit={handleUnlockTerminal} className="space-y-2 pt-1 text-left">
                     <label className="block text-[10px] font-mono text-slate-300 uppercase tracking-wider">
-                      Master Terminal Passcode (Default: <span className="text-emerald-400 font-bold">AURA2026</span>)
+                      Restaurant Access Code
                     </label>
                     <div className="flex items-center space-x-2">
                       <input
@@ -304,14 +326,15 @@ export const LoginPage: React.FC = () => {
                           setPasscodeInput(e.target.value);
                           setPasscodeError(null);
                         }}
-                        placeholder="e.g. AURA2026"
+                        placeholder="Enter access code"
                         className="flex-1 py-2 px-3 bg-[#0D121F] border border-slate-700 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-amber-400"
                       />
                       <button
                         type="submit"
-                        className="py-2 px-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shrink-0"
+                        disabled={isVerifyingTerminal}
+                        className="py-2 px-3.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shrink-0"
                       >
-                        Unlock
+                        {isVerifyingTerminal ? 'Checking...' : 'Unlock'}
                       </button>
                     </div>
                     {passcodeError && (

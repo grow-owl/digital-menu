@@ -588,7 +588,11 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 // @route   GET /api/orders/:orderId
 // @access  Public
 export const getOrderById = asyncHandler(async (req, res) => {
-  const order = await Order.findOne({ orderId: req.params.orderId });
+  const targetId = req.params.orderId;
+  const isValidObjId = targetId.match(/^[0-9a-fA-F]{24}$/);
+  const order = await Order.findOne({
+    $or: [{ orderId: targetId }, { _id: isValidObjId ? targetId : null }]
+  });
   if (!order) return res.status(404).json({ message: 'Order not found' });
   res.json({ data: order });
 });

@@ -75,9 +75,9 @@ export const orderService = {
     return response.data;
   },
 
-  async getSettledOrders() {
-    const response = await apiClient.get('/orders/settled/all');
-    return response.data.data;
+  async getSettledOrders(params?: { page?: number; limit?: number; search?: string; method?: string }) {
+    const response = await apiClient.get('/orders/settled/all', { params });
+    return response.data?.data || response.data;
   },
 
   async refundOrder(orderId: string, payload?: string | {

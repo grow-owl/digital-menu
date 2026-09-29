@@ -14,7 +14,8 @@ import {
   DollarSign, ShoppingBag, LayoutGrid, ChefHat, TrendingUp, RefreshCw, Layers, ShieldCheck,
   Calendar, Users, AlertTriangle, Sparkles, Clock, Award, Utensils, Receipt, CheckCircle2,
   Plus, Edit, Trash2, Flame, Search, Filter, X, Check, Eye, CreditCard, Printer, RotateCcw, QrCode,
-  Download, ArrowUpRight, BarChart3, Bell, CheckSquare, Square, ToggleLeft, ToggleRight, Smartphone
+  Download, ArrowUpRight, BarChart3, Bell, CheckSquare, Square, ToggleLeft, ToggleRight, Smartphone,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export const AdminDashboardPage: React.FC = () => {
@@ -124,7 +125,7 @@ export const AdminDashboardPage: React.FC = () => {
 
       setAllTables(tables || []);
       setRealActiveOrders(active || []);
-      setRealSettledOrders(settled || []);
+      setRealSettledOrders(Array.isArray(settled) ? settled : (settled?.data || []));
       setRealRefundedOrders(refunded || []);
       setCategories(cats || []);
       setMenuItems(items || []);
@@ -360,6 +361,22 @@ export const AdminDashboardPage: React.FC = () => {
       return matchSearch && matchMethod;
     });
   }, [realSettledOrders, historySearchQuery, historyPaymentFilter]);
+
+  // Pagination State for Settled Invoices Log (10 items per page)
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPageSize = 10;
+
+  // Reset to page 1 whenever search query or payment filter changes
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historySearchQuery, historyPaymentFilter]);
+
+  const totalHistoryPages = Math.max(1, Math.ceil(filteredBillingHistory.length / historyPageSize));
+
+  const paginatedBillingHistory = useMemo(() => {
+    const start = (historyPage - 1) * historyPageSize;
+    return filteredBillingHistory.slice(start, start + historyPageSize);
+  }, [filteredBillingHistory, historyPage, historyPageSize]);
 
   // Export Billing CSV
   const handleExportBillingCSV = () => {
@@ -835,7 +852,7 @@ export const AdminDashboardPage: React.FC = () => {
                         </td>
                       </tr>
                     ) : (
-                      filteredBillingHistory.map((ord) => {
+                      paginatedBillingHistory.map((ord) => {
                         const net = ord.netAmount !== undefined ? ord.netAmount : Math.max(0, (ord.total || 0) - (ord.refundAmount || 0));
                         const dateStr = ord.paidAt
                           ? new Date(ord.paidAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
@@ -900,7 +917,7 @@ export const AdminDashboardPage: React.FC = () => {
                 {filteredBillingHistory.length === 0 ? (
                   <p className="text-center py-6 text-xs text-slate-500 font-mono">No bills found.</p>
                 ) : (
-                  filteredBillingHistory.map((ord) => {
+                  paginatedBillingHistory.map((ord) => {
                     const net = ord.netAmount !== undefined ? ord.netAmount : Math.max(0, (ord.total || 0) - (ord.refundAmount || 0));
                     const dateStr = ord.paidAt
                       ? new Date(ord.paidAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -945,6 +962,54 @@ export const AdminDashboardPage: React.FC = () => {
                   })
                 )}
               </div>
+
+              {/* Pagination Controls (10 items per page) */}
+              {filteredBillingHistory.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-theme-border font-mono text-xs text-slate-400">
+                  <div>
+                    Showing <span className="text-white font-bold">{Math.min(filteredBillingHistory.length, (historyPage - 1) * historyPageSize + 1)}</span> to{' '}
+                    <span className="text-white font-bold">{Math.min(filteredBillingHistory.length, historyPage * historyPageSize)}</span> of{' '}
+                    <span className="text-white font-bold">{filteredBillingHistory.length}</span> invoices
+                  </div>
+
+                  <div className="flex items-center space-x-1.5">
+                    <button
+                      disabled={historyPage === 1}
+                      onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                      className="px-3 py-1.5 rounded-xl border border-theme-border bg-theme-bg text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center space-x-1"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Prev</span>
+                    </button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((pg) => (
+                        <button
+                          key={pg}
+                          onClick={() => setHistoryPage(pg)}
+                          className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            historyPage === pg
+                              ? 'bg-theme-primary text-black font-black shadow-sm'
+                              : 'bg-theme-bg border border-theme-border text-slate-400 hover:text-white'
+                          }`}
+                        >
+                          {pg}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      disabled={historyPage === totalHistoryPages}
+                      onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                      className="px-3 py-1.5 rounded-xl border border-theme-border bg-theme-bg text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center space-x-1"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -8,7 +8,84 @@ import User from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
 export const generateOrderId = () => `ORD-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-export const generateInvoiceNumber = () => `INV-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
+// Chronological sequential invoice number generator: INV-1, INV-2, INV-3...
+export const getNextInvoiceNumber = async () => {
+  const orders = await Order.find({ invoiceNumber: { $exists: true, $ne: null } })
+    .select('invoiceNumber createdAt paidAt');
+
+  let maxSeq = 0;
+  for (const ord of orders) {
+    if (ord.invoiceNumber) {
+      const match = ord.invoiceNumber.match(/^INV-(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxSeq) maxSeq = num;
+      }
+    }
+  }
+
+  if (maxSeq === 0 && orders.length > 0) {
+    const distinctInvoices = new Set(orders.map(o => o.invoiceNumber).filter(Boolean));
+    maxSeq = distinctInvoices.size;
+  }
+
+  return `INV-${maxSeq + 1}`;
+};
+
+// Backward-compatible fallback
+export const generateInvoiceNumber = () => 'INV-1';
+
+// Auto-migrate legacy random hex invoices (e.g. INV-9BBAAF) to chronological sequential numbers (INV-1, INV-2...)
+export const normalizeInvoiceNumbers = async () => {
+  try {
+    const paidOrders = await Order.find({
+      $or: [
+        { paymentStatus: 'PAID' },
+        { invoiceNumber: { $exists: true, $ne: null } }
+      ]
+    }).sort({ paidAt: 1, createdAt: 1 });
+
+    if (!paidOrders || paidOrders.length === 0) return;
+
+    // Check if any order still has the old random hex format (not INV-digits)
+    const hasLegacyHex = paidOrders.some(o => o.invoiceNumber && !/^INV-\d+$/i.test(o.invoiceNumber));
+
+    if (hasLegacyHex) {
+      // Group by existing legacy invoiceNumber to keep table order tickets grouped under the same invoice
+      const billGroups = new Map();
+      for (const ord of paidOrders) {
+        const key = ord.invoiceNumber || `temp_${ord._id}`;
+        if (!billGroups.has(key)) {
+          billGroups.set(key, []);
+        }
+        billGroups.get(key).push(ord);
+      }
+
+      // Sort bill groups chronologically by earliest paidAt/createdAt
+      const sortedKeys = Array.from(billGroups.keys()).sort((a, b) => {
+        const aFirst = billGroups.get(a)[0];
+        const bFirst = billGroups.get(b)[0];
+        const aTime = new Date(aFirst.paidAt || aFirst.createdAt || 0).getTime();
+        const bTime = new Date(bFirst.paidAt || bFirst.createdAt || 0).getTime();
+        return aTime - bTime;
+      });
+
+      let seq = 1;
+      for (const key of sortedKeys) {
+        const newInvoiceNum = `INV-${seq++}`;
+        const groupOrders = billGroups.get(key);
+        for (const ord of groupOrders) {
+          ord.invoiceNumber = newInvoiceNum;
+          await ord.save();
+        }
+      }
+      console.log(`[Invoice Migration] Successfully migrated ${sortedKeys.length} legacy invoices to sequential INV-1..INV-${seq - 1}`);
+    }
+  } catch (err) {
+    console.warn('[Invoice Migration] Warning during invoice migration:', err.message);
+  }
+};
 
 // @desc    DEV UTILITY: Purge all orders & reset table statuses
 // @route   POST /api/orders/dev/purge-all
@@ -309,12 +386,52 @@ export const getActiveOrders = asyncHandler(async (req, res) => {
   res.json({ data: activeOrders });
 });
 
-// @desc    Get all settled orders (History / POS)
+// @desc    Get all settled orders (History / POS) with pagination
 // @route   GET /api/orders/settled/all
 // @access  Public / Staff
 export const getSettledOrders = asyncHandler(async (req, res) => {
-  const settledOrders = await Order.find({ paymentStatus: 'PAID' }).sort({ paidAt: -1, updatedAt: -1 });
-  res.json({ data: settledOrders });
+  await normalizeInvoiceNumbers();
+
+  const page = req.query.page !== undefined ? parseInt(req.query.page, 10) : null;
+  const limit = req.query.limit !== undefined ? parseInt(req.query.limit, 10) : 10;
+  const search = req.query.search ? String(req.query.search).trim() : '';
+  const method = req.query.method ? String(req.query.method).trim().toUpperCase() : '';
+
+  const filter = { paymentStatus: 'PAID' };
+
+  if (method && method !== 'ALL') {
+    filter.paymentMethod = new RegExp(method, 'i');
+  }
+
+  if (search) {
+    filter.$or = [
+      { invoiceNumber: new RegExp(search, 'i') },
+      { orderId: new RegExp(search, 'i') },
+      { customerName: new RegExp(search, 'i') },
+      { customerPhone: new RegExp(search, 'i') }
+    ];
+  }
+
+  const totalCount = await Order.countDocuments(filter);
+
+  let query = Order.find(filter).sort({ paidAt: -1, updatedAt: -1 });
+
+  if (page && page > 0) {
+    query = query.skip((page - 1) * limit).limit(limit);
+  }
+
+  const settledOrders = await query;
+
+  res.json({
+    success: true,
+    data: settledOrders,
+    pagination: {
+      currentPage: page || 1,
+      totalPages: page ? Math.max(1, Math.ceil(totalCount / limit)) : 1,
+      totalCount,
+      limit
+    }
+  });
 });
 
 // @desc    Refund an order (Full or Partial)
@@ -437,7 +554,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   if (req.body.paymentStatus === 'PAID' && !order.paidAt) {
     order.paidAt = new Date();
     if (!order.invoiceNumber) {
-      order.invoiceNumber = generateInvoiceNumber();
+      order.invoiceNumber = await getNextInvoiceNumber();
     }
   }
 
@@ -659,7 +776,7 @@ export const payTableBill = asyncHandler(async (req, res) => {
     });
   }
 
-  const invoiceNumber = generateInvoiceNumber();
+  const invoiceNumber = await getNextInvoiceNumber();
 
   for (const ord of activeOrders) {
     ord.status = 'completed';

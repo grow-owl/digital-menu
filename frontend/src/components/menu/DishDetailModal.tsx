@@ -276,14 +276,14 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
 
           {/* Smart Add-ons & High-Margin Pairings */}
           {smartAddons.length > 0 && (
-            <div className="p-3 sm:p-3.5 bg-gradient-to-br from-[#FCFBF8] via-[#F8F3EC] to-[#F3ECE1] border border-[#E5D7C7] rounded-xl sm:rounded-2xl space-y-2 shadow-2xs">
+            <div className="p-3 sm:p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl space-y-2.5 shadow-2xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-[#3B2818] uppercase tracking-wider">
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
                   Add-ons &amp; Chef Pairings
                 </span>
               </div>
 
-              <div className="space-y-1.5 sm:space-y-2">
+              <div className="space-y-2">
                 {smartAddons.map((addon) => {
                   const qty = selectedAddonQuantities[addon.id] || 0;
                   const isAdded = qty > 0;
@@ -291,30 +291,16 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
                   return (
                     <div
                       key={addon.id}
-                      className={`p-2.5 sm:p-3 rounded-xl border text-xs flex items-center justify-between gap-2.5 transition-all ${
+                      className={`p-3 rounded-xl border text-xs flex items-center justify-between gap-3 transition-all ${
                         isAdded
-                          ? 'bg-[#FAF4EC] border-[#A2734C] text-[#2D1E12] shadow-xs ring-1 ring-[#A2734C]/25'
-                          : 'bg-white hover:bg-[#FDFBF8] border-[#E8DACB] text-slate-800 hover:border-[#C4A482]'
+                          ? 'bg-emerald-50/90 border-[#0C831F] text-emerald-950 shadow-xs ring-1 ring-[#0C831F]/30'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-850 hover:border-emerald-500/50 shadow-2xs'
                       }`}
                     >
-                      <div className="flex items-center space-x-2.5 min-w-0 flex-1">
-                        <span
-                          className={`w-2 h-2 rounded-full shrink-0 transition-colors ${
-                            isAdded ? 'bg-[#9D6A38]' : 'bg-[#D6C4B2]'
-                          }`}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
-                              {formatAddonName(addon.name)}
-                            </span>
-                            {addon.reason && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-[#F5E8D7] text-[#7A4B1A] border border-[#DFC8B0] rounded-md tracking-tight whitespace-nowrap">
-                                {addon.reason}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
+                          {formatAddonName(addon.name)}
+                        </span>
                       </div>
 
                       {/* Add Button with +₹Price or Stepper */}
@@ -322,13 +308,13 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleAddonIncrement(addon.id)}
-                          className="px-3 py-1.5 bg-[#FAF3EA] hover:bg-[#8B5A2B] text-[#8B5A2B] hover:text-white border border-[#D4BFAB] hover:border-[#8B5A2B] font-bold font-mono rounded-lg text-xs shadow-2xs transition-all flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
+                          className="px-3.5 py-1.5 bg-emerald-50 hover:bg-[#0C831F] text-[#0C831F] hover:text-white border border-emerald-300 hover:border-[#0C831F] font-bold font-mono rounded-lg text-xs shadow-2xs transition-all flex items-center justify-center cursor-pointer active:scale-95 shrink-0"
                           title={`Add for ₹${addon.price}`}
                         >
                           <span>+₹{addon.price}</span>
                         </button>
                       ) : (
-                        <div className="flex items-center space-x-1.5 bg-[#8B5A2B] text-white px-2 py-1 rounded-lg shadow-sm shrink-0">
+                        <div className="flex items-center space-x-1.5 bg-[#0C831F] text-white px-2 py-1 rounded-lg shadow-sm shrink-0">
                           <button
                             type="button"
                             onClick={() => handleAddonDecrement(addon.id)}

@@ -128,7 +128,7 @@ Here is how data, state, and audio move through the venue:
 * **Zero Registration Wall:** Guests simply enter a 10-digit mobile number during ordering to link their loyalty points and order history. No passwords, no confirmation emails, no barrier to eating.
 * **Automatic +100 Loyalty Bonus:** New dining numbers are automatically gifted 100 points on their first order.
 * **Clean URLs:** Tables are securely authenticated without exposing ugly, brittle session tokens in the browser's address bar.
-* **Floating Floor Chimes:** One tap on **"Water Refill"** or **"Call Server"** sends an ambient notification directly to the waiter station.
+* **Floating Floor Chimes:** One tap on **"Call Service"** sends an ambient notification directly to the admin & staff dashboard.
 
 ### 2. 🍳 For the Kitchen (KDS Pass)
 * **High-Visibility Cooking Grid:** High-contrast dark interface engineered for hot, steamy kitchen environments with clear visual hierarchy.

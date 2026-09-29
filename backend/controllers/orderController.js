@@ -252,6 +252,34 @@ export const getOrdersByPhone = asyncHandler(async (req, res) => {
   res.json({ data: orders });
 });
 
+// Helper to automatically transition orders to 'ready' when kitchen preparation time completes
+const autoUpdateOrdersToReady = async (orders) => {
+  if (!orders || !orders.length) return;
+  const now = Date.now();
+  for (const order of orders) {
+    if (order && ['received', 'preparing'].includes(order.status)) {
+      const elapsedSecs = Math.floor((now - new Date(order.createdAt).getTime()) / 1000);
+      const activeItems = (order.items || []).filter(it => it.status !== 'cancelled');
+      if (activeItems.length > 0) {
+        const allDone = activeItems.every(it => {
+          const cookSecs = (it.preparationTimeMinutes || 5) * 60;
+          return it.status === 'ready' || it.status === 'served' || it.isPrepared || elapsedSecs >= cookSecs;
+        });
+        if (allDone) {
+          order.status = 'ready';
+          activeItems.forEach(it => {
+            if (it.status !== 'served') {
+              it.status = 'ready';
+              it.isPrepared = true;
+            }
+          });
+          await order.save().catch(e => console.warn('Auto-ready transition save warn:', e.message));
+        }
+      }
+    }
+  }
+};
+
 // @desc    Get orders for specific table
 // @route   GET /api/orders/table/:tableId
 // @access  Public
@@ -265,6 +293,7 @@ export const getOrdersByTable = asyncHandler(async (req, res) => {
   }
 
   const orders = await Order.find(filter).sort({ createdAt: -1 });
+  await autoUpdateOrdersToReady(orders);
   res.json({ data: orders });
 });
 
@@ -276,6 +305,7 @@ export const getActiveOrders = asyncHandler(async (req, res) => {
     status: { $in: ['received', 'preparing', 'ready', 'served'] },
     paymentStatus: { $ne: 'PAID' }
   }).sort({ createdAt: 1 });
+  await autoUpdateOrdersToReady(activeOrders);
   res.json({ data: activeOrders });
 });
 
@@ -595,6 +625,7 @@ export const getOrderById = asyncHandler(async (req, res) => {
     $or: [{ orderId: targetId }, { _id: isValidObjId ? targetId : null }]
   });
   if (!order) return res.status(404).json({ message: 'Order not found' });
+  await autoUpdateOrdersToReady([order]);
   res.json({ data: order });
 });
 

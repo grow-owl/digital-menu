@@ -311,8 +311,28 @@ export const OrderTrackingPage: React.FC = () => {
     }
   };
 
+  const resolveOrderStatus = (ord: OrderData | null): string => {
+    if (!ord) return 'received';
+    if (['ready', 'completed', 'served'].includes(ord.status)) return 'ready';
+    if (ord.status === 'cancelled') return 'cancelled';
+    
+    // Check if dishes are prepared or if kitchen cooking time has completed
+    const activeItems = (ord.items || []).filter((it) => it.status !== 'cancelled');
+    if (activeItems.length > 0) {
+      const elapsedSecs = ord.createdAt ? Math.floor((Date.now() - new Date(ord.createdAt).getTime()) / 1000) : 0;
+      const allDone = activeItems.every((it) => {
+        if (it.status === 'ready' || it.status === 'served') return true;
+        // Default preparation time 4 minutes (240s)
+        return elapsedSecs >= 240;
+      });
+      if (allDone) return 'ready';
+    }
+    return ord.status || 'received';
+  };
+
   const grandSessionTotal = orders.reduce((sum, ord) => sum + (ord.total || 0), 0);
   const latestOrder = orders.length > 0 ? orders[0] : null;
+  const latestOrderEffectiveStatus = resolveOrderStatus(latestOrder);
 
   const activeReel = CHAI_ADDAA_REELS[activeReelIdx];
 
@@ -396,9 +416,9 @@ export const OrderTrackingPage: React.FC = () => {
                 {/* Status color bar */}
                 <div
                   className={`h-1.5 w-full transition-all duration-700 ${
-                    latestOrder.status === 'received' ? 'bg-amber-400' :
-                    latestOrder.status === 'preparing' ? 'bg-[#0C831F]' :
-                    latestOrder.status === 'ready' ? 'bg-sky-400 animate-pulse' :
+                    latestOrderEffectiveStatus === 'received' ? 'bg-amber-400' :
+                    latestOrderEffectiveStatus === 'preparing' ? 'bg-[#0C831F]' :
+                    latestOrderEffectiveStatus === 'ready' ? 'bg-[#0C831F] animate-pulse' :
                     'bg-purple-500'
                   }`}
                 />
@@ -417,9 +437,9 @@ export const OrderTrackingPage: React.FC = () => {
 
                     {/* Status Badge */}
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${getStatusBadge(latestOrder.status).color}`}
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${getStatusBadge(latestOrderEffectiveStatus).color}`}
                     >
-                      {getStatusBadge(latestOrder.status).label}
+                      {getStatusBadge(latestOrderEffectiveStatus).label}
                     </span>
                   </div>
 
@@ -429,11 +449,11 @@ export const OrderTrackingPage: React.FC = () => {
                       <div className="absolute top-4 left-0 right-0 h-1 bg-slate-200 z-0" />
                       <div
                         className="absolute top-4 left-0 h-1 bg-[#0C831F] z-0 transition-all duration-700"
-                        style={{ width: `${(getStepIndex(latestOrder.status) / (steps.length - 1)) * 100}%` }}
+                        style={{ width: `${(getStepIndex(latestOrderEffectiveStatus) / (steps.length - 1)) * 100}%` }}
                       />
 
                       {steps.map((step, idx) => {
-                        const currentStep = getStepIndex(latestOrder.status);
+                        const currentStep = getStepIndex(latestOrderEffectiveStatus);
                         const isPassed = idx <= currentStep;
                         const isCurrent = idx === currentStep;
 
@@ -461,6 +481,14 @@ export const OrderTrackingPage: React.FC = () => {
                       })}
                     </div>
                   </div>
+
+                  {/* Ready Banner */}
+                  {latestOrderEffectiveStatus === 'ready' && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center space-x-2.5 text-xs text-[#0C831F] font-bold animate-in fade-in duration-300">
+                      <CheckCircle2 className="w-4 h-4 text-[#0C831F] shrink-0" />
+                      <span>Order is Ready! Kitchen has freshly prepared all your dishes.</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -921,7 +949,8 @@ export const OrderTrackingPage: React.FC = () => {
               </div>
 
               {orders.map((ord, index) => {
-                const badge = getStatusBadge(ord.status);
+                const effectiveStatus = resolveOrderStatus(ord);
+                const badge = getStatusBadge(effectiveStatus);
 
                 return (
                   <div key={ord._id || ord.orderId} className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-sm">

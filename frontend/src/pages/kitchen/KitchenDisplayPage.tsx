@@ -62,6 +62,7 @@ export const KitchenDisplayPage: React.FC = () => {
   const [cancelModalTicket, setCancelModalTicket] = useState<{ id: string; tableId: string } | null>(null);
   const [cancelItemTarget, setCancelItemTarget] = useState<CancelItemTarget | null>(null);
   const prevTicketsRef = useRef<KDSTicket[]>([]);
+  const readySentRef = useRef<Set<string>>(new Set());
 
   // Web Audio API Chime for New Order Notification
   const playAudioChime = () => {
@@ -203,6 +204,25 @@ export const KitchenDisplayPage: React.FC = () => {
       return it.status === 'served' || it.isPrepared || elapsed >= cookSecs;
     });
   };
+
+  // Automatically sync ready tickets with backend so user end displays Ready
+  useEffect(() => {
+    tickets.forEach((ticket) => {
+      if (isTicketReady(ticket) && ticket.status !== 'ready' && !readySentRef.current.has(ticket.id)) {
+        readySentRef.current.add(ticket.id);
+        orderService.updateOrderStatus(ticket.id, 'ready')
+          .then(() => {
+            setTickets((prev) =>
+              prev.map((t) => (t.id === ticket.id ? { ...t, status: 'ready' } : t))
+            );
+          })
+          .catch((err) => {
+            console.warn('Auto ready ticket err:', err);
+            readySentRef.current.delete(ticket.id);
+          });
+      }
+    });
+  }, [nowTimestamp, tickets]);
 
   const filteredTickets = tickets.filter((t) => {
     if (filterStatus === 'ALL') return true;
@@ -459,17 +479,7 @@ export const KitchenDisplayPage: React.FC = () => {
                       </div>
 
                       <div className="text-right space-y-1">
-                        <div
-                          className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${
-                            isAllDone
-                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                              : urgency.badgeStyle
-                          }`}
-                        >
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>{timerFormatted}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 block font-mono">
+                        <span className="text-xs text-slate-300 block font-mono font-bold">
                           {new Date(ticket.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -549,8 +559,8 @@ export const KitchenDisplayPage: React.FC = () => {
                                     </span>
                                   ) : (
                                     <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-[9px] font-bold shrink-0 uppercase flex items-center space-x-1">
-                                      <Clock className="w-3 h-3 text-amber-400 animate-spin" />
-                                      <span>{formatTimer(remainingSecs)} left ({cookMins}m)</span>
+                                      <Flame className="w-3 h-3 text-amber-400 animate-pulse" />
+                                      <span>Cooking ({cookMins}m)</span>
                                     </span>
                                   )}
                                 </div>

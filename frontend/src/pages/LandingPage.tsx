@@ -487,7 +487,7 @@ export const LandingPage: React.FC = () => {
               </div>
               <h3 className="font-bold text-sm text-[#223134] font-serif-display">Contactless Control at Your Table</h3>
               <p className="text-xs text-[#5f6c6e] leading-relaxed">
-                Add food, request extra water, or view your itemized bill without having to flag down staff during crowded rush hours.
+                Add food, request service assistance, or view your itemized bill without having to flag down staff during crowded rush hours.
               </p>
             </div>
           </div>

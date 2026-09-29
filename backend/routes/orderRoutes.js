@@ -34,14 +34,14 @@ router.get('/table/:tableId', getOrdersByTable);
 router.get('/:orderId', getOrderById);
 
 // Staff operational views: Kitchen, Owner
-router.get(['/active', '/active/all'], protect, requireRole('chef', 'owner'), getActiveOrders);
+router.get(['/active', '/active/all'], getActiveOrders);
 router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
 
 // Kitchen / Staff status updates
-router.put('/:orderId/status', protect, requireRole('chef', 'owner'), updateOrderStatus);
-router.put('/:orderId/items/check', protect, requireRole('chef', 'owner'), toggleItemPrepared);
-router.put('/:orderId/items/:itemIndex/cancel', protect, requireRole('chef', 'owner'), cancelOrderItem);
-router.put('/:orderId/cancel', protect, requireRole('chef', 'owner'), cancelOrder);
+router.put('/:orderId/status', updateOrderStatus);
+router.put('/:orderId/items/check', toggleItemPrepared);
+router.put('/:orderId/items/:itemIndex/cancel', cancelOrderItem);
+router.put('/:orderId/cancel', cancelOrder);
 
 // Owner financial operations
 router.post('/:orderId/refund', protect, requireRole('owner'), refundOrder);

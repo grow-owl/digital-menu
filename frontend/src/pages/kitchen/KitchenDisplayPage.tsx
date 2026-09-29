@@ -225,6 +225,20 @@ export const KitchenDisplayPage: React.FC = () => {
               setTickets((prev) =>
                 prev.map((t) => (t.id === ticket.id ? { ...t, status: 'ready' } : t))
               );
+              try {
+                localStorage.setItem('aura_last_order_status_update', JSON.stringify({
+                  orderId: ticket.id,
+                  tableId: ticket.tableId,
+                  status: 'ready',
+                  timestamp: Date.now()
+                }));
+                window.dispatchEvent(new CustomEvent('order_status_updated', {
+                  detail: { orderId: ticket.id, tableId: ticket.tableId, status: 'ready' }
+                }));
+                window.dispatchEvent(new Event('storage'));
+              } catch (e) {
+                console.warn('Storage sync err:', e);
+              }
             })
             .catch((err) => {
               console.warn('Auto ready ticket err:', err);

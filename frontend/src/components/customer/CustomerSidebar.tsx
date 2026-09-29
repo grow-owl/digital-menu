@@ -50,10 +50,12 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
 
   const handleCallService = async (reason: string = 'Call Service to Table') => {
     try {
+      const now = Date.now();
+      localStorage.setItem(`aura_call_service_timestamp_${tableId}`, now.toString());
       await tableService.callWaiter(tableId, reason);
       const existingAlerts = JSON.parse(localStorage.getItem('aura_waiter_alerts') || '[]');
       const newAlert = {
-        id: Date.now(),
+        id: now,
         tableId,
         reason,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -65,6 +67,9 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
       showToast(`Service assistance requested for Table ${tableId}!`, 'success');
       onClose();
     } catch (e) {
+      const now = Date.now();
+      localStorage.setItem(`aura_call_service_timestamp_${tableId}`, now.toString());
+      window.dispatchEvent(new Event('storage'));
       showToast(`Service call sent for Table ${tableId}.`, 'info');
       onClose();
     }

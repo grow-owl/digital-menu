@@ -311,20 +311,33 @@ export const createOrder = asyncHandler(async (req, res) => {
   const queryTableId = physicalTable ? String(physicalTable.tableNumber) : cleanTableNum;
 
   // Always create a fresh independent kitchen order ticket so each order round cooks from 00:00
+  // Retry up to 5 times to handle race condition where concurrent requests generate the same orderId
   await normalizeOrderIds();
-  const newOrderId = await getNextOrderId();
-  const order = await Order.create({
-    orderId: newOrderId,
-    tableId: queryTableId,
-    customerPhone: cleanCustomerPhone,
-    customerName: customerName || (customerUser ? customerUser.name : `Diner-${cleanCustomerPhone.slice(-4)}`),
-    items: verifiedNewItems,
-    subtotal: verifiedSubtotal,
-    tax: computedTax,
-    total: calculatedTotal,
-    status: 'preparing',
-    createdAt: new Date()
-  });
+  let order;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const newOrderId = await getNextOrderId();
+    try {
+      order = await Order.create({
+        orderId: newOrderId,
+        tableId: queryTableId,
+        customerPhone: cleanCustomerPhone,
+        customerName: customerName || (customerUser ? customerUser.name : `Diner-${cleanCustomerPhone.slice(-4)}`),
+        items: verifiedNewItems,
+        subtotal: verifiedSubtotal,
+        tax: computedTax,
+        total: calculatedTotal,
+        status: 'preparing',
+        createdAt: new Date()
+      });
+      break; // success
+    } catch (err) {
+      if (err.code === 11000 && attempt < 4) {
+        // Duplicate key — another concurrent request grabbed the same orderId; retry
+        continue;
+      }
+      throw err;
+    }
+  }
 
   if (physicalTable) {
     physicalTable.status = 'occupied';
@@ -359,6 +372,29 @@ export const getOrdersByPhone = asyncHandler(async (req, res) => {
   res.json({ data: orders });
 });
 
+// Flexible Order ID / Mongo ID query builder supporting ORD-1, #ORD-1, 1, ord-1, or ObjectId
+export const buildOrderIdQuery = (rawId) => {
+  const target = String(rawId || '').trim();
+  const cleanId = target.replace(/^#/, '').trim();
+  const numOnly = cleanId.replace(/^ORD-/i, '').trim();
+  const isValidObjId = /^[0-9a-fA-F]{24}$/.test(target);
+  
+  const queryConditions = [
+    { orderId: target },
+    { orderId: cleanId },
+    { orderId: `ORD-${cleanId}` },
+    { orderId: `ORD-${numOnly}` },
+    { orderId: new RegExp(`^${cleanId}$`, 'i') },
+    { orderId: new RegExp(`^ORD-${numOnly}$`, 'i') }
+  ];
+
+  if (isValidObjId) {
+    queryConditions.push({ _id: target });
+  }
+
+  return { $or: queryConditions };
+};
+
 // Helper to automatically transition orders to 'ready' when kitchen preparation time completes
 const autoUpdateOrdersToReady = async (orders) => {
   if (!orders || !orders.length) return;
@@ -369,7 +405,7 @@ const autoUpdateOrdersToReady = async (orders) => {
       const activeItems = (order.items || []).filter(it => it.status !== 'cancelled');
       if (activeItems.length > 0) {
         const allDone = activeItems.every(it => {
-          const cookSecs = (it.preparationTimeMinutes || 5) * 60;
+          const cookSecs = (it.preparationTimeMinutes || 4) * 60;
           return it.status === 'ready' || it.status === 'served' || it.isPrepared || elapsedSecs >= cookSecs;
         });
         if (allDone) {
@@ -447,18 +483,22 @@ export const getSettledOrders = asyncHandler(async (req, res) => {
   const search = req.query.search ? String(req.query.search).trim() : '';
   const method = req.query.method ? String(req.query.method).trim().toUpperCase() : '';
 
+  // Escape special regex characters to prevent ReDoS from user-controlled input
+  const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
   const filter = { paymentStatus: 'PAID' };
 
   if (method && method !== 'ALL') {
-    filter.paymentMethod = new RegExp(method, 'i');
+    filter.paymentMethod = new RegExp(escapeRegex(method), 'i');
   }
 
   if (search) {
+    const safeSearch = escapeRegex(search);
     filter.$or = [
-      { invoiceNumber: new RegExp(search, 'i') },
-      { orderId: new RegExp(search, 'i') },
-      { customerName: new RegExp(search, 'i') },
-      { customerPhone: new RegExp(search, 'i') }
+      { invoiceNumber: new RegExp(safeSearch, 'i') },
+      { orderId: new RegExp(safeSearch, 'i') },
+      { customerName: new RegExp(safeSearch, 'i') },
+      { customerPhone: new RegExp(safeSearch, 'i') }
     ];
   }
 
@@ -586,11 +626,8 @@ export const getRefunds = asyncHandler(async (req, res) => {
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
   const targetOrderId = req.params.orderId;
-  const isValidObjId = targetOrderId.match(/^[0-9a-fA-F]{24}$/);
 
-  const order = await Order.findOne({
-    $or: [{ orderId: targetOrderId }, { _id: isValidObjId ? targetOrderId : null }]
-  });
+  const order = await Order.findOne(buildOrderIdQuery(targetOrderId));
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
   if (status) order.status = status;
@@ -633,11 +670,8 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 export const toggleItemPrepared = asyncHandler(async (req, res) => {
   const { itemIndex, isPrepared } = req.body;
   const targetOrderId = req.params.orderId;
-  const isValidObjId = targetOrderId.match(/^[0-9a-fA-F]{24}$/);
 
-  const order = await Order.findOne({
-    $or: [{ orderId: targetOrderId }, { _id: isValidObjId ? targetOrderId : null }]
-  });
+  const order = await Order.findOne(buildOrderIdQuery(targetOrderId));
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
@@ -649,6 +683,13 @@ export const toggleItemPrepared = asyncHandler(async (req, res) => {
     if (isPrepared && order.items[itemIndex].status !== 'served') {
       order.items[itemIndex].status = 'ready';
     }
+
+    // If all active dishes are prepared, automatically mark order as ready
+    const active = (order.items || []).filter(it => it.status !== 'cancelled');
+    if (active.length > 0 && active.every(it => it.isPrepared || it.status === 'ready' || it.status === 'served')) {
+      order.status = 'ready';
+    }
+
     await order.save();
   }
 
@@ -662,11 +703,8 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
   const { reason, cancelledBy } = req.body;
   const targetOrderId = req.params.orderId;
   const itemIndex = parseInt(req.params.itemIndex, 10);
-  const isValidObjId = targetOrderId.match(/^[0-9a-fA-F]{24}$/);
 
-  const order = await Order.findOne({
-    $or: [{ orderId: targetOrderId }, { _id: isValidObjId ? targetOrderId : null }]
-  });
+  const order = await Order.findOne(buildOrderIdQuery(targetOrderId));
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
   if (order.status === 'cancelled') {
@@ -731,11 +769,8 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
 export const cancelOrder = asyncHandler(async (req, res) => {
   const { reason, cancelledBy } = req.body;
   const targetOrderId = req.params.orderId;
-  const isValidObjId = targetOrderId.match(/^[0-9a-fA-F]{24}$/);
 
-  const order = await Order.findOne({
-    $or: [{ orderId: targetOrderId }, { _id: isValidObjId ? targetOrderId : null }]
-  });
+  const order = await Order.findOne(buildOrderIdQuery(targetOrderId));
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
@@ -787,10 +822,7 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 // @access  Public
 export const getOrderById = asyncHandler(async (req, res) => {
   const targetId = req.params.orderId;
-  const isValidObjId = targetId.match(/^[0-9a-fA-F]{24}$/);
-  const order = await Order.findOne({
-    $or: [{ orderId: targetId }, { _id: isValidObjId ? targetId : null }]
-  });
+  const order = await Order.findOne(buildOrderIdQuery(targetId));
   if (!order) return res.status(404).json({ message: 'Order not found' });
   await autoUpdateOrdersToReady([order]);
   res.json({ data: order });

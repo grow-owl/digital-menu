@@ -219,18 +219,42 @@ export const OrderTrackingPage: React.FC = () => {
     }
   };
 
+  const [tickTime, setTickTime] = useState(Date.now());
+
   // Fetch active orders for this table's session
   const fetchTableOrders = async () => {
     try {
-      const data = await orderService.getOrdersByTable(tableId);
-      if (Array.isArray(data)) {
-        const activeSessionOrders = data.filter(
-          (ord: any) => ord.status !== 'cancelled' && ord.paymentStatus !== 'PAID'
-        );
-        const recentlyCancelled = data.filter((ord: any) => ord.status === 'cancelled');
-        setOrders(activeSessionOrders);
-        setCancelledOrders(recentlyCancelled);
+      const activeTable = activeStoreTableId || paramTableId || '10';
+      const promises: Promise<any>[] = [orderService.getOrdersByTable(activeTable)];
+      
+      // If tracking a specific order ID, fetch it directly as well to guarantee sync
+      if (orderId && orderId !== 'active') {
+        promises.push(orderService.getOrder(orderId).catch(() => null));
       }
+
+      const [tableData, specificOrder] = await Promise.all(promises);
+
+      let combined: any[] = Array.isArray(tableData) ? [...tableData] : [];
+      if (specificOrder && specificOrder.orderId) {
+        const alreadyExists = combined.some(
+          (o) => o.orderId === specificOrder.orderId || o._id === specificOrder._id
+        );
+        if (!alreadyExists) {
+          combined.unshift(specificOrder);
+        } else {
+          // Replace with freshly fetched specific order data
+          combined = combined.map((o) =>
+            o.orderId === specificOrder.orderId || o._id === specificOrder._id ? specificOrder : o
+          );
+        }
+      }
+
+      const activeSessionOrders = combined.filter(
+        (ord: any) => ord.status !== 'cancelled' && ord.paymentStatus !== 'PAID'
+      );
+      const recentlyCancelled = combined.filter((ord: any) => ord.status === 'cancelled');
+      setOrders(activeSessionOrders);
+      setCancelledOrders(recentlyCancelled);
     } catch (err) {
       console.error('Failed to fetch table orders:', err);
     } finally {
@@ -240,9 +264,25 @@ export const OrderTrackingPage: React.FC = () => {
 
   useEffect(() => {
     fetchTableOrders();
-    const interval = setInterval(fetchTableOrders, 5000);
-    return () => clearInterval(interval);
-  }, [tableId, orderId]);
+    // 2-second fast polling for responsive live kitchen sync
+    const pollInterval = setInterval(fetchTableOrders, 2000);
+    // 1-second clock tick for smooth timer / progress progression
+    const clockInterval = setInterval(() => setTickTime(Date.now()), 1000);
+
+    const handleSync = () => {
+      fetchTableOrders();
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('order_status_updated', handleSync);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(clockInterval);
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('order_status_updated', handleSync);
+    };
+  }, [tableId, orderId, activeStoreTableId]);
 
 
   const handlePrevReel = () => {
@@ -319,11 +359,11 @@ export const OrderTrackingPage: React.FC = () => {
     // Check if dishes are prepared or if kitchen cooking time has completed
     const activeItems = (ord.items || []).filter((it) => it.status !== 'cancelled');
     if (activeItems.length > 0) {
-      const elapsedSecs = ord.createdAt ? Math.floor((Date.now() - new Date(ord.createdAt).getTime()) / 1000) : 0;
+      const elapsedSecs = ord.createdAt ? Math.floor((tickTime - new Date(ord.createdAt).getTime()) / 1000) : 0;
       const allDone = activeItems.every((it) => {
-        if (it.status === 'ready' || it.status === 'served') return true;
-        // Default preparation time 4 minutes (240s)
-        return elapsedSecs >= 240;
+        if (it.status === 'ready' || it.status === 'served' || (it as any).isPrepared) return true;
+        const cookSecs = ((it as any).preparationTimeMinutes || 4) * 60;
+        return elapsedSecs >= cookSecs;
       });
       if (allDone) return 'ready';
     }
@@ -331,7 +371,10 @@ export const OrderTrackingPage: React.FC = () => {
   };
 
   const grandSessionTotal = orders.reduce((sum, ord) => sum + (ord.total || 0), 0);
-  const latestOrder = orders.length > 0 ? orders[0] : null;
+  const targetedOrder = (orderId && orderId !== 'active')
+    ? orders.find((o) => o.orderId === orderId || (o as any)._id === orderId) || orders[0] || null
+    : orders[0] || null;
+  const latestOrder = targetedOrder;
   const latestOrderEffectiveStatus = resolveOrderStatus(latestOrder);
 
   const activeReel = CHAI_ADDAA_REELS[activeReelIdx];

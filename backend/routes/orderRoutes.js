@@ -18,6 +18,7 @@ import {
 } from '../controllers/orderController.js';
 
 import { protect, requireRole } from '../middleware/authMiddleware.js';
+import { orderRateLimiter } from '../middleware/securityMiddleware.js';
 
 const router = express.Router();
 
@@ -25,16 +26,16 @@ const router = express.Router();
 router.post('/dev/purge-all', protect, requireRole('owner'), purgeAllOrders);
 
 // Order creation: Customer (logged-in or table guest) or staff placing order
-router.post('/', createOrder);
+router.post('/', orderRateLimiter, createOrder);
 
 // Customer / Table order retrieval
 router.get('/phone/:phone', getOrdersByPhone);
 router.get('/table/:tableId', getOrdersByTable);
 router.get('/:orderId', getOrderById);
 
-// Staff operational views: Kitchen, Waiter, Cashier, Owner
-router.get(['/active', '/active/all'], protect, requireRole('chef', 'waiter', 'cashier', 'owner'), getActiveOrders);
-router.get('/settled/all', protect, requireRole('cashier', 'owner'), getSettledOrders);
+// Staff operational views: Kitchen, Waiter, Owner
+router.get(['/active', '/active/all'], protect, requireRole('chef', 'waiter', 'owner'), getActiveOrders);
+router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
 
 // Kitchen / Staff status updates
 router.put('/:orderId/status', protect, requireRole('chef', 'waiter', 'owner'), updateOrderStatus);
@@ -42,9 +43,9 @@ router.put('/:orderId/items/check', protect, requireRole('chef', 'owner'), toggl
 router.put('/:orderId/items/:itemIndex/cancel', protect, requireRole('chef', 'waiter', 'owner'), cancelOrderItem);
 router.put('/:orderId/cancel', protect, requireRole('chef', 'waiter', 'owner'), cancelOrder);
 
-// Cashier / Owner financial operations
-router.post('/:orderId/refund', protect, requireRole('cashier', 'owner'), refundOrder);
-router.get('/refunds/all', protect, requireRole('cashier', 'owner'), getRefunds);
+// Owner financial operations
+router.post('/:orderId/refund', protect, requireRole('owner'), refundOrder);
+router.get('/refunds/all', protect, requireRole('owner'), getRefunds);
 router.post('/pay-table', payTableBill);
 
 // Auto-cancel orders in 'received' status older than 15 minutes (Kitchen Timeout)

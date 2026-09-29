@@ -26,7 +26,7 @@ router.get('/qr-token/:tableNumber', protect, requireRole('waiter', 'owner'), ge
 router.post(['/:tableId/rotate-qr', '/rotate-qr/:tableId'], protect, requireRole('owner'), rotateTableQrToken);
 router.get('/session/:sessionId', getSessionDetails);
 router.post(['/checkout', '/session/:sessionId/checkout'], checkoutTableSession);
-router.put(['/:tableId/status', '/status/:tableId'], protect, requireRole('waiter', 'cashier', 'owner'), updateTableStatus);
+router.put(['/:tableId/status', '/status/:tableId'], protect, requireRole('waiter', 'owner'), updateTableStatus);
 router.post('/call-waiter', callWaiter);
 router.get('/waiter-calls', protect, requireRole('waiter', 'owner'), getWaiterCalls);
 router.put('/waiter-calls/:id/resolve', protect, requireRole('waiter', 'owner'), resolveWaiterCall);

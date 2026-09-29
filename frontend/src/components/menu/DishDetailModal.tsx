@@ -123,6 +123,10 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
   };
 
   const handleAdd = () => {
+    if (item.isAvailable === false) {
+      showToast(`"${item.name}" is sold out today and cannot be added.`, 'error');
+      return;
+    }
     const finalNotes = getCombinedNotes();
     if (isUpdating) {
       updateItemConfiguration(item.id, displayQuantity, unitPrice, finalNotes, chosenAddonNames);
@@ -218,6 +222,12 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
 
         {/* Scrollable Body Content */}
         <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+          {item.isAvailable === false && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2.5 text-rose-800 text-xs font-bold shadow-2xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shrink-0" />
+              <span>This dish is currently SOLD OUT today and cannot be added to your order.</span>
+            </div>
+          )}
           <div>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -383,12 +393,10 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
         {/* Modal Footer */}
         <div className="p-4 bg-white border-t border-slate-200 flex flex-col space-y-2 shrink-0">
           {item.isAvailable === false ? (
-            <button
-              disabled
-              className="w-full py-3 px-6 bg-slate-200 text-slate-400 font-bold rounded-xl text-xs uppercase tracking-wider cursor-not-allowed"
-            >
-              OUT OF STOCK
-            </button>
+            <div className="w-full py-3.5 px-4 bg-rose-100/90 border border-rose-300 text-rose-800 font-black rounded-2xl text-xs sm:text-sm uppercase tracking-wider text-center flex items-center justify-center space-x-2 shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+              <span>SOLD OUT TODAY • NOT AVAILABLE</span>
+            </div>
           ) : (
             <div className="flex items-center space-x-2.5">
               {/* Optional Remove from Cart button when item is already in cart */}

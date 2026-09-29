@@ -1,5 +1,4 @@
-# 🌿 AURA Gastronomy
-### The Resilient, Real-Time Operating System for Modern Dining & Hospitality
+# 🌿 Chai Addaa
 
 <div align="center">
 
@@ -37,7 +36,7 @@ I’ve spent hours observing busy dinner services—watching what happens when a
 Here is what *actually* happens in real dining rooms:
 1. **The Kitchen Runs Out of Scallops Mid-Service:** The line cook yells across the kitchen pass that scallops are *86’d*. The floor staff doesn't hear it over the dining room chatter. A server rings in two more orders five minutes later. The manager now has to go to the table, apologize, void the tickets, and re-balance the entire check.
 2. **The App Trap:** Guests sit down, scan a QR code, and get hit with: *"Download our app from the App Store and create a password."* Nobody does it. They put their phone away, wait 10 minutes to catch a server's eye, and the whole service slows down.
-3. **The Refund Disaster:** A guest sends back one glass of wine because it wasn't chilled. Most POS systems force the cashier to void the whole £280 bill, re-punch 12 dishes from scratch, and leave the end-of-night accounting ledger off by £15.
+3. **The Refund Disaster:** A guest sends back one glass of wine because it wasn't chilled. Most POS systems force staff to void the whole £280 bill, re-punch 12 dishes from scratch, and leave the end-of-night accounting ledger off by £15.
 4. **Basement Signal Dead Zones:** Guests sit in a subterranean cellar or secluded courtyard with zero cellular reception, staring at a blank loading screen because they don't know the guest Wi-Fi password.
 
 **AURA was engineered to be the quiet, dependable pulse that solves every single one of these problems without getting in the way of hospitality.**
@@ -78,7 +77,7 @@ Here is how data, state, and audio move through the venue:
 │ • Net Revenue & 5% GST       │ • Live Kitchen Stage Pipeline │ • 30 Tables / 128 Seats Capacity      │
 │ • Payment Split (UPI/Card)   │ • Real-Time Order Stream Ticker│ • Status Grid (Free/Occupied/Billing) │
 │ • 24h Hourly Revenue Heatmap │ • Top Performing Dishes       │ • 4 Seating Zones Breakdown           │
-│ • End-of-Day Audit Export    │ • 86'd Out-of-Stock Restock   │ • Direct Waiter/Cashier/KDS Shortcuts │
+│ • End-of-Day Audit Export    │ • 86'd Out-of-Stock Restock   │ • Direct Table Billing & KDS Shortcuts│
 └──────────────────────────────┴───────────────┬───────────────┴───────────────────────────────────────┘
                                                │
                                                ▼
@@ -106,7 +105,7 @@ Here is how data, state, and audio move through the venue:
 
 ### 🍷 Scenario 2: A Spilled Drink & Partial Refund
 * **The Problem:** A guest accidentally knocks over a glass of vintage Pinot Noir (£18) and the floor manager wants to comp it without disrupting the rest of their £320 anniversary dinner check.
-* **The AURA Fix:** The cashier opens the table's check, taps **Refund Line Item**, selects the Pinot Noir, and logs the reason (*"Spilled / Manager Courtesy"*).
+* **The AURA Fix:** The manager opens the table's check, taps **Refund Line Item**, selects the Pinot Noir, and logs the reason (*"Spilled / Manager Courtesy"*).
   - The system adjusts the balance: `netAmount = originalTotal - refundAmount`.
   - The thermal receipt prints an itemized credit deduction line.
   - The daily executive revenue dashboard deducts the £18 from net sales so the night's cash-out ledger balances to the penny.
@@ -150,13 +149,13 @@ Here is how data, state, and audio move through the venue:
 The CEO Executive Cockpit and Operational Admin Panel are consolidated into a single powerhouse dashboard at `/admin`, structured around **Three Core Pillars**:
 * **Pillar 1: Finance**: Real-time Gross Settled Sales, Average Order Value (AOV), Payment Method Breakdown (UPI, Card, Cash %), 5% GST & Net Intake, 24-hour service revenue heatmap, and 1-click audit CSV export.
 * **Pillar 2: Menu Details & Live Working in Restaurant**: 4-stage kitchen pipeline monitor (*In Queue*, *On Flames*, *At Pass*, *Served*), live active dining tickets ticker showing items ordered and elapsed timers, top dishes leaderboard, and live 86'd Out-of-Stock monitor with 1-tap restock toggle.
-* **Pillar 3: Floor, Table & Staff Operations**: 30 tables / 128 pax capacity breakdown, status distribution (Free, Occupied, Billing, Cleaning), 4 floor zones (Main Hall, VIP Lounge, Garden, Family Boothing), turnover speed metrics, and direct shortcuts to Waiter Floor Map, Cashier POS, and Kitchen KDS.
+* **Pillar 3: Floor, Table & Staff Operations**: 30 tables / 128 pax capacity breakdown, status distribution (Free, Occupied, Billing, Cleaning), 4 floor zones (Main Hall, VIP Lounge, Garden, Family Boothing), turnover speed metrics, and direct shortcuts to Table Billing, Waiter Floor Map, and Kitchen KDS.
 
-### 5. 💳 For Cashiers & Accountants (POS & Ledger)
+### 5. 💳 Table Billing & Precision Invoicing (Admin Portal)
 * **Precision Refunds:** Supports **Full Refunds**, **Partial Value Offsets**, and **Item-Level Line Returns** with full audit logs (who issued it, at what time, and why).
 * **True Net Revenue Tracking:** Calculates `netAmount = total - refundAmount`, guaranteeing that daily closing summaries, tax reports, and owner analytics match real banked revenue.
 * **Dual Printing Engine:**
-  - **80mm Thermal Receipt:** Clean slip with item breakdowns, discount lines, refund deductions, and cashier name.
+  - **80mm Thermal Receipt:** Clean slip with item breakdowns, discount lines, refund deductions, and staff name.
   - **Formal A4 GST Invoice:** Full business tax breakdown with GSTIN, CGST, SGST, customer information, and tax summary tables.
 
 ### 6. 🖨️ Luxury Dual-QR Table Stand Generator
@@ -199,8 +198,7 @@ We treat every client connection—whether from a diner's smartphone or an unkno
 | ⏱️ **Live Order Tracker** | `/order/:orderId` | *Automatic on checkout* | Real-time prep stage tracker & live bill adjustment notices |
 | 🍳 **Kitchen Pass (KDS)** | `/kitchen` | `chef@aura.com` / `chef123` | High-contrast tickets, dish 86 controls, ticket timer badges |
 | 🤵 **Floor Command** | `/waiter` | `waiter@aura.com` / `waiter123` | 30-table layout, audio chimes, service calls, table turnover |
-| 💳 **Cashier Station** | `/cashier` | `cashier@aura.com` / `cashier123` | Settlement, item refunds, thermal & GST invoice printing |
-| 👑 **Admin & Executive Portal** | `/admin` | `admin@aura.com` / `admin123` | Unified 3-pillar cockpit: Finance, Live Kitchen & Floor Ops |
+| 👑 **Admin Portal** | `/admin` | `admin@aura.com` / `admin123` | 4-in-1 Workspace: Table Billing, Billing History, Menu Items & Today's Availability |
 | 🖨️ **QR Stand Studio** | `/admin/qr-generator` | `admin@aura.com` / `admin123` | High-res dual QR acrylic table stand generation |
 | ⚙️ **Platform Settings** | `/admin/settings` | `admin@aura.com` / `admin123` | Venue branding, dining host URL, guest Wi-Fi credentials |
 | 🔐 **Fast Staff Gate** | `/login` | Passcode: `AURA2026` | Quick 1-click station switcher for dedicated floor tablets |

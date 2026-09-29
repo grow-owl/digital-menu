@@ -149,7 +149,7 @@ export const phoneLogin = asyncHandler(async (req, res) => {
   let roleUpper = rawRole.toUpperCase();
   if (roleUpper === 'KITCHEN') roleUpper = 'CHEF';
   if (roleUpper === 'RESTAURANT_OWNER' || roleUpper === 'ADMIN' || roleUpper === 'MANAGER') roleUpper = 'OWNER';
-  if (!['OWNER', 'CASHIER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
+  if (!['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
     roleUpper = 'CUSTOMER';
   }
 
@@ -247,7 +247,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     let roleUpper = rawRole.toUpperCase();
     if (roleUpper === 'KITCHEN') roleUpper = 'CHEF';
     if (roleUpper === 'RESTAURANT_OWNER' || roleUpper === 'ADMIN' || roleUpper === 'MANAGER') roleUpper = 'OWNER';
-    if (!['OWNER', 'CASHIER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
+    if (!['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
       roleUpper = 'CUSTOMER';
     }
 
@@ -291,7 +291,7 @@ export const getMe = asyncHandler(async (req, res) => {
   let roleUpper = rawRole.toUpperCase();
   if (roleUpper === 'KITCHEN') roleUpper = 'CHEF';
   if (roleUpper === 'RESTAURANT_OWNER' || roleUpper === 'ADMIN' || roleUpper === 'MANAGER') roleUpper = 'OWNER';
-  if (!['OWNER', 'CASHIER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
+  if (!['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
     roleUpper = 'CUSTOMER';
   }
 

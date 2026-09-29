@@ -184,6 +184,18 @@ export const createOrder = asyncHandler(async (req, res) => {
     dbMenuMap.set(String(item._id), item);
   });
 
+  // Daily availability guard: block 86'd / unavailable dishes
+  for (const it of items) {
+    const targetId = String(it.menuItemId || it.id || '');
+    const dbItem = dbMenuMap.get(targetId);
+    if (dbItem && dbItem.isAvailable === false) {
+      return res.status(400).json({
+        success: false,
+        message: `"${dbItem.name}" is currently sold out and not available today. Please remove it from your order.`
+      });
+    }
+  }
+
   let verifiedSubtotal = 0;
   const verifiedNewItems = items.map(it => {
     const targetId = String(it.menuItemId || it.id || '');
@@ -402,7 +414,7 @@ export const getSettledOrders = asyncHandler(async (req, res) => {
 
 // @desc    Refund an order (Full or Partial)
 // @route   POST /api/orders/:orderId/refund
-// @access  Private / Staff / Cashier
+// @access  Private / Staff / Owner
 export const refundOrder = asyncHandler(async (req, res) => {
   const { amount, reason, refundedBy, refundType, refundedItems, refundMethod } = req.body;
   const targetOrderId = req.params.orderId;
@@ -441,7 +453,7 @@ export const refundOrder = asyncHandler(async (req, res) => {
   order.refundType = effectiveType;
   order.refundReason = reason || (isFullRefund ? 'Full Bill Refund' : 'Partial / Item Refund');
   order.refundedAt = new Date();
-  order.refundedBy = refundedBy || 'Cashier / Manager';
+  order.refundedBy = refundedBy || 'Admin / Manager';
   order.netAmount = Math.max(0, Math.round((order.total - newTotalRefunded) * 100) / 100);
 
   if (Array.isArray(refundedItems) && refundedItems.length > 0) {
@@ -465,7 +477,7 @@ export const refundOrder = asyncHandler(async (req, res) => {
   order.refundHistory.push({
     amount: requestedAmount,
     reason: reason || (isFullRefund ? 'Full Bill Refund' : 'Partial / Item Refund'),
-    refundedBy: refundedBy || 'Cashier / Manager',
+    refundedBy: refundedBy || 'Admin / Manager',
     refundedAt: new Date(),
     items: refundedItems || [],
     refundMethod: refundMethod || order.paymentMethod || 'ORIGINAL'

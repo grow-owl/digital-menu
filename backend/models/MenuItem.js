@@ -15,6 +15,7 @@ const menuItemSchema = new mongoose.Schema({
   isGlutenFree: { type: Boolean, default: false },
   isChefSpecial: { type: Boolean, default: false },
   isBestSeller: { type: Boolean, default: false },
+  isPopular: { type: Boolean, default: false },
   isAvailable: { type: Boolean, default: true },
   spiceLevel: { type: Number, default: 0 },
   

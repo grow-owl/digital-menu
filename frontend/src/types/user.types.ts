@@ -1,6 +1,5 @@
 export type Role =
   | 'OWNER'
-  | 'CASHIER'
   | 'CHEF'
   | 'WAITER'
   | 'CUSTOMER';

@@ -16,7 +16,7 @@ const router = express.Router();
 router.get('/balance/:phone', getLoyaltyBalance);
 router.get('/transactions/:phone', getLoyaltyTransactions);
 router.post('/feedback-reward', claimFeedbackReward);
-router.post('/admin/adjust', protect, requireRole('cashier', 'owner'), adminAdjustPoints);
+router.post('/admin/adjust', protect, requireRole('owner'), adminAdjustPoints);
 
 export {
   calculateTier,

@@ -41,7 +41,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
         const upper = String(user.role).toUpperCase();
         if (upper === 'ADMIN' || upper === 'RESTAURANT_OWNER' || upper === 'MANAGER' || upper === 'SUPER_ADMIN') return 'OWNER';
         if (upper === 'KITCHEN') return 'CHEF';
-        if (['OWNER', 'CASHIER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(upper)) {
+        if (['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(upper)) {
           return upper as Role;
         }
         return 'CUSTOMER';

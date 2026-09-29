@@ -362,7 +362,7 @@ export const KitchenDisplayPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+          <div className="hidden sm:flex items-center space-x-2 text-xs font-mono text-slate-400">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>High-Contrast Glare Resistant Terminal</span>
           </div>
@@ -370,13 +370,13 @@ export const KitchenDisplayPage: React.FC = () => {
 
         {/* Tickets Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6">
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div key={n} className="h-64 bg-slate-900/60 rounded-2xl animate-pulse border border-slate-800" />
             ))}
           </div>
         ) : filteredTickets.length === 0 ? (
-          <div className="py-24 text-center space-y-4 bg-[#0A0D15] rounded-3xl border border-slate-800 p-8 max-w-md mx-auto shadow-2xl">
+          <div className="py-16 sm:py-24 text-center space-y-4 bg-[#0A0D15] rounded-3xl border border-slate-800 p-6 sm:p-8 max-w-md mx-auto shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-amber-400">
               <ChefHat className="w-8 h-8" />
             </div>
@@ -386,7 +386,7 @@ export const KitchenDisplayPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-6">
             {filteredTickets.map((ticket) => {
               const elapsedSecs = getElapsedSeconds(ticket.createdAt);
               const timerFormatted = formatTimer(elapsedSecs);
@@ -405,7 +405,7 @@ export const KitchenDisplayPage: React.FC = () => {
               return (
                 <div
                   key={ticket.id}
-                  className={`bg-[#0A0D15] border rounded-2xl p-5 space-y-4 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden ${
+                  className={`bg-[#0A0D15] border rounded-2xl p-4 sm:p-5 space-y-3.5 sm:space-y-4 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden ${
                     ticket.status === 'preparing'
                       ? isAllChecked
                         ? 'border-emerald-500 ring-2 ring-emerald-500/30'
@@ -413,7 +413,7 @@ export const KitchenDisplayPage: React.FC = () => {
                       : 'border-slate-800 hover:border-slate-700'
                   }`}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* Ticket Header */}
                     <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                       <div>

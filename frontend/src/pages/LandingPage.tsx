@@ -48,17 +48,6 @@ export const LandingPage: React.FC = () => {
       actionBg: "bg-[#223134] hover:bg-[#1a2528] text-white"
     },
     {
-      title: "Cashier POS Terminal",
-      role: "Billing and Cashier",
-      route: "/cashier",
-      icon: Receipt,
-      description: "Fast bill settlement with automatic CGST and SGST tax calculation, split payments across UPI, cards, and cash, plus instant thermal receipt generation.",
-      badge: "Counter Staff",
-      badgeColor: "bg-stone-100 text-stone-700 border-stone-300",
-      cta: "Open POS",
-      actionBg: "bg-[#223134] hover:bg-[#1a2528] text-white"
-    },
-    {
       title: "Admin Management",
       role: "Manager and Owner",
       route: "/admin",
@@ -669,7 +658,7 @@ export const LandingPage: React.FC = () => {
               Dedicated Portals for Diners and Restaurant Staff
             </h2>
             <p className="text-xs sm:text-sm text-[#5f6c6e] max-w-2xl leading-relaxed">
-              Every dining touchpoint is coordinated seamlessly: guests order from tables, floor captains supervise zones, chefs pace kitchen tickets, and cashiers generate fast bills.
+              Every dining touchpoint is coordinated seamlessly: guests order from tables, floor captains supervise zones, chefs pace kitchen tickets, and managers coordinate table billing.
             </p>
           </div>
 

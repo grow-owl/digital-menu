@@ -9,6 +9,19 @@ import { TableQrScanModal } from '../components/customer/TableQrScanModal';
 // Session expires after 4 hours of inactivity
 const SESSION_EXPIRY_MS = 4 * 60 * 60 * 1000;
 
+// Client-side JWT expiration check
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(atob(parts[1]));
+    if (!payload.exp) return false;
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+};
+
 export const TableSessionRoute: React.FC = () => {
   const { tableId, orderId } = useParams();
   const [searchParams] = useSearchParams();
@@ -16,17 +29,26 @@ export const TableSessionRoute: React.FC = () => {
   const navigate = useNavigate();
 
   const { activeTableId, activeSessionId, qrToken, isVerified, verifiedAt, setActiveSession, clearSession } = useTableStore();
-  const user = useAuthStore((state) => state.user);
+  const { user, isAuthenticated, token: authToken } = useAuthStore();
 
   const [isValidating, setIsValidating] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Check if the current session is still valid (not expired)
+  // Strict Admin verification — ONLY genuinely authenticated Admins/Owners with a valid, non-expired JWT
+  const isAdmin = React.useMemo(() => {
+    if (!isAuthenticated || !authToken || isTokenExpired(authToken) || !user) return false;
+    const normalizedRole = String(user.role || '').toUpperCase();
+    return ['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER'].includes(normalizedRole);
+  }, [user, isAuthenticated, authToken]);
+
+  // Check if the current session is still valid (not expired) OR authorized Admin preview
   const isSessionValid = React.useMemo(() => {
+    // Verified Admin/Owner can preview and inspect customer menu directly without physical table QR scan
+    if (isAdmin) return true;
     if (!activeTableId || !isVerified || !verifiedAt) return false;
     const elapsed = Date.now() - verifiedAt;
     return elapsed < SESSION_EXPIRY_MS;
-  }, [activeTableId, isVerified, verifiedAt]);
+  }, [activeTableId, isVerified, verifiedAt, isAdmin]);
 
   // Auto-clear expired sessions on mount
   useEffect(() => {

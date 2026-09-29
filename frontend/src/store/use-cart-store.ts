@@ -79,6 +79,10 @@ export const useCartStore = create<CartState>()(
       },
 
       addItem: (menuItem, quantity = 1, specialNotes = '', unitPrice, addonNames) => {
+        if (menuItem.isAvailable === false) {
+          return;
+        }
+
         set((state) => {
           const existingIndex = state.items.findIndex(
             (item) => item.menuItem.id === menuItem.id
@@ -126,6 +130,11 @@ export const useCartStore = create<CartState>()(
       updateQuantity: (menuItemId, quantity) => {
         if (quantity <= 0) {
           get().removeItem(menuItemId);
+          return;
+        }
+
+        const existing = get().items.find((it) => it.menuItem.id === menuItemId);
+        if (existing && existing.menuItem.isAvailable === false) {
           return;
         }
 

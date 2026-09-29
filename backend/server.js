@@ -30,7 +30,6 @@ import contentRoutes from './routes/contentRoutes.js';
 import tableRoutes from './routes/tableRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import loyaltyRoutes from './routes/loyaltyRoutes.js';
-import cashierRoutes from './routes/cashierRoutes.js';
 
 // Connect to MongoDB (non-blocking initialization)
 connectDB().catch((err) => {
@@ -114,7 +113,6 @@ app.use(async (req, res, next) => {
 // 5. Rate Limiting Protection on Sensitive Endpoints
 app.use('/api/auth/register', authRateLimiter);
 app.use('/api/auth/login', authRateLimiter);
-app.use('/api/orders', orderRateLimiter);
 app.use('/api/loyalty/feedback-reward', feedbackRateLimiter);
 app.use('/api', generalRateLimiter);
 
@@ -127,7 +125,6 @@ app.use('/api/content', contentRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
-app.use('/api/cashier', cashierRoutes);
 
 // Health check endpoint
 app.get(['/', '/api/health'], (req, res) => {

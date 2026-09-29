@@ -12,8 +12,6 @@ Disallow: /kitchen
 Disallow: /kitchen/*
 Disallow: /waiter
 Disallow: /waiter/*
-Disallow: /cashier
-Disallow: /cashier/*
 Disallow: /settings
 Disallow: /profile
 

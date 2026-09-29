@@ -4,8 +4,8 @@ import { getMetrics, getAnalyticsSummary, getExecutiveAnalytics } from '../contr
 
 const router = express.Router();
 
-// Restrict all owner/admin analytics/metrics to authorized staff roles
-router.use(protect, requireRole('owner', 'cashier'));
+// Restrict all owner/admin analytics/metrics to authorized owner role
+router.use(protect, requireRole('owner'));
 
 router.get('/metrics', getMetrics);
 router.get('/analytics', getAnalyticsSummary);

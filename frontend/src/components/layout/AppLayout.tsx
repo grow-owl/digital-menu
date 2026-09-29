@@ -34,7 +34,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     const isOwner = userRole === 'OWNER' || userRole === 'ADMIN' || userRole === 'RESTAURANT_OWNER' || userRole === 'MANAGER';
     const isChef = userRole === 'CHEF' || userRole === 'KITCHEN';
     const isWaiter = userRole === 'WAITER';
-    const isCashier = userRole === 'CASHIER';
 
     const sections = [];
 
@@ -43,7 +42,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       sections.push({
         section: 'MANAGEMENT',
         items: [
-          { name: 'Owner Operations Portal', shortName: 'Owner', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
+          { name: 'Admin Operations & Billing', shortName: 'Admin', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
           { name: 'QR Table Stands & Print', shortName: 'QR Studio', path: '/admin/qr-generator', icon: QrCode, accent: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' },
         ]
       });
@@ -56,9 +55,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
     if (isOwner || isWaiter) {
       opsItems.push({ name: 'Waiter Floor Map', shortName: 'Floor', path: '/waiter', icon: Layers, accent: 'text-cyan-400', activeBg: 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' });
-    }
-    if (isOwner || isCashier) {
-      opsItems.push({ name: 'Cashier POS', shortName: 'POS', path: '/cashier', icon: Receipt, accent: 'text-purple-400', activeBg: 'bg-purple-500/15 border-purple-500/40 text-purple-300' });
     }
 
     if (opsItems.length > 0) {
@@ -85,7 +81,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const getPortalMeta = () => {
     if (location.pathname.startsWith('/admin')) {
       return { 
-        label: 'OWNER & MANAGEMENT PORTAL', 
+        label: 'ADMIN & OPERATIONS PORTAL', 
         badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
         themeClass: 'page-theme-admin'
       };
@@ -104,13 +100,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         themeClass: 'page-theme-waiter'
       };
     }
-    if (location.pathname.startsWith('/cashier')) {
-      return { 
-        label: 'BANKING POS HUB', 
-        badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
-        themeClass: 'page-theme-cashier'
-      };
-    }
     return { 
       label: 'OPERATIONS PORTAL', 
       badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
@@ -119,7 +108,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   const portalMeta = getPortalMeta();
-  const isOperationalRoute = ['/waiter', '/kitchen', '/cashier'].some(path => location.pathname.startsWith(path));
+  const isOperationalRoute = ['/waiter', '/kitchen'].some(path => location.pathname.startsWith(path));
 
   return (
     <div className={`dark h-screen ${portalMeta.themeClass} bg-theme-bg text-theme-text flex overflow-hidden font-sans`}>

@@ -59,12 +59,12 @@ const normalizeRole = (role) => {
   const upper = String(role).trim().toUpperCase();
   if (upper === 'ADMIN' || upper === 'RESTAURANT_OWNER' || upper === 'MANAGER') return 'OWNER';
   if (upper === 'KITCHEN') return 'CHEF';
-  if (['OWNER', 'CASHIER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(upper)) return upper;
+  if (['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(upper)) return upper;
   return 'CUSTOMER';
 };
 
 /**
- * Require specific user role(s): OWNER, CASHIER, CHEF, WAITER, CUSTOMER
+ * Require specific user role(s): OWNER, CHEF, WAITER, CUSTOMER
  */
 const requireRole = (...allowedRoles) => {
   return (req, res, next) => {

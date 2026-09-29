@@ -212,7 +212,7 @@ export const claimFeedbackReward = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Admin / Cashier manual loyalty points adjustment
+// @desc    Admin / Owner manual loyalty points adjustment
 // @route   POST /api/loyalty/admin/adjust
 // @access  Private / Staff / Admin
 export const adminAdjustPoints = asyncHandler(async (req, res) => {
@@ -244,7 +244,7 @@ export const adminAdjustPoints = asyncHandler(async (req, res) => {
     points: ptsNum,
     balanceAfter: newBalance,
     description: reason || `Manual adjustment by ${adjustedBy || 'Staff'}`,
-    metadata: { adjustedBy: adjustedBy || 'Cashier / Admin', reason }
+    metadata: { adjustedBy: adjustedBy || 'Admin / Owner', reason }
   });
 
   res.json({

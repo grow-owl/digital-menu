@@ -65,7 +65,8 @@ const nosqlSanitizer = (req, res, next) => {
  */
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,
+  max: 50,
+  skip: () => process.env.NODE_ENV !== 'production',
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -76,11 +77,12 @@ const authRateLimiter = rateLimit({
 
 /**
  * Rate Limiter for Order Placement
- * Max 60 orders per 15 minutes per IP
+ * Max 200 orders per 15 minutes per IP
  */
 const orderRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: 200,
+  skip: () => process.env.NODE_ENV !== 'production',
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -91,11 +93,12 @@ const orderRateLimiter = rateLimit({
 
 /**
  * Rate Limiter for Feedback Points Claiming
- * Max 10 submissions per 30 minutes
+ * Max 20 submissions per 30 minutes
  */
 const feedbackRateLimiter = rateLimit({
   windowMs: 30 * 60 * 1000,
-  max: 10,
+  max: 20,
+  skip: () => process.env.NODE_ENV !== 'production',
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -106,11 +109,12 @@ const feedbackRateLimiter = rateLimit({
 
 /**
  * General API Rate Limiter
- * Max 400 requests per 15 minutes
+ * Max 1000 requests per 15 minutes
  */
 const generalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 400,
+  max: 1000,
+  skip: () => process.env.NODE_ENV !== 'production',
   standardHeaders: true,
   legacyHeaders: false,
   message: {

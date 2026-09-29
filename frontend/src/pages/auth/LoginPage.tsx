@@ -71,9 +71,6 @@ export const LoginPage: React.FC = () => {
         case 'WAITER':
           navigate('/waiter');
           break;
-        case 'CASHIER':
-          navigate('/cashier');
-          break;
         case 'RESTAURANT_OWNER':
         case 'OWNER':
         case 'ADMIN':
@@ -100,10 +97,9 @@ export const LoginPage: React.FC = () => {
   };
 
   const quickRoles = [
-    { role: 'OWNER', title: 'Restaurant Owner', email: 'owner@aura.com', pass: 'owner123', badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40', icon: <LayoutDashboard className="w-4 h-4 text-indigo-400" /> },
+    { role: 'OWNER', title: 'Restaurant Admin / Owner', email: 'owner@aura.com', pass: 'owner123', badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40', icon: <LayoutDashboard className="w-4 h-4 text-indigo-400" /> },
     { role: 'CHEF', title: 'Head Chef KDS', email: 'chef@aura.com', pass: 'chef123', badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <ChefHat className="w-4 h-4 text-amber-400" /> },
     { role: 'WAITER', title: 'Floor Waiter', email: 'waiter@aura.com', pass: 'waiter123', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', icon: <UserCheck className="w-4 h-4 text-emerald-400" /> },
-    { role: 'CASHIER', title: 'Cashier POS', email: 'cashier@aura.com', pass: 'cashier123', badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', icon: <CreditCard className="w-4 h-4 text-cyan-400" /> },
   ];
 
   return (
@@ -137,7 +133,7 @@ export const LoginPage: React.FC = () => {
 
         <div className="relative z-10 space-y-6 max-w-lg">
           <h2 className="font-serif text-2xl font-bold leading-snug text-slate-100">
-            "Coordinating table orders, live kitchen preparation, floor dispatch, and cashier billing in real time."
+            "Coordinating table orders, live kitchen preparation, floor dispatch, and table billing in real time."
           </h2>
           <div className="grid grid-cols-3 gap-4 border-t border-slate-800 pt-6">
             <div>
@@ -149,7 +145,7 @@ export const LoginPage: React.FC = () => {
               <p className="text-[10px] text-slate-400 uppercase font-mono">Kitchen Tickets</p>
             </div>
             <div>
-              <h3 className="text-xl font-black text-emerald-400 font-mono">POS Billing</h3>
+              <h3 className="text-xl font-black text-emerald-400 font-mono">Table Billing</h3>
               <p className="text-[10px] text-slate-400 uppercase font-mono">Fast Settlement</p>
             </div>
           </div>

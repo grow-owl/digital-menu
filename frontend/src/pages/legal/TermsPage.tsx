@@ -86,7 +86,7 @@ export const TermsPage: React.FC = () => {
               <span>3. Billing and Payment Settlement</span>
             </h2>
             <p>
-              Payment may be settled at the table or at the cashier counter using UPI, debit/credit cards, or cash. Itemized digital receipts and printed tax invoices are provided upon settlement.
+              Payment may be settled at the table or at the reception billing desk using UPI, debit/credit cards, or cash. Itemized digital receipts and printed tax invoices are provided upon settlement.
             </p>
           </section>
 

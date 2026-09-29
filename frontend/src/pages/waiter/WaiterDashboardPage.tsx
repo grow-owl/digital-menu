@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Utensils, Bell, CheckCircle2, Clock, Users, ArrowRight, RefreshCw, AlertTriangle, Layers, DollarSign, Sparkles, Check, X, ChevronRight, PhoneCall, Flame, PackageCheck, Search, BellRing, BellOff, UserPlus, QrCode, ExternalLink, Grid, Receipt } from 'lucide-react';
+import { Utensils, Bell, CheckCircle2, Clock, Users, ArrowRight, RefreshCw, AlertTriangle, Layers, DollarSign, Sparkles, Check, X, ChevronRight, PhoneCall, Flame, PackageCheck, Search, BellRing, BellOff, UserPlus, QrCode, ExternalLink, Grid, Receipt, Smartphone } from 'lucide-react';
 import { useToast } from '../../components/feedback/ToastContainer';
 import { tableService } from '../../services/table.service';
 import { orderService } from '../../services/order.service';
@@ -53,7 +53,7 @@ export const WaiterDashboardPage: React.FC = () => {
 
   // Payment state
   const [seatGuestCount, setSeatGuestCount] = useState<number>(2);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'UPI_QR' | 'CARD_SWIPE' | 'CASH'>('UPI_QR');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'UPI' | 'CARD_SWIPE' | 'CASH'>('UPI');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const prevReadyCountRef = useRef<number>(0);
@@ -319,10 +319,10 @@ export const WaiterDashboardPage: React.FC = () => {
       return;
     }
 
-    // Rule 4: Billing table CANNOT transition directly back to Available without Cashier POS settlement
+    // Rule 4: Billing table CANNOT transition directly back to Available without Admin bill settlement
     if (nextStatus === 'available' && targetTable.status === 'billing') {
       showToast(
-        `Table ${tableNum} is awaiting bill settlement at Cashier POS. Settle payment at Cashier POS or set to Cleaning.`,
+        `Table ${tableNum} is awaiting bill settlement in Admin Billing. Settle payment in Admin or set to Cleaning.`,
         'info',
         'Bill Payment Required'
       );
@@ -341,7 +341,7 @@ export const WaiterDashboardPage: React.FC = () => {
       }
       if (targetTable.status === 'billing' || (targetTable.orderTotal && targetTable.orderTotal > 0)) {
         showToast(
-          `Table ${tableNum} has an unpaid balance of ₹${targetTable.orderTotal?.toFixed(2) || '0.00'}! Settle bill at Cashier POS before setting table to Cleaning.`,
+          `Table ${tableNum} has an unpaid balance of ₹${targetTable.orderTotal?.toFixed(2) || '0.00'}! Settle bill in Admin Billing before setting table to Cleaning.`,
           'error',
           'Unpaid Bill Pending'
         );
@@ -932,7 +932,7 @@ export const WaiterDashboardPage: React.FC = () => {
 
         {/* TAB 2: CUSTOMER WAITER ASSISTANCE CALLS */}
         {activeTab === 'WAITER_CALLS' && (
-          <div className="bg-aura-container border border-aura-border/80 rounded-3xl p-6 space-y-6 shadow-2xl">
+          <div className="bg-aura-container border border-aura-border/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 space-y-4 sm:space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-aura-border/60 pb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-2xl">
@@ -1016,7 +1016,7 @@ export const WaiterDashboardPage: React.FC = () => {
 
         {/* TAB 3: FOOD READY FOR SERVE */}
         {activeTab === 'FOOD_READY' && (
-          <div className="bg-aura-container border border-aura-border/80 rounded-3xl p-6 space-y-6 shadow-2xl">
+          <div className="bg-aura-container border border-aura-border/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 space-y-4 sm:space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-aura-border/60 pb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl">
@@ -1099,7 +1099,7 @@ export const WaiterDashboardPage: React.FC = () => {
 
         {/* TAB 4: BILL REQUESTS */}
         {activeTab === 'BILL_REQUESTS' && (
-          <div className="bg-aura-container border border-aura-border/80 rounded-3xl p-6 space-y-6 shadow-2xl">
+          <div className="bg-aura-container border border-aura-border/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 space-y-4 sm:space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-aura-border/60 pb-4">
               <div className="flex items-center space-x-3">
                 <div className="p-3 bg-amber-500/20 border border-amber-500/40 rounded-2xl">
@@ -1324,15 +1324,15 @@ export const WaiterDashboardPage: React.FC = () => {
                     </span>
                     <div className="grid grid-cols-3 gap-2">
                       <button
-                        onClick={() => setSelectedPaymentMethod('UPI_QR')}
+                        onClick={() => setSelectedPaymentMethod('UPI')}
                         className={`p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex flex-col items-center space-y-1 ${
-                          selectedPaymentMethod === 'UPI_QR'
+                          selectedPaymentMethod === 'UPI'
                             ? 'bg-purple-500 text-white border-purple-400 font-black shadow-md'
                             : 'bg-theme-bg text-purple-400 border-purple-500/30 hover:bg-purple-500/10'
                         }`}
                       >
-                        <QrCode className="w-4 h-4" />
-                        <span>UPI QR</span>
+                        <Smartphone className="w-4 h-4" />
+                        <span>UPI</span>
                       </button>
 
                       <button
@@ -1360,21 +1360,6 @@ export const WaiterDashboardPage: React.FC = () => {
                       </button>
                     </div>
                   </div>
-
-                  {/* Display Live UPI QR Code Image if UPI selected */}
-                  {selectedPaymentMethod === 'UPI_QR' && (
-                    <div className="p-3 bg-white rounded-2xl text-center space-y-2 text-slate-900 border border-purple-400/50 shadow-inner">
-                      <span className="text-[10px] font-mono font-bold text-gray-700 uppercase block tracking-wider">
-                        Scan UPI QR to Pay ₹{Math.round(selectedTable.orderTotal || 0).toLocaleString('en-IN')}
-                      </span>
-                      <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=aura.restaurant@upi%26pn=Siliguri%20Chai%20Addaa%26am=${Math.round(selectedTable.orderTotal || 0)}%26cu=INR`}
-                        alt="UPI Payment QR"
-                        className="w-32 h-32 mx-auto rounded-xl shadow-md border border-gray-200"
-                      />
-                      <p className="text-[10px] text-gray-600 font-mono">Accepts GPay, PhonePe, Paytm, BHIM</p>
-                    </div>
-                  )}
 
                   <button
                     onClick={() => handleSettlePayment(selectedTable.tableNumber)}

@@ -9,7 +9,6 @@ import { OrderTrackingPage } from './pages/customer/OrderTrackingPage';
 import { DineScanPage } from './pages/customer/DineScanPage';
 import { KitchenDisplayPage } from './pages/kitchen/KitchenDisplayPage';
 import { WaiterDashboardPage } from './pages/waiter/WaiterDashboardPage';
-import { CashierPOSPage } from './pages/cashier/CashierPOSPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { QrGeneratorPage } from './pages/admin/QrGeneratorPage';
@@ -61,11 +60,6 @@ export const App: React.FC = () => {
             <Route path="/waiter/dashboard" element={<AppLayout><WaiterDashboardPage /></AppLayout>} />
           </Route>
 
-          {/* Cashier POS Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['CASHIER', 'OWNER']} />}>
-            <Route path="/cashier" element={<AppLayout><CashierPOSPage /></AppLayout>} />
-            <Route path="/cashier/pos" element={<AppLayout><CashierPOSPage /></AppLayout>} />
-          </Route>
 
           {/* Owner & Management Routes */}
           <Route element={<ProtectedRoute allowedRoles={['OWNER']} />}>

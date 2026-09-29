@@ -43,10 +43,10 @@ export const MenuDishesGrid: React.FC<MenuDishesGridProps> = ({
       {/* Active Table Status Banner (Above All Dishes) */}
       <div className="mb-3.5 p-2.5 sm:p-3 bg-gradient-to-r from-[#FAF6F0] via-white to-[#F5ECE1] border border-[#E4D5C3] rounded-2xl flex items-center space-x-3 shadow-2xs">
         <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#9d785e] to-[#87654d] text-white flex items-center justify-center font-black text-xs sm:text-sm shrink-0 shadow-xs">
-          T{tableId}
+          {tableId === 'Admin' ? '👑' : `T${tableId}`}
         </div>
         <span className="font-extrabold text-xs sm:text-sm text-[#2A1D13] tracking-tight">
-          Ordering for Table {tableId}
+          {tableId === 'Admin' ? 'Admin Menu Inspection • Viewing Customer Side' : `Ordering for Table ${tableId}`}
         </span>
       </div>
 

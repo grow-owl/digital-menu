@@ -49,7 +49,7 @@ const PRESET_REASONS = [
 export const OrderRefundModal: React.FC<OrderRefundModalProps> = ({
   isOpen,
   order,
-  refundedBy = 'Cashier / Manager',
+  refundedBy = 'Admin / Manager',
   onClose,
   onSuccess,
 }) => {

@@ -69,7 +69,7 @@ export const loyaltyService = {
     return response.data;
   },
 
-  // Cashier / Admin manual adjustment
+  // Admin manual adjustment
   async adjustPoints(data: {
     phone: string;
     points: number;

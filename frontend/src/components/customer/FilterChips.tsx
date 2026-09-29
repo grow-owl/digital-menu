@@ -49,11 +49,11 @@ export const FilterChips: React.FC<FilterChipsProps> = ({ selectedFilters, onTog
 
   return (
     <div className="w-full max-w-full flex items-center gap-1 select-none overflow-x-auto no-scrollbar">
-      {/* Clear Active Filters Button */}
+      {/* Clear Active Filters Button (Hidden on Mobile & Tablet, visible on Desktop) */}
       {hasActiveFilters && (
         <button
           onClick={() => onToggleFilter('ALL')}
-          className="h-8 px-2 rounded-full text-[11px] font-bold flex items-center space-x-1 bg-slate-900 text-white shadow-xs cursor-pointer shrink-0 active:scale-95 transition-all"
+          className="hidden lg:inline-flex h-8 px-2.5 rounded-full text-[11px] font-bold items-center space-x-1 bg-slate-900 text-white shadow-xs cursor-pointer shrink-0 active:scale-95 transition-all"
           title="Reset filters"
         >
           <X className="w-3 h-3 stroke-[2.5]" />

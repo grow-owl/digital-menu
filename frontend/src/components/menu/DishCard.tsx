@@ -26,7 +26,11 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       onClick={() => onClick(item)}
-      className="bg-white border border-slate-200 hover:border-emerald-600 rounded-xl overflow-hidden cursor-pointer flex flex-col justify-between shadow-xs hover:shadow-md group relative transition-all duration-200 hover:-translate-y-0.5"
+      className={`bg-white border rounded-xl overflow-hidden cursor-pointer flex flex-col justify-between shadow-xs hover:shadow-md group relative transition-all duration-200 ${
+        item.isAvailable === false
+          ? 'border-slate-200 opacity-80 hover:border-slate-300'
+          : 'border-slate-200 hover:border-emerald-600 hover:-translate-y-0.5'
+      }`}
     >
       {/* Top Image Box */}
       <div className="relative h-28 sm:h-44 w-full bg-slate-100 border-b border-slate-200 overflow-hidden">
@@ -46,10 +50,11 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
 
         {/* Out of Stock Overlay */}
         {item.isAvailable === false && (
-          <div className="absolute inset-0 bg-white/85 backdrop-blur-[2px] flex items-center justify-center z-10">
-            <span className="px-2.5 py-1 bg-rose-600 text-white text-[9px] sm:text-[10px] font-bold tracking-wider uppercase rounded-md shadow-sm">
-              OUT OF STOCK
+          <div className="absolute inset-0 bg-slate-950/65 backdrop-blur-[2px] flex flex-col items-center justify-center p-2 text-center z-20">
+            <span className="px-2.5 py-1 bg-rose-600 text-white text-[9px] sm:text-[10px] font-black tracking-wider uppercase rounded-md shadow-md border border-rose-400">
+              SOLD OUT TODAY
             </span>
+            <span className="text-[9px] text-white/90 font-medium mt-1">Not available</span>
           </div>
         )}
 
@@ -129,8 +134,9 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
 
           <div className="shrink-0">
             {item.isAvailable === false ? (
-              <span className="px-2 py-1 bg-slate-100 text-slate-400 font-bold text-[9px] rounded uppercase">
-                Sold Out
+              <span className="px-2 py-1 bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[9px] sm:text-[10px] rounded-lg uppercase tracking-tight flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span>Sold Out</span>
               </span>
             ) : quantity > 0 ? (
               <div

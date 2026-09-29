@@ -52,6 +52,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [guestPhone, setGuestPhone] = useState(user?.phone || '');
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
 
+  const hasUnavailableItems = items.some((it) => it.menuItem.isAvailable === false);
+
   // Sync user phone when drawer opens or user changes
   useEffect(() => {
     if (isOpen && user?.phone) {
@@ -212,6 +214,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
       if (!targetPhone) {
         showToast('A valid 10-digit mobile number is mandatory to place your order.', 'error');
+        return;
+      }
+
+      if (hasUnavailableItems) {
+        showToast('Some dishes in your cart are sold out today. Please remove them before placing your order.', 'error');
+        return;
+      }
+
+      if (tableId === 'Admin') {
+        showToast('Admin Menu Preview: Please scan a table QR code or assign a dining table to send orders to the kitchen.', 'info');
         return;
       }
 
@@ -377,6 +389,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <Trash2 className="w-4 h-4 pointer-events-none" />
                     </button>
                   </div>
+
+                  {/* Unavailable / Sold Out Alert */}
+                  {item.menuItem.isAvailable === false && (
+                    <div className="p-2 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between text-rose-700 text-xs font-bold shadow-2xs">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse shrink-0" />
+                        <span>Sold out today! Remove to order.</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.menuItem.id)}
+                        className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-black uppercase hover:bg-rose-700 cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
 
                   {/* Quantity Stepper & Special Instructions */}
                   <div className="flex items-center justify-between pt-1">
@@ -620,17 +649,37 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   )}
                 </div>
 
+                {hasUnavailableItems && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse shrink-0" />
+                    <span>Your cart contains dishes that are sold out today. Please remove them before proceeding.</span>
+                  </div>
+                )}
+
                 <button
+                  disabled={hasUnavailableItems}
                   onClick={() => {
+                    if (tableId === 'Admin') {
+                      showToast('Admin Menu Preview: Please scan a table QR code or assign a dining table to send orders to the kitchen.', 'info');
+                      return;
+                    }
+                    if (hasUnavailableItems) {
+                      showToast('Please remove sold out items from your cart before sending order.', 'error');
+                      return;
+                    }
                     if (!user?.phone && guestPhone.length !== 10) {
                       showToast('Please enter your 10-digit mobile number before sending order.', 'error');
                       return;
                     }
                     setIsConfirmOpen(true);
                   }}
-                  className="w-full py-3.5 bg-c-primary hover:bg-c-primary-dark text-white font-black rounded-2xl text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-between px-5"
+                  className={`w-full py-3.5 font-black rounded-2xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-between px-5 ${
+                    hasUnavailableItems
+                      ? 'bg-rose-600 text-white cursor-not-allowed opacity-90'
+                      : 'bg-c-primary hover:bg-c-primary-dark text-white cursor-pointer active:scale-95'
+                  }`}
                 >
-                  <span>SEND ORDER TO KITCHEN</span>
+                  <span>{hasUnavailableItems ? 'REMOVE SOLD OUT ITEMS TO ORDER' : 'SEND ORDER TO KITCHEN'}</span>
                   <span className="font-mono text-sm font-black">₹{grandTotal.toFixed(2)}</span>
                 </button>
               </div>

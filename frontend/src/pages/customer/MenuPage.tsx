@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import { menuService } from '../../services/menu.service';
 import { Category, MenuItem } from '../../types/menu.types';
 import { CategoryBar } from '../../components/menu/CategoryBar';
@@ -23,7 +24,15 @@ import { useHeaderScrollCollapse } from '../../hooks/useHeaderScrollCollapse';
 export const MenuPage: React.FC = () => {
   const { tableId: paramTableId } = useParams<{ tableId?: string }>();
   const activeStoreTableId = useTableStore((state) => state.activeTableId);
-  const tableId = activeStoreTableId || paramTableId || '10';
+  const { user, isAuthenticated, token: authToken } = useAuthStore();
+
+  const isAdmin = React.useMemo(() => {
+    if (!isAuthenticated || !authToken || !user) return false;
+    const normalizedRole = String(user.role || '').toUpperCase();
+    return ['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER'].includes(normalizedRole);
+  }, [user, isAuthenticated, authToken]);
+
+  const tableId = activeStoreTableId || paramTableId || (isAdmin ? 'Admin' : '10');
   const navigate = useNavigate();
 
   // Core Data State
@@ -185,6 +194,27 @@ export const MenuPage: React.FC = () => {
 
   return (
     <div className="page-theme-customer min-h-screen flex flex-col bg-[#F4F6F8] text-slate-800 font-sans selection:bg-[#0C831F] selection:text-white w-full max-w-full overflow-x-hidden">
+      {/* Admin Menu Inspection Bar */}
+      {isAdmin && (
+        <div className="sticky top-0 z-40 bg-slate-900 border-b border-amber-500/40 px-3.5 py-2 text-white flex items-center justify-between shadow-lg">
+          <div className="flex items-center space-x-2">
+            <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-mono font-black text-[10px] uppercase tracking-wider">
+              ADMIN MENU INSPECTION
+            </span>
+            <span className="text-xs text-slate-300 font-medium hidden sm:inline">
+              Viewing customer digital menu without table QR session
+            </span>
+          </div>
+          <button
+            onClick={() => navigate('/admin')}
+            className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer shadow-xs active:scale-95"
+          >
+            <span>Return to Admin</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Sticky Navigation Header & Category Bar */}
       <div className="sticky top-0 z-30 w-full max-w-full bg-white/95 backdrop-blur-md border-b border-slate-300 shadow-sm">
         <MenuBrandHeader

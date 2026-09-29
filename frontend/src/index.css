@@ -178,21 +178,6 @@ button:disabled,
   --theme-accent: #06B6D4;
 }
 
-/* 6. Cashier POS Terminal (Precision Banking Royal Purple Theme) */
-.page-theme-cashier {
-  --theme-bg: #07090E;
-  --theme-surface: #0A0D15;
-  --theme-surface-hover: #121626;
-  --theme-border: #1E263D;
-  --theme-border-strong: #334155;
-  --theme-primary: #8B5CF6;
-  --theme-primary-hover: #7C3AED;
-  --theme-primary-light: rgba(139, 92, 246, 0.15);
-  --theme-secondary: #10B981;
-  --theme-text: #F8FAFC;
-  --theme-text-muted: #94A3B8;
-  --theme-accent: #8B5CF6;
-}
 
 /* 7. Staff Login Terminal (High-Security Multi-Role Preset Slate) */
 .page-theme-login {
@@ -239,7 +224,6 @@ button:disabled,
   /* ===== STAFF DASHBOARDS — Inter: compact, data-dense ===== */
   .page-theme-kitchen,
   .page-theme-waiter,
-  .page-theme-cashier,
   .page-theme-admin,
   .page-theme-owner,
   .page-theme-login {
@@ -257,7 +241,6 @@ button:disabled,
   /* On dark staff screens: Inter headings (sharp, no-nonsense) */
   .page-theme-kitchen h1, .page-theme-kitchen h2, .page-theme-kitchen h3,
   .page-theme-waiter h1, .page-theme-waiter h2, .page-theme-waiter h3,
-  .page-theme-cashier h1, .page-theme-cashier h2, .page-theme-cashier h3,
   .page-theme-admin h1, .page-theme-admin h2, .page-theme-admin h3,
   .page-theme-owner h1, .page-theme-owner h2, .page-theme-owner h3 {
     font-family: 'Inter', system-ui, sans-serif;
@@ -299,7 +282,6 @@ button:disabled,
 /* font-mono on DARK STAFF screens: JetBrains Mono (terminal precision) */
 .page-theme-kitchen .font-mono,
 .page-theme-waiter .font-mono,
-.page-theme-cashier .font-mono,
 .page-theme-admin .font-mono,
 .page-theme-owner .font-mono,
 .page-theme-login .font-mono,
@@ -389,7 +371,6 @@ button:disabled,
 /* Dark Staff Terminal Scrollbars */
 .page-theme-kitchen ::-webkit-scrollbar-thumb,
 .page-theme-waiter ::-webkit-scrollbar-thumb,
-.page-theme-cashier ::-webkit-scrollbar-thumb,
 .page-theme-admin ::-webkit-scrollbar-thumb,
 .page-theme-owner ::-webkit-scrollbar-thumb,
 .page-theme-login ::-webkit-scrollbar-thumb {
@@ -401,7 +382,6 @@ button:disabled,
 
 .page-theme-kitchen ::-webkit-scrollbar-thumb:hover,
 .page-theme-waiter ::-webkit-scrollbar-thumb:hover,
-.page-theme-cashier ::-webkit-scrollbar-thumb:hover,
 .page-theme-admin ::-webkit-scrollbar-thumb:hover,
 .page-theme-owner ::-webkit-scrollbar-thumb:hover,
 .page-theme-login ::-webkit-scrollbar-thumb:hover {
@@ -410,7 +390,6 @@ button:disabled,
 
 .page-theme-kitchen,
 .page-theme-waiter,
-.page-theme-cashier,
 .page-theme-admin,
 .page-theme-owner,
 .page-theme-login {

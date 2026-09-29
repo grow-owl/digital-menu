@@ -17,6 +17,7 @@ import {
   Download, ArrowUpRight, BarChart3, Bell, CheckSquare, Square, ToggleLeft, ToggleRight, Smartphone,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { playWaiterCallChime } from '../../utils/audioAlert';
 
 export const AdminDashboardPage: React.FC = () => {
   const { showToast } = useToast();
@@ -136,25 +137,16 @@ export const AdminDashboardPage: React.FC = () => {
     }
   };
 
-  // Audio chime for urgent Call Service alert
+  // Audio chime for urgent Call Service alert (Loud, crisp, pleasant restaurant bell)
   const playAlertChime = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.6);
-    } catch (e) {}
+    playWaiterCallChime();
   };
+
+  useEffect(() => {
+    if (activeServiceCall) {
+      playWaiterCallChime();
+    }
+  }, [activeServiceCall]);
 
   const checkServiceCalls = async () => {
     try {

@@ -62,9 +62,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
     // Customer View Section
     sections.push({
-      section: 'GUEST EXPERIENCE',
+      section: 'Menu',
       items: [
-        { name: 'Customer Menu', shortName: 'Menu', path: '/menu', icon: Utensils, accent: 'text-[#0C831F]', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' }
+        { name: 'Menu', shortName: 'Menu', path: '/menu', icon: Utensils, accent: 'text-[#0C831F]', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' }
       ]
     });
 
@@ -75,6 +75,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
   // Active Portal Identity Styling
   const getPortalMeta = () => {
+    if (location.pathname.startsWith('/admin/qr') || location.pathname.startsWith('/qr-generator')) {
+      return { 
+        label: 'QR SECTION', 
+        badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        themeClass: 'page-theme-admin'
+      };
+    }
     if (location.pathname.startsWith('/admin')) {
       return { 
         label: 'ADMIN', 
@@ -90,10 +97,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       };
     }
     return { 
-      label: 'OPERATIONS PORTAL', 
+      label: 'ADMIN', 
       badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
       themeClass: 'page-theme-admin'
     };
+  };
+
+  // Accurate active state matching so nested '/admin/qr-generator' doesn't highlight parent '/admin'
+  const isItemActive = (itemPath: string) => {
+    const current = location.pathname;
+    if (itemPath === '/admin') {
+      return current === '/admin' || current === '/admin/' || current === '/admin/dashboard';
+    }
+    if (itemPath === '/admin/qr-generator') {
+      return (
+        current === '/admin/qr-generator' ||
+        current.startsWith('/admin/qr-generator') ||
+        current.startsWith('/admin/qr-stands') ||
+        current.startsWith('/qr-generator')
+      );
+    }
+    return current === itemPath || (itemPath !== '/' && current.startsWith(itemPath));
   };
 
   const portalMeta = getPortalMeta();
@@ -162,7 +186,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               )}
               {sec.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname.startsWith(item.path) && item.path !== '/';
+                const isActive = isItemActive(item.path);
                 return (
                   <button
                     key={item.path}
@@ -206,7 +230,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               <button
                 onClick={() => {
                   logout();
-                  navigate('/staff-access');
+                  navigate('/');
                 }}
                 className="p-1.5 text-theme-muted hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                 title="Sign Out"
@@ -218,7 +242,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             <button
               onClick={() => {
                 logout();
-                navigate('/staff-access');
+                navigate('/');
               }}
               className="w-full flex justify-center p-2 text-theme-muted hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
               title="Sign Out"
@@ -312,7 +336,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                       </p>
                       {sec.items.map((item) => {
                         const Icon = item.icon;
-                        const isActive = location.pathname.startsWith(item.path);
+                        const isActive = isItemActive(item.path);
                         return (
                           <button
                             key={item.path}
@@ -344,7 +368,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                 <button
                   onClick={() => {
                     logout();
-                    navigate('/staff-access');
+                    navigate('/');
                   }}
                   className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl"
                 >

@@ -220,6 +220,7 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
               onClick={() => {
                 logout();
                 onClose();
+                navigate('/');
                 showToast('Signed out successfully', 'info');
               }}
               className="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold rounded-xl text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all cursor-pointer"

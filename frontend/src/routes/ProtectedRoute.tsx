@@ -26,14 +26,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
 
   // Require login + valid token
   if (!isAuthenticated || !user || !token) {
-    return <Navigate to="/staff-access" replace />;
+    return <Navigate to="/" replace />;
   }
 
-  // If JWT is expired, clear auth and redirect to login
+  // If JWT is expired, clear auth and redirect to landing page
   if (isTokenExpired(token)) {
     // Call logout asynchronously so we don't mutate state during render
     setTimeout(() => logout(), 0);
-    return <Navigate to="/staff-access" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const normalizedUserRole: Role | null = user.role

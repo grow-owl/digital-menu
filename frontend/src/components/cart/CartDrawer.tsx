@@ -12,7 +12,7 @@ import { useTableStore } from '../../store/use-table-store';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../hooks/useBackHandler';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AI_RECOMMENDED_PAIRINGS, getSpendMoreProgress } from '../../services/aiPairingEngine';
+import { AI_RECOMMENDED_PAIRINGS, getSpendMoreProgress, getDynamicCartPairings } from '../../services/aiPairingEngine';
 import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
 import { authService } from '../../services/auth.service';
 
@@ -81,6 +81,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   const [tempNote, setTempNote] = useState('');
   const [selectedPairingItem, setSelectedPairingItem] = useState<MenuItem | null>(null);
   const pairingScrollRef = useRef<HTMLDivElement>(null);
+  const dynamicPairings = React.useMemo(() => getDynamicCartPairings(items), [items]);
 
   const scrollPairings = (direction: 'left' | 'right') => {
     if (pairingScrollRef.current) {
@@ -401,8 +402,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               ))
             )}
 
-            {/* AI-Powered Pairing Suggestions */}
-            {items.length > 0 && AI_RECOMMENDED_PAIRINGS.length > 0 && (
+            {/* AI-Powered Pairing Suggestions (Dynamically tailored to cart items) */}
+            {items.length > 0 && dynamicPairings.length > 0 && (
               <div className="space-y-2 pt-1 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1.5 text-xs font-black text-slate-800 uppercase tracking-wider">
@@ -432,7 +433,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   ref={pairingScrollRef}
                   className="flex space-x-3.5 overflow-x-auto pb-3 pt-1 -mx-1 px-1 no-scrollbar scroll-smooth select-none touch-pan-x"
                 >
-                  {AI_RECOMMENDED_PAIRINGS.map((rec) => {
+                  {dynamicPairings.map((rec) => {
                     const inCart = items.find((it) => it.menuItem.id === rec.id);
                     return (
                       <div

@@ -7,7 +7,61 @@ import Table from '../models/Table.js';
 import User from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-export const generateOrderId = () => `ORD-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+// Chronological sequential order ID generator: ORD-1, ORD-2, ORD-3...
+export const getNextOrderId = async () => {
+  const orders = await Order.find({ orderId: { $exists: true, $ne: null } })
+    .select('orderId createdAt');
+
+  let maxSeq = 0;
+  for (const ord of orders) {
+    if (ord.orderId) {
+      const match = ord.orderId.match(/^ORD-(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxSeq) maxSeq = num;
+      }
+    }
+  }
+
+  if (maxSeq === 0 && orders.length > 0) {
+    maxSeq = orders.length;
+  }
+
+  let candidate = `ORD-${maxSeq + 1}`;
+  let attempt = 1;
+  while (await Order.exists({ orderId: candidate })) {
+    maxSeq++;
+    candidate = `ORD-${maxSeq + 1}`;
+    attempt++;
+    if (attempt > 100) break;
+  }
+
+  return candidate;
+};
+
+// Backward-compatible fallback
+export const generateOrderId = () => 'ORD-1';
+
+// Auto-migrate legacy random hex order IDs (e.g. ORD-E7E98D) to chronological sequential numbers (ORD-1, ORD-2...)
+export const normalizeOrderIds = async () => {
+  try {
+    const allOrders = await Order.find().sort({ createdAt: 1 });
+    if (!allOrders || allOrders.length === 0) return;
+
+    const hasLegacyHex = allOrders.some(o => o.orderId && !/^ORD-\d+$/i.test(o.orderId));
+    if (hasLegacyHex) {
+      const sorted = [...allOrders].sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+      let seq = 1;
+      for (const ord of sorted) {
+        ord.orderId = `ORD-${seq++}`;
+        await ord.save();
+      }
+      console.log(`[Order ID Migration] Successfully migrated ${sorted.length} legacy order IDs to sequential ORD-1..ORD-${seq - 1}`);
+    }
+  } catch (err) {
+    console.warn('[Order ID Migration] Warning during order ID migration:', err.message);
+  }
+};
 
 // Chronological sequential invoice number generator: INV-1, INV-2, INV-3...
 export const getNextInvoiceNumber = async () => {
@@ -256,45 +310,21 @@ export const createOrder = asyncHandler(async (req, res) => {
   const cleanTableNum = String(tableId || '1').match(/\d+/)?.[0] || '1';
   const queryTableId = physicalTable ? String(physicalTable.tableNumber) : cleanTableNum;
 
-  let existingOrder = await Order.findOne({
-    $or: [
-      { tableId: queryTableId },
-      { tableId: `table/${queryTableId}/menu` },
-      { tableId: `table-${queryTableId}` },
-      { tableId: String(tableId) },
-      { tableId: physicalTable ? String(physicalTable._id) : null }
-    ],
-    paymentStatus: 'PENDING',
-    status: { $ne: 'cancelled' }
-  }).sort({ createdAt: -1 });
-
-  let order;
-
-  if (existingOrder) {
-    existingOrder.items.push(...verifiedNewItems);
-    existingOrder.subtotal = (existingOrder.subtotal || 0) + verifiedSubtotal;
-    existingOrder.tax = (existingOrder.tax || 0) + computedTax;
-    existingOrder.total = (existingOrder.total || 0) + calculatedTotal;
-    
-    if (cleanCustomerPhone) existingOrder.customerPhone = cleanCustomerPhone;
-    if (customerName) existingOrder.customerName = customerName;
-    
-    existingOrder.status = 'preparing';
-    await existingOrder.save();
-    order = existingOrder;
-  } else {
-    order = await Order.create({
-      orderId: generateOrderId(),
-      tableId: queryTableId,
-      customerPhone: cleanCustomerPhone,
-      customerName: customerName || (customerUser ? customerUser.name : `Diner-${cleanCustomerPhone.slice(-4)}`),
-      items: verifiedNewItems,
-      subtotal: verifiedSubtotal,
-      tax: computedTax,
-      total: calculatedTotal,
-      status: 'preparing'
-    });
-  }
+  // Always create a fresh independent kitchen order ticket so each order round cooks from 00:00
+  await normalizeOrderIds();
+  const newOrderId = await getNextOrderId();
+  const order = await Order.create({
+    orderId: newOrderId,
+    tableId: queryTableId,
+    customerPhone: cleanCustomerPhone,
+    customerName: customerName || (customerUser ? customerUser.name : `Diner-${cleanCustomerPhone.slice(-4)}`),
+    items: verifiedNewItems,
+    subtotal: verifiedSubtotal,
+    tax: computedTax,
+    total: calculatedTotal,
+    status: 'preparing',
+    createdAt: new Date()
+  });
 
   if (physicalTable) {
     physicalTable.status = 'occupied';
@@ -361,6 +391,7 @@ const autoUpdateOrdersToReady = async (orders) => {
 // @route   GET /api/orders/table/:tableId
 // @access  Public
 export const getOrdersByTable = asyncHandler(async (req, res) => {
+  await normalizeOrderIds();
   const { includeCompleted } = req.query;
   const filter = { tableId: String(req.params.tableId) };
   
@@ -378,11 +409,29 @@ export const getOrdersByTable = asyncHandler(async (req, res) => {
 // @route   GET /api/orders/active, GET /api/orders/active/all
 // @access  Public / Staff
 export const getActiveOrders = asyncHandler(async (req, res) => {
+  await normalizeOrderIds();
+  await normalizeInvoiceNumbers();
   const activeOrders = await Order.find({
     status: { $in: ['received', 'preparing', 'ready', 'served'] },
     paymentStatus: { $ne: 'PAID' }
   }).sort({ createdAt: 1 });
   await autoUpdateOrdersToReady(activeOrders);
+
+  if (req.query.includeCompleted === 'true') {
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const completedOrders = await Order.find({
+      $or: [
+        { status: { $in: ['ready', 'served', 'completed'] } },
+        { paymentStatus: 'PAID' }
+      ],
+      createdAt: { $gte: sixHoursAgo }
+    })
+      .sort({ createdAt: -1 })
+      .limit(9);
+
+    return res.json({ data: activeOrders, completed: completedOrders });
+  }
+
   res.json({ data: activeOrders });
 });
 
@@ -390,6 +439,7 @@ export const getActiveOrders = asyncHandler(async (req, res) => {
 // @route   GET /api/orders/settled/all
 // @access  Public / Staff
 export const getSettledOrders = asyncHandler(async (req, res) => {
+  await normalizeOrderIds();
   await normalizeInvoiceNumbers();
 
   const page = req.query.page !== undefined ? parseInt(req.query.page, 10) : null;

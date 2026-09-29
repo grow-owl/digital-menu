@@ -90,20 +90,22 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
         </button>
 
         <div className="flex items-center space-x-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#9d785e] to-[#87654d] border border-[#87654d]/60 flex items-center justify-center text-white shadow-xs shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-[#0C831F] flex items-center justify-center text-white shadow-md shadow-emerald-900/15 shrink-0">
             <Coffee className="w-5 h-5 text-white" />
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Confirm Table Order</h3>
-            <p className="text-xs text-[#9d785e] font-bold">Ordering for Table {tableId}</p>
+            <span className="inline-flex items-center text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-full mt-0.5">
+              Ordering for Table {tableId}
+            </span>
           </div>
         </div>
 
         {/* Customer Mobile Number Section (Formatted cleanly for mobile without wrapping) */}
         {isIdentified ? (
-          <div className="p-3 sm:p-3.5 bg-[#faf7f4] border border-[#e8dfd5] rounded-2xl flex items-center justify-between gap-2.5">
+          <div className="p-3 sm:p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-2.5">
             <div className="flex items-center space-x-2.5 min-w-0 flex-1">
-              <div className="w-8 h-8 rounded-xl bg-[#9d785e] text-white flex items-center justify-center shrink-0 shadow-2xs">
+              <div className="w-8 h-8 rounded-xl bg-[#0C831F] text-white flex items-center justify-center shrink-0 shadow-xs">
                 <CheckCircle2 className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -134,7 +136,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
           <div className="p-3 sm:p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
             <div className="flex items-center justify-between gap-2">
               <label className="flex items-center space-x-1.5 text-xs font-black text-slate-900 uppercase tracking-wide">
-                <Phone className="w-3.5 h-3.5 text-[#9d785e]" />
+                <Phone className="w-3.5 h-3.5 text-[#0C831F]" />
                 <span>Mobile Number</span>
                 <span className="text-red-500 text-[10px] font-bold">* Required</span>
               </label>
@@ -157,7 +159,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                   placeholder="Enter 10-digit mobile number"
-                  className="w-full pl-11 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#9d785e] transition-all tracking-wider font-mono shadow-sm"
+                  className="w-full pl-11 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0C831F] focus:ring-1 focus:ring-[#0C831F] transition-all tracking-wider font-mono shadow-sm"
                 />
               </div>
 
@@ -168,7 +170,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your Name (Optional)"
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#9d785e] transition-colors shadow-sm"
+                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0C831F] focus:ring-1 focus:ring-[#0C831F] transition-colors shadow-sm"
                 />
               </div>
             </div>
@@ -180,35 +182,35 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
           {items.map((item, idx) => {
             const itemTotal = (item.unitPrice ?? item.menuItem.price) * item.quantity;
             return (
-              <div key={idx} className="p-2.5 sm:p-3 bg-[#faf7f4] border border-[#e8dfd5] rounded-xl text-xs space-y-1.5 shadow-2xs">
+              <div key={idx} className="p-2.5 sm:p-3 bg-slate-50/90 border border-slate-200 rounded-xl text-xs space-y-1.5 shadow-2xs">
                 {/* Item Name & Item Total Price on Top Row */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-[#223134] text-xs sm:text-sm leading-snug">
+                    <p className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
                       {item.quantity}x {item.menuItem.name}
                     </p>
                     {item.quantity > 1 && (
-                      <span className="text-[10px] text-[#5f6c6e] font-mono">
+                      <span className="text-[10px] text-slate-500 font-mono">
                         (₹{(item.unitPrice ?? item.menuItem.price).toFixed(2)} each)
                       </span>
                     )}
                   </div>
-                  <span className="font-mono text-[#9d785e] font-black text-xs sm:text-sm shrink-0">
+                  <span className="font-mono text-[#0C831F] font-black text-xs sm:text-sm shrink-0">
                     ₹{itemTotal.toFixed(2)}
                   </span>
                 </div>
 
                 {/* Add-ons Chips or Notes Display Below */}
                 {item.addonNames && item.addonNames.length > 0 ? (
-                  <div className="p-2 bg-white/95 border border-[#e3ddd4] rounded-lg space-y-1">
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-[#9d785e] block">
+                  <div className="p-2 bg-white border border-slate-200 rounded-lg space-y-1">
+                    <span className="text-[9px] uppercase tracking-wider font-bold text-emerald-800 block">
                       Customized Add-ons:
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {item.addonNames.map((addon, aIdx) => (
                         <span
                           key={aIdx}
-                          className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#f5f2ee] text-[#223134] text-[10px] font-semibold border border-[#e8dfd5] break-words"
+                          className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-900 text-[10px] font-semibold border border-emerald-200/80 break-words"
                         >
                           {addon}
                         </span>
@@ -216,8 +218,8 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
                     </div>
                   </div>
                 ) : item.specialNotes ? (
-                  <div className="p-2 bg-white/95 border border-[#e3ddd4] rounded-lg text-[10px] text-[#865d38] font-medium leading-relaxed break-words">
-                    <span className="font-bold text-[#9d785e]">Note: </span>
+                  <div className="p-2 bg-amber-50/80 border border-amber-200/80 rounded-lg text-[10px] text-amber-900 font-medium leading-relaxed break-words">
+                    <span className="font-bold text-amber-800">Note: </span>
                     <span>{item.specialNotes}</span>
                   </div>
                 ) : null}
@@ -240,7 +242,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
 
           <div className="flex justify-between text-base font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
             <span>Total Active Bill</span>
-            <span className="font-mono text-[#9d785e] font-black text-lg">₹{grandTotal.toFixed(2)}</span>
+            <span className="font-mono text-[#0C831F] font-black text-xl">₹{grandTotal.toFixed(2)}</span>
           </div>
         </div>
 
@@ -256,7 +258,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
           <button
             onClick={handleConfirmClick}
             disabled={isSubmitting || (!isIdentified && !isPhoneValid)}
-            className="flex-1 py-3 sm:py-3.5 px-3 sm:px-4 bg-[#9d785e] hover:bg-[#86644d] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl sm:rounded-2xl text-[11px] sm:text-xs uppercase tracking-normal sm:tracking-wider transition-all shadow-md flex items-center justify-center space-x-1.5 sm:space-x-2 cursor-pointer active:scale-95 whitespace-nowrap min-w-0"
+            className="flex-1 py-3 sm:py-3.5 px-3 sm:px-4 bg-[#0C831F] hover:bg-[#0a6f1a] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl sm:rounded-2xl text-[11px] sm:text-xs uppercase tracking-normal sm:tracking-wider transition-all shadow-md shadow-emerald-900/15 flex items-center justify-center space-x-1.5 sm:space-x-2 cursor-pointer active:scale-95 whitespace-nowrap min-w-0"
           >
             {isSubmitting ? (
               <div className="flex items-center justify-center space-x-1.5 whitespace-nowrap">

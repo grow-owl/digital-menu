@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Flame, Clock, CheckCircle2, AlertCircle, RefreshCw, ChefHat, Filter,
-  CheckSquare, Square, BellRing, BellOff, Sparkles, Lock, ArrowRight,
-  Activity, Timer, ShieldAlert, Check, Ban, UtensilsCrossed
+  Flame, Clock, CheckCircle2, AlertCircle, RefreshCw, ChefHat,
+  BellRing, BellOff, Ban, LogOut
 } from 'lucide-react';
 import { useToast } from '../../components/feedback/ToastContainer';
+import { useAuthStore } from '../../store/use-auth-store';
 import { orderService } from '../../services/order.service';
 import { OrderCancelModal } from '../../components/orders/OrderCancelModal';
 import { OrderItemCancelModal } from '../../components/orders/OrderItemCancelModal';
 import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
+import { playRestaurantChime } from '../../utils/audioAlert';
 
 // Dynamic Dish Preparation Time Catalog Lookup (Minutes)
 const DISH_PREP_MAP = new Map<string, number>(
@@ -40,7 +42,7 @@ interface KDSTicket {
   _id: string; // DB ID
   tableId: string;
   createdAt: string;
-  status: 'received' | 'preparing' | 'ready' | 'completed';
+  status: 'received' | 'preparing' | 'ready' | 'served' | 'completed';
   items: KDSItem[];
 }
 
@@ -53,8 +55,9 @@ interface CancelItemTarget {
 }
 
 export const KitchenDisplayPage: React.FC = () => {
+  const navigate = useNavigate();
   const { showToast } = useToast();
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'cooking' | 'ready'>('ALL');
+  const [filterStatus, setFilterStatus] = useState<'cooking' | 'completed'>('cooking');
   const [tickets, setTickets] = useState<KDSTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [nowTimestamp, setNowTimestamp] = useState(Date.now());
@@ -64,39 +67,25 @@ export const KitchenDisplayPage: React.FC = () => {
   const prevTicketsRef = useRef<KDSTicket[]>([]);
   const readySentRef = useRef<Set<string>>(new Set());
 
+  // Retention: 6 Hours, Max 9 Past Completed Orders (FIFO)
+  const COMPLETED_RETENTION_MS = 6 * 60 * 60 * 1000;
+  const MAX_COMPLETED_ORDERS = 9;
+
   // Web Audio API Chime for New Order Notification
   const playAudioChime = () => {
     if (!soundEnabled) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
-
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
-    } catch (e) {
-      // Audio policy catch
-    }
+    playRestaurantChime(0.85);
   };
 
   const fetchActiveOrders = async (isManual = false) => {
     if (isManual) setIsLoading(true);
     try {
-      const data = await orderService.getActiveOrders();
+      const res = await orderService.getKitchenOrders();
+      const activeRaw = Array.isArray(res) ? res : (res?.data || []);
+      const completedRaw = Array.isArray(res?.completed) ? res.completed : [];
 
       // Automatically accept any incoming 'received' orders into 'preparing'
-      const unaccepted = data.filter((ord: any) => ord.status === 'received');
+      const unaccepted = activeRaw.filter((ord: any) => ord.status === 'received');
       if (unaccepted.length > 0) {
         Promise.all(
           unaccepted.map((ord: any) =>
@@ -105,12 +94,19 @@ export const KitchenDisplayPage: React.FC = () => {
         );
       }
 
-      // Kitchen KDS shows active tickets needing kitchen preparation
-      const activeKitchenData = data.filter(
-        (ord: any) => ord.status === 'received' || ord.status === 'preparing' || ord.status === 'ready'
-      );
+      // Combine active and completed into a deduplicated list
+      const combinedRaw = [...activeRaw, ...completedRaw];
+      const seen = new Set<string>();
+      const deduplicated: any[] = [];
+      for (const ord of combinedRaw) {
+        const key = ord.orderId || ord._id;
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          deduplicated.push(ord);
+        }
+      }
 
-      const newTicketList: KDSTicket[] = activeKitchenData.map((order: any) => ({
+      const newTicketList: KDSTicket[] = deduplicated.map((order: any) => ({
         id: order.orderId,
         _id: order._id,
         tableId: order.tableId,
@@ -127,10 +123,12 @@ export const KitchenDisplayPage: React.FC = () => {
         })),
       }));
 
-      // Detect new incoming tickets
+      // Detect new incoming tickets (only notify for cooking tickets)
       if (prevTicketsRef.current.length > 0) {
         const prevIds = new Set(prevTicketsRef.current.map((t) => t.id));
-        const newlyArrived = newTicketList.filter((t) => !prevIds.has(t.id));
+        const newlyArrived = newTicketList.filter(
+          (t) => !prevIds.has(t.id) && !isTicketReady(t) && t.status !== 'ready' && t.status !== 'served' && t.status !== 'completed'
+        );
 
         if (newlyArrived.length > 0) {
           playAudioChime();
@@ -195,6 +193,12 @@ export const KitchenDisplayPage: React.FC = () => {
     };
   };
 
+  const getTicketMaxCookSecs = (ticket: KDSTicket) => {
+    const active = ticket.items.filter((it) => it.status !== 'cancelled');
+    if (active.length === 0) return 0;
+    return Math.max(...active.map((it) => getDishCookMinutes(it.name, it.preparationTimeMinutes) * 60));
+  };
+
   const isTicketReady = (ticket: KDSTicket) => {
     const active = ticket.items.filter((it) => it.status !== 'cancelled');
     if (active.length === 0) return true;
@@ -205,37 +209,47 @@ export const KitchenDisplayPage: React.FC = () => {
     });
   };
 
-  // Automatically sync ready tickets with backend so user end displays Ready
+  const isTicketCompleted = (ticket: KDSTicket) => {
+    if (ticket.status === 'served' || ticket.status === 'completed' || ticket.status === 'ready') return true;
+    return isTicketReady(ticket);
+  };
+
+  // Automatically sync ready tickets with backend
   useEffect(() => {
     tickets.forEach((ticket) => {
-      if (isTicketReady(ticket) && ticket.status !== 'ready' && !readySentRef.current.has(ticket.id)) {
-        readySentRef.current.add(ticket.id);
-        orderService.updateOrderStatus(ticket.id, 'ready')
-          .then(() => {
-            setTickets((prev) =>
-              prev.map((t) => (t.id === ticket.id ? { ...t, status: 'ready' } : t))
-            );
-          })
-          .catch((err) => {
-            console.warn('Auto ready ticket err:', err);
-            readySentRef.current.delete(ticket.id);
-          });
+      if (isTicketReady(ticket)) {
+        if (ticket.status !== 'ready' && ticket.status !== 'served' && ticket.status !== 'completed' && !readySentRef.current.has(ticket.id)) {
+          readySentRef.current.add(ticket.id);
+          orderService.updateOrderStatus(ticket.id, 'ready')
+            .then(() => {
+              setTickets((prev) =>
+                prev.map((t) => (t.id === ticket.id ? { ...t, status: 'ready' } : t))
+              );
+            })
+            .catch((err) => {
+              console.warn('Auto ready ticket err:', err);
+              readySentRef.current.delete(ticket.id);
+            });
+        }
       }
     });
   }, [nowTimestamp, tickets]);
 
-  const filteredTickets = tickets.filter((t) => {
-    if (filterStatus === 'ALL') return true;
-    const ready = isTicketReady(t);
-    if (filterStatus === 'ready') return ready;
-    if (filterStatus === 'cooking') return !ready;
-    return true;
-  });
 
-  const activeCount = tickets.length;
-  const readyTicketsCount = tickets.filter(isTicketReady).length;
-  const cookingTicketsCount = activeCount - readyTicketsCount;
-  const overdueCount = tickets.filter((t) => getElapsedSeconds(t.createdAt) > 900 && !isTicketReady(t)).length;
+  // 1. Cooking Tickets: Active cooking dishes only (leaves as soon as ready)
+  const cookingTickets = tickets.filter((t) => !isTicketCompleted(t));
+
+  // 2. Completed Tickets: Retained for up to 6 hours, max 9 orders (FIFO)
+  const completedTickets = tickets
+    .filter((t) => {
+      if (!isTicketCompleted(t)) return false;
+      const ageMs = Math.max(0, nowTimestamp - new Date(t.createdAt).getTime());
+      return ageMs <= COMPLETED_RETENTION_MS;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, MAX_COMPLETED_ORDERS);
+
+  const displayedTickets = filterStatus === 'cooking' ? cookingTickets : completedTickets;
 
   const now = new Date(nowTimestamp);
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -272,13 +286,22 @@ export const KitchenDisplayPage: React.FC = () => {
           {/* Right Controls: Alarm & Refresh */}
           <div className="flex items-center space-x-1.5 sm:space-x-2">
             <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
+              onClick={() => {
+                const next = !soundEnabled;
+                setSoundEnabled(next);
+                if (next) {
+                  playRestaurantChime(0.85);
+                  showToast('🔔 Kitchen alarm enabled & sound tested!', 'info');
+                } else {
+                  showToast('🔇 Kitchen alarm muted', 'info');
+                }
+              }}
               className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 border cursor-pointer transition-colors ${
                 soundEnabled
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                   : 'bg-theme-bg text-slate-400 border-slate-800'
               }`}
-              title={soundEnabled ? 'Kitchen Alarm ON' : 'Alarm Muted'}
+              title={soundEnabled ? 'Kitchen Alarm ON (Tap to Mute)' : 'Alarm Muted (Tap to Enable)'}
             >
               {soundEnabled ? (
                 <BellRing className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
@@ -297,76 +320,52 @@ export const KitchenDisplayPage: React.FC = () => {
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
               <span className="hidden sm:inline text-[11px]">Sync</span>
             </button>
+
+            <button
+              onClick={() => {
+                useAuthStore.getState().logout();
+                navigate('/');
+                showToast('Kitchen signed out', 'info');
+              }}
+              className="px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 hover:text-rose-200 rounded-xl transition-all flex items-center space-x-1.5 text-xs font-bold cursor-pointer shadow-sm"
+              title="Sign Out Kitchen"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline text-[11px]">Sign Out</span>
+            </button>
           </div>
         </div>
 
-        {/* Row 2: Queue Filter Tabs (Top) & Live Station Metrics (Neeche on Mobile, Inline on Desktop) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
-          {/* Filter Pills — 3 equal columns */}
-          <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:space-x-1.5 py-0.5">
-            <button
-              onClick={() => setFilterStatus('ALL')}
-              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
-                filterStatus === 'ALL'
-                  ? 'bg-slate-800 text-white border-slate-600 shadow-md font-black'
-                  : 'bg-theme-bg text-slate-400 border-slate-800 hover:text-white'
-              }`}
-            >
-              <span className="sm:hidden">All</span>
-              <span className="hidden sm:inline">All Active</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-900 border border-slate-800 font-bold">
-                {activeCount}
-              </span>
-            </button>
-
+        {/* Row 2: Queue Filter Tabs */}
+        <div className="flex items-center">
+          {/* Filter Pills — 2 equal columns: Cooking Now (Default), Completed */}
+          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center sm:space-x-2 py-0.5">
             <button
               onClick={() => setFilterStatus('cooking')}
-              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
+              className={`px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 border cursor-pointer ${
                 filterStatus === 'cooking'
-                  ? 'bg-amber-600 text-white border-amber-400 shadow-md font-black'
+                  ? 'bg-amber-600 text-white border-amber-400 shadow-md font-black ring-1 ring-amber-400/50'
                   : 'bg-theme-bg text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
               }`}
             >
               <Flame className="w-3.5 h-3.5 shrink-0" />
-              <span className="sm:hidden">Cooking</span>
-              <span className="hidden sm:inline">Cooking Now</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-950/60 border border-amber-800 text-amber-300 font-bold">
-                {cookingTicketsCount}
+              <span>Cooking Now</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-950/80 border border-amber-800 text-amber-300 font-bold">
+                {cookingTickets.length}
               </span>
             </button>
 
             <button
-              onClick={() => setFilterStatus('ready')}
-              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
-                filterStatus === 'ready'
-                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-md font-black'
+              onClick={() => setFilterStatus('completed')}
+              className={`px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 border cursor-pointer ${
+                filterStatus === 'completed'
+                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-md font-black ring-1 ring-emerald-400/50'
                   : 'bg-theme-bg text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="sm:hidden">Ready</span>
-              <span className="hidden sm:inline">Dishes Ready</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-300 font-bold">
-                {readyTicketsCount}
-              </span>
+              <span>Completed</span>
             </button>
-          </div>
-
-          {/* Quick Metrics Badges */}
-          <div className="w-full sm:w-auto mt-2.5 pt-2.5 border-t border-slate-800/80 sm:border-t-0 sm:pt-0 sm:mt-0 sm:border-l sm:border-slate-800 sm:pl-3 pb-0.5">
-            <div className={`grid ${overdueCount > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-2 w-full sm:w-auto sm:flex sm:items-center sm:space-x-2 text-xs font-mono whitespace-nowrap`}>
-              <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-theme-border text-slate-300 font-bold text-center text-[11px] sm:text-xs">
-                Orders: <strong className="text-white font-mono">{activeCount}</strong>
-              </span>
-              <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-amber-500/30 text-amber-400 font-bold text-center text-[11px] sm:text-xs">
-                Cooking: <strong className="font-mono">{cookingTicketsCount}</strong>
-              </span>
-              {overdueCount > 0 && (
-                <span className="px-1.5 py-2 sm:py-1.5 rounded-xl bg-rose-950/30 border border-rose-500/60 text-rose-400 font-bold animate-pulse text-center text-[11px] sm:text-xs">
-                  Late: <strong className="font-mono">{overdueCount}</strong>
-                </span>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -378,22 +377,28 @@ export const KitchenDisplayPage: React.FC = () => {
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-            <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse shrink-0" />
+            {filterStatus === 'cooking' ? (
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 animate-pulse shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
+            )}
             <h2 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide truncate">
-              {filterStatus === 'ALL'
-                ? 'Live Cooking Pass'
-                : filterStatus === 'cooking'
-                ? 'Active Cooking Line'
-                : 'All Dishes Ready'}
+              {filterStatus === 'cooking' ? 'Active Cooking Line' : 'Completed Dishes'}
             </h2>
             <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[11px] sm:text-xs font-bold shrink-0">
-              {filteredTickets.length} Tickets
+              {displayedTickets.length} Tickets
             </span>
           </div>
 
           <div className="hidden sm:flex items-center space-x-2 text-xs font-mono text-slate-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>High-Contrast Glare Resistant Terminal</span>
+            {filterStatus === 'completed' ? (
+              <span className="text-emerald-400 font-semibold">Past 9 Completed Orders (6h Retention)</span>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Live Active Cooking Pass</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -404,22 +409,30 @@ export const KitchenDisplayPage: React.FC = () => {
               <div key={n} className="h-64 bg-slate-900/60 rounded-2xl animate-pulse border border-slate-800" />
             ))}
           </div>
-        ) : filteredTickets.length === 0 ? (
+        ) : displayedTickets.length === 0 ? (
           <div className="py-16 sm:py-24 text-center space-y-4 bg-[#0A0D15] rounded-3xl border border-slate-800 p-4 sm:p-8 max-w-md mx-auto shadow-2xl">
             <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-amber-400">
-              <ChefHat className="w-8 h-8" />
+              {filterStatus === 'cooking' ? (
+                <ChefHat className="w-8 h-8" />
+              ) : (
+                <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+              )}
             </div>
-            <h2 className="font-serif text-xl font-bold text-white">Kitchen Line Clear</h2>
+            <h2 className="font-serif text-xl font-bold text-white">
+              {filterStatus === 'cooking' ? 'Cooking Line Clear' : 'No Completed Orders Yet'}
+            </h2>
             <p className="text-xs text-slate-400 leading-relaxed">
-              No tickets in the <span className="text-amber-400 font-bold uppercase">{filterStatus}</span> queue. All dishes prepped and dispatched!
+              {filterStatus === 'cooking'
+                ? 'All active orders are prepped! No pending dishes on the stove.'
+                : 'Completed dishes will appear here (retained for up to 6 hours, max past 9 orders).'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-            {filteredTickets.map((ticket) => {
+            {displayedTickets.map((ticket) => {
               const elapsedSecs = getElapsedSeconds(ticket.createdAt);
-              const timerFormatted = formatTimer(elapsedSecs);
               const urgency = getUrgencyConfig(elapsedSecs);
+              const isTicketDone = isTicketCompleted(ticket);
 
               // Map each dish with its cooking duration and auto-done calculation
               const itemsWithStatus = ticket.items.map((item, originalIdx) => {
@@ -427,7 +440,8 @@ export const KitchenDisplayPage: React.FC = () => {
                 const cookSecs = cookMins * 60;
                 const isCancelled = item.status === 'cancelled';
                 const isAutoDone = !isCancelled && elapsedSecs >= cookSecs;
-                const isDone = isCancelled ? false : (item.status === 'served' || item.isPrepared || isAutoDone);
+                const isDone = isTicketDone || isCancelled ? false : (item.status === 'served' || item.isPrepared || isAutoDone);
+                const finalDone = isCancelled ? false : (isTicketDone || isDone);
                 const remainingSecs = Math.max(0, cookSecs - elapsedSecs);
                 return {
                   item,
@@ -436,7 +450,7 @@ export const KitchenDisplayPage: React.FC = () => {
                   cookSecs,
                   isCancelled,
                   isAutoDone,
-                  isDone,
+                  isDone: finalDone,
                   remainingSecs
                 };
               });
@@ -444,14 +458,13 @@ export const KitchenDisplayPage: React.FC = () => {
               const activeItemsWithStatus = itemsWithStatus.filter((x) => !x.isCancelled);
               const doneCount = activeItemsWithStatus.filter((x) => x.isDone).length;
               const totalItems = activeItemsWithStatus.length;
-              const isAllDone = totalItems > 0 && doneCount === totalItems;
 
               return (
                 <div
                   key={ticket.id}
                   className={`bg-[#0A0D15] border rounded-2xl p-3 sm:p-5 space-y-3 sm:space-y-4 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden ${
-                    isAllDone
-                      ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+                    isTicketDone
+                      ? 'border-emerald-500/60 ring-1 ring-emerald-500/20'
                       : urgency.cardBorder
                   }`}
                 >
@@ -465,17 +478,24 @@ export const KitchenDisplayPage: React.FC = () => {
                           </span>
                           <span
                             className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                              isAllDone
+                              isTicketDone
                                 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                 : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                             }`}
                           >
-                            {isAllDone ? 'READY' : 'IN PREP'}
+                            {isTicketDone ? 'COMPLETED' : 'IN PREP'}
                           </span>
                         </div>
-                        <span className="font-mono text-xs text-slate-400 font-bold">
-                          #{ticket.id}
-                        </span>
+                        <div className="flex items-center space-x-2 mt-0.5">
+                          <span className="font-mono text-xs text-slate-400 font-bold">
+                            #{ticket.id}
+                          </span>
+                          {isTicketDone && (
+                            <span className="text-[10px] font-mono text-emerald-400 font-semibold">
+                              • Completed
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="text-right space-y-1">
@@ -492,11 +512,11 @@ export const KitchenDisplayPage: React.FC = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono uppercase tracking-wider px-1">
                         <span>
-                          Active Dishes ({totalItems}
+                          {isTicketDone ? 'Dishes' : 'Active Dishes'} ({totalItems}
                           {ticket.items.length !== totalItems ? ` • ${ticket.items.length - totalItems} Cancelled` : ''})
                         </span>
-                        <span className={isAllDone ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-                          {totalItems === 0 ? 'All 86\'d' : `${doneCount}/${totalItems} Done`}
+                        <span className={isTicketDone ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                          {totalItems === 0 ? 'All 86\'d' : isTicketDone ? 'All Done' : `${doneCount}/${totalItems} Done`}
                         </span>
                       </div>
 
@@ -549,7 +569,7 @@ export const KitchenDisplayPage: React.FC = () => {
                                   }`}>
                                     {item.quantity}x
                                   </span>
-                                  <span className={`font-bold text-xs leading-tight truncate ${isDone ? 'line-through text-emerald-300/80' : 'text-white'}`}>
+                                  <span className={`font-bold text-xs leading-tight truncate ${isDone ? 'text-emerald-300/90' : 'text-white'}`}>
                                     {item.name}
                                   </span>
                                   {isDone ? (
@@ -572,26 +592,28 @@ export const KitchenDisplayPage: React.FC = () => {
                                 )}
                               </div>
 
-                              <div className="flex items-center space-x-2 shrink-0">
-                                {/* Only Chef 86 / Cancel Dish Action */}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCancelItemTarget({
-                                      orderId: ticket.id,
-                                      tableId: ticket.tableId,
-                                      itemIndex: originalIdx,
-                                      itemName: item.name,
-                                      itemQuantity: item.quantity,
-                                    });
-                                  }}
-                                  title="Cancel / 86 this dish"
-                                  className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
-                                >
-                                  <Ban className="w-4 h-4" />
-                                </button>
-                              </div>
+                              {!isTicketDone && (
+                                <div className="flex items-center space-x-2 shrink-0">
+                                  {/* Chef 86 / Cancel Dish Action */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCancelItemTarget({
+                                        orderId: ticket.id,
+                                        tableId: ticket.tableId,
+                                        itemIndex: originalIdx,
+                                        itemName: item.name,
+                                        itemQuantity: item.quantity,
+                                      });
+                                    }}
+                                    title="Cancel / 86 this dish"
+                                    className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                                  >
+                                    <Ban className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -599,16 +621,18 @@ export const KitchenDisplayPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Operational Action Controls: Only Cancel / Void Ticket */}
-                  <div className="pt-3 border-t border-slate-800/80">
-                    <button
-                      onClick={() => setCancelModalTicket({ id: ticket.id, tableId: ticket.tableId })}
-                      className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center space-x-1.5"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                      <span>Void / Cancel Ticket</span>
-                    </button>
-                  </div>
+                  {/* Operational Action Controls: Only for cooking tickets */}
+                  {!isTicketDone && (
+                    <div className="pt-3 border-t border-slate-800/80">
+                      <button
+                        onClick={() => setCancelModalTicket({ id: ticket.id, tableId: ticket.tableId })}
+                        className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Void / Cancel Ticket</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -45,6 +45,11 @@ export const orderService = {
     return response.data.data;
   },
 
+  async getKitchenOrders() {
+    const response = await apiClient.get('/orders/active/all?includeCompleted=true');
+    return response.data; // { data: activeOrders, completed: completedOrders }
+  },
+
   async updateOrderStatus(orderId: string, status: string) {
     const response = await apiClient.put(`/orders/${orderId}/status`, { status });
     return response.data.data;

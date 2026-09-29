@@ -372,13 +372,13 @@ export const QrGeneratorPage: React.FC = () => {
         {/* Top Sticky Header */}
         <header className="sticky top-0 z-30 bg-[#070B16]/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-amber-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 shadow-lg shadow-emerald-950/40">
+            <div className="w-10 h-10 rounded-2xl border border-white flex items-center justify-center text-emerald-400 shrink-0">
               <QrCode className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2 flex-wrap">
                 <h1 className="font-serif text-base sm:text-xl font-bold text-white tracking-wide">
-                  Table QR &amp; Stand Studio
+                  QR Generator Page
                 </h1>
               </div>
             </div>
@@ -389,17 +389,17 @@ export const QrGeneratorPage: React.FC = () => {
             <button
               onClick={() => triggerPrint('ALL_STANDS')}
               className="px-3 py-1.5 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-300 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
-              title="Print all table stands"
+              title="Print all QR codes"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print All ({tables.length})</span>
+              <span>Print All QRs ({tables.length})</span>
             </button>
 
             <button
               onClick={() => handleBatchDownload('STAND')}
               disabled={isBatchRunning || filteredTables.length === 0}
               className="px-3 py-1.5 bg-[#0C831F] hover:bg-[#096918] text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer border border-emerald-400/50 shadow-md shadow-emerald-950/30 disabled:opacity-50"
-              title="Batch download all stand cards as PNG"
+              title="Download all QR codes as PNG"
             >
               {isBatchRunning ? (
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -407,7 +407,7 @@ export const QrGeneratorPage: React.FC = () => {
                 <Download className="w-3.5 h-3.5" />
               )}
               <span>
-                {batchProgress ? `${batchProgress.current}/${batchProgress.total}` : 'Download All Stands'}
+                {batchProgress ? `${batchProgress.current}/${batchProgress.total}` : 'Download All QRs'}
               </span>
             </button>
           </div>
@@ -520,7 +520,7 @@ export const QrGeneratorPage: React.FC = () => {
                         onClick={() => handleDownloadSingle(table, 'STAND')}
                         disabled={downloadingKey === `STAND_${table.tableNumber}`}
                         className="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 shadow-md shadow-emerald-950/50 cursor-pointer disabled:opacity-50"
-                        title="Download Luxury Stand Card PNG"
+                        title="Download QR Code PNG"
                       >
                         {downloadingKey === `STAND_${table.tableNumber}` ? (
                           <RefreshCw className="w-3.5 h-3.5 animate-spin" />

@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Coffee, Utensils, ChefHat, Layers, Receipt, ShieldCheck,
-  QrCode, Clock, MapPin, Phone, ArrowRight, CheckCircle2,
-  Sparkles, ExternalLink, Menu as MenuIcon, X, ChevronRight,
-  Wifi, Check, AlertCircle, ShoppingBag, Star, Flame, Calendar
+  Coffee, Utensils, QrCode, Clock, MapPin, Phone, ArrowRight,
+  Sparkles, Menu as MenuIcon, X, ChevronRight, CheckCircle2
 } from 'lucide-react';
 import { TableQrScanModal } from '../components/customer/TableQrScanModal';
 
@@ -12,99 +10,6 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isTableQrScanOpen, setIsTableQrScanOpen] = useState(false);
-
-  const systemPortals = [
-    {
-      title: "Customer Table Menu",
-      role: "Diners and Guests",
-      route: "/menu",
-      icon: Utensils,
-      description: "Contactless QR ordering right from your seat. Browse handcrafted teas, snacks, and meals with dietary tags and track kitchen preparation live.",
-      badge: "Public Access",
-      badgeColor: "bg-emerald-50 text-emerald-800 border-emerald-200",
-      cta: "Scan & Open Menu",
-      actionBg: "bg-[#9d785e] hover:bg-[#86644d] text-white"
-    },
-    {
-      title: "Kitchen Display (KDS)",
-      role: "Kitchen Line and Chefs",
-      route: "/kitchen",
-      icon: ChefHat,
-      description: "Live order preparation tickets with station routing, preparation timers, modifier notes, and stage toggles for coordinated kitchen pacing.",
-      badge: "Kitchen Staff",
-      badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
-      cta: "Open KDS",
-      actionBg: "bg-[#223134] hover:bg-[#1a2528] text-white"
-    },
-    {
-      title: "Admin Management",
-      role: "Manager and Owner",
-      route: "/admin",
-      icon: ShieldCheck,
-      description: "Complete menu catalog management, stock availability toggles, price updates, printable table QR stand generator, and daily shift records.",
-      badge: "Management",
-      badgeColor: "bg-stone-100 text-stone-700 border-stone-300",
-      cta: "Admin Console",
-      actionBg: "bg-[#223134] hover:bg-[#1a2528] text-white"
-    }
-  ];
-
-  const signatureItems = [
-    {
-      name: "Handcrafted Masala Chai",
-      category: "Artisan Teas",
-      description: "Assam golden-tip tea simmered with fresh crushed ginger, green cardamom, cloves, and whole milk.",
-      price: "₹45",
-      isVeg: true,
-      prepTime: "5 mins",
-      imageUrl: "https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      name: "Steamed Darjeeling Momos",
-      category: "Appetisers",
-      description: "Handmade flour parcels filled with seasoned chicken, fresh scallions, and served with spicy sesame chutney.",
-      price: "₹140",
-      isVeg: false,
-      prepTime: "12 mins",
-      imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      name: "Smoky Paneer Tikka Burger",
-      category: "Burgers & Sandwiches",
-      description: "Charcoal-grilled spiced paneer slab, mint mayo, crisp lettuce, and caramelized onions on toasted brioche.",
-      price: "₹165",
-      isVeg: true,
-      prepTime: "10 mins",
-      imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      name: "Classic Wai Wai Sadheko",
-      category: "Quick Bites",
-      description: "Crispy roasted Wai Wai noodles tossed with fresh tomatoes, red onions, green chillies, mustard oil, and fresh coriander.",
-      price: "₹85",
-      isVeg: true,
-      prepTime: "7 mins",
-      imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      name: "Iced Strawberry Matcha Latte",
-      category: "Cold Brews",
-      description: "House strawberry compote, chilled milk, and stone-ground Japanese Uji matcha whisked fresh to order.",
-      price: "₹190",
-      isVeg: true,
-      prepTime: "6 mins",
-      imageUrl: "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=800&q=80"
-    },
-    {
-      name: "Artisanal Cold Brew Coffee",
-      category: "Specialty Coffee",
-      description: "Single-origin Arabica steeped cold for 18 hours, served over clear ice blocks with optional vanilla cream.",
-      price: "₹150",
-      isVeg: true,
-      prepTime: "4 mins",
-      imageUrl: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=800&q=80"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-[#f5f2ef] text-[#223134] font-sans selection:bg-[#9d785e] selection:text-white flex flex-col w-full max-w-full overflow-x-hidden">
@@ -141,23 +46,20 @@ export const LandingPage: React.FC = () => {
 
             {/* Center / Left Nav Links — All in a single line, whitespace-nowrap */}
             <nav className="hidden lg:flex items-center space-x-6 xl:space-x-7 text-xs font-semibold tracking-[0.16em] uppercase text-[#223134]">
-              <a href="#home" className="text-[#9d785e] hover:text-[#86644d] transition-colors border-b-2 border-[#9d785e] pb-1 whitespace-nowrap">
-                Home
-              </a>
               <a href="#about" className="hover:text-[#9d785e] transition-colors whitespace-nowrap">
                 Concept
               </a>
-              <a href="#specialties" className="hover:text-[#9d785e] transition-colors whitespace-nowrap">
-                Our Menu
-              </a>
+              <button
+                onClick={() => setIsTableQrScanOpen(true)}
+                className="hover:text-[#9d785e] transition-colors whitespace-nowrap uppercase cursor-pointer"
+              >
+                Menu
+              </button>
               <a href="#how-it-works" className="hover:text-[#9d785e] transition-colors whitespace-nowrap">
                 How It Works
               </a>
-              <a href="#portals" className="hover:text-[#9d785e] transition-colors whitespace-nowrap">
-                Portals
-              </a>
-              <a href="#location" className="hover:text-[#9d785e] transition-colors whitespace-nowrap">
-                Contact
+              <a href="#contact" className="hover:text-[#9d785e] transition-colors whitespace-nowrap">
+                Location &amp; Hours
               </a>
             </nav>
 
@@ -202,13 +104,15 @@ export const LandingPage: React.FC = () => {
                 >
                   About &amp; Concept
                 </a>
-                <a
-                  href="#specialties"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="py-2 px-3 rounded hover:bg-[#f5f2ef]"
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsTableQrScanOpen(true);
+                  }}
+                  className="text-left py-2 px-3 rounded hover:bg-[#f5f2ef] uppercase"
                 >
                   Our Menu
-                </a>
+                </button>
                 <a
                   href="#how-it-works"
                   onClick={() => setMobileMenuOpen(false)}
@@ -217,11 +121,11 @@ export const LandingPage: React.FC = () => {
                   How QR Ordering Works
                 </a>
                 <a
-                  href="#location"
+                  href="#contact"
                   onClick={() => setMobileMenuOpen(false)}
                   className="py-2 px-3 rounded hover:bg-[#f5f2ef]"
                 >
-                  Location &amp; Contact
+                  Location &amp; Hours
                 </a>
               </div>
 
@@ -495,95 +399,6 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          SIGNATURE MENU SPECIALTIES
-          ========================================================================= */}
-      <section id="specialties" className="py-12 sm:py-24 px-3 sm:px-6 lg:px-8 bg-plaster border-b border-[#e3ddd4]">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="space-y-2">
-              <span className="font-script text-3xl sm:text-4xl text-[#9d785e] block">
-                From Our Kitchen
-              </span>
-              <h2 className="text-2xl sm:text-4xl font-serif-display font-bold text-[#223134] tracking-tight">
-                Signature House Specialties
-              </h2>
-              <p className="text-xs sm:text-sm text-[#5f6c6e] max-w-xl leading-relaxed">
-                Handcrafted fresh to order. Explore our complete artisan catalog spanning handcrafted teas, momos, burgers, and comfort food.
-              </p>
-            </div>
-
-            <button
-              onClick={() => setIsTableQrScanOpen(true)}
-              className="inline-flex items-center space-x-2 text-xs font-bold tracking-wider uppercase text-[#9d785e] hover:text-[#86644d] transition-colors shrink-0 cursor-pointer"
-            >
-              <span>View complete artisan menu</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {signatureItems.map((dish, idx) => (
-              <div
-                key={idx}
-                className="rounded-2xl bg-white border border-[#e3ddd4] overflow-hidden flex flex-col justify-between hover:shadow-lg transition-all"
-              >
-                <div className="h-48 w-full overflow-hidden bg-stone-100 relative">
-                  <img
-                    src={dish.imageUrl}
-                    alt={dish.name}
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute top-3 left-3 flex items-center space-x-1.5">
-                    <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-white/95 text-[#9d785e] border border-[#e3ddd4] uppercase tracking-wider shadow-xs">
-                      {dish.category}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        dish.isVeg
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'bg-rose-50 text-rose-800 border border-rose-200'
-                      }`}
-                    >
-                      {dish.isVeg ? 'Veg' : 'Non-Veg'}
-                    </span>
-                  </div>
-
-                  <span className="absolute bottom-3 right-3 px-2 py-0.5 rounded text-[10px] font-mono font-medium text-stone-700 bg-white/90 backdrop-blur-xs shadow-xs">
-                    {dish.prepTime}
-                  </span>
-                </div>
-
-                <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold font-serif-display text-base text-[#223134] leading-tight">
-                        {dish.name}
-                      </h3>
-                      <span className="font-mono font-bold text-[#9d785e] text-base shrink-0">
-                        {dish.price}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#5f6c6e] leading-relaxed font-normal">
-                      {dish.description}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={() => setIsTableQrScanOpen(true)}
-                    className="w-full py-2.5 bg-[#9d785e] hover:bg-[#86644d] text-white text-xs font-semibold tracking-wider uppercase rounded transition-colors cursor-pointer text-center flex items-center justify-center space-x-1.5"
-                  >
-                    <Utensils className="w-3.5 h-3.5" />
-                    <span>Order from Table</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
           HOW TABLE QR DINING WORKS (3 STEPS)
           ========================================================================= */}
       <section id="how-it-works" className="py-12 sm:py-24 px-3 sm:px-6 lg:px-8 bg-white border-b border-[#e3ddd4]">
@@ -635,214 +450,124 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* =========================================================================
-          5 DEDICATED SYSTEM PORTALS
+          FOOTER & RESTAURANT LOCATION / HOURS
           ========================================================================= */}
-      <section id="portals" className="py-12 sm:py-24 px-3 sm:px-6 lg:px-8 bg-plaster border-b border-[#e3ddd4]">
-        <div className="max-w-7xl mx-auto space-y-6 sm:space-y-10">
-          <div className="space-y-2 text-left">
-            <span className="font-script text-2xl xs:text-3xl sm:text-4xl text-[#9d785e] block">
-              Unified Platform
-            </span>
-            <h2 className="text-xl xs:text-2xl sm:text-4xl font-serif-display font-bold text-[#223134] tracking-tight">
-              Dedicated Portals for Diners and Restaurant Staff
-            </h2>
-            <p className="text-xs sm:text-sm text-[#5f6c6e] max-w-2xl leading-relaxed">
-              Every dining touchpoint is coordinated seamlessly: guests order from tables, floor captains supervise zones, chefs pace kitchen tickets, and managers coordinate table billing.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {systemPortals.map((portal, idx) => {
-              const Icon = portal.icon;
-              return (
-                <div
-                  key={idx}
-                  className="p-5 sm:p-6 rounded-xl sm:rounded-2xl bg-white border border-[#e3ddd4] hover:shadow-md flex flex-col justify-between space-y-4 transition-all"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="w-10 h-10 rounded-lg bg-[#9d785e]/10 border border-[#9d785e]/20 flex items-center justify-center text-[#9d785e]">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded border uppercase tracking-wider ${portal.badgeColor}`}>
-                        {portal.badge}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3 className="font-bold font-serif-display text-base text-[#223134]">
-                        {portal.title}
-                      </h3>
-                      <p className="text-[11px] font-mono text-[#5f6c6e] uppercase tracking-wide mt-0.5">
-                        User: {portal.role}
-                      </p>
-                    </div>
-
-                    <p className="text-xs text-[#5f6c6e] leading-relaxed">
-                      {portal.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 border-t border-[#e3ddd4]">
-                    <button
-                      onClick={() => {
-                        if (portal.route === '/menu') {
-                          setIsTableQrScanOpen(true);
-                        } else {
-                          navigate(portal.route);
-                        }
-                      }}
-                      className={`w-full py-2.5 px-3 rounded text-xs font-semibold tracking-wider uppercase transition-colors flex items-center justify-center space-x-2 cursor-pointer ${portal.actionBg}`}
-                    >
-                      <span>{portal.cta}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+      <footer id="contact" className="border-t border-[#2d3a3d] bg-[#1a2528] pt-12 pb-8 sm:pt-14 sm:pb-10 px-4 sm:px-6 lg:px-8 text-xs text-stone-400 mt-auto">
+        <div className="max-w-7xl mx-auto space-y-8 sm:space-y-10">
+          {/* Main Footer Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10 pb-8 border-b border-[#2d3a3d]/70">
+            {/* Col 1: Brand Identity */}
+            <div className="lg:col-span-4 space-y-3.5">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-[#9d785e] shadow-sm flex items-center justify-center text-white shrink-0">
+                  <Coffee className="w-5 h-5 text-white" />
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          LOCATION, HOURS & CONTACT
-          ========================================================================= */}
-      <section id="location" className="py-12 sm:py-24 px-3 sm:px-6 lg:px-8 bg-white border-b border-[#e3ddd4]">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* Location info */}
-          <div className="lg:col-span-7 space-y-4 sm:space-y-5 text-left">
-            <span className="font-script text-2xl xs:text-3xl sm:text-4xl text-[#9d785e] block">
-              Visit Us in Siliguri
-            </span>
-
-            <h2 className="text-xl xs:text-2xl sm:text-4xl font-serif-display font-bold text-[#223134] tracking-tight">
-              Café Location and Service Hours
-            </h2>
-
-            <p className="text-xs sm:text-sm text-[#5f6c6e] leading-relaxed max-w-xl">
-              Join us for authentic tea brews, conversation, and freshly prepared food in Siliguri. Whether dining in or taking away, we welcome you every day of the week.
-            </p>
-
-            <div className="space-y-3 pt-2 text-xs sm:text-sm text-[#223134]">
-              <div className="flex items-start space-x-3.5 p-3.5 sm:p-4 rounded-xl bg-plaster-subtle border border-[#e3ddd4]">
-                <MapPin className="w-4 h-4 text-[#9d785e] mt-0.5 shrink-0" />
                 <div>
-                  <span className="font-bold block">Physical Address</span>
-                  <span className="text-[#5f6c6e]">Sevoke Road, Siliguri, West Bengal 734001, India</span>
+                  <span className="font-serif-display font-bold text-white tracking-wider block text-base sm:text-lg">
+                    Siliguri's Chai Addaa
+                  </span>
+                  <span className="text-[10px] text-stone-400 font-mono tracking-wider uppercase">
+                    Artisan Tea House &amp; Digital Dining
+                  </span>
                 </div>
               </div>
+              <p className="text-xs text-stone-400 leading-relaxed max-w-sm">
+                Authentic handcrafted regional teas, fresh comfort snacks, and contactless QR table ordering in Siliguri.
+              </p>
+            </div>
 
-              <div className="flex items-start space-x-3.5 p-3.5 sm:p-4 rounded-xl bg-plaster-subtle border border-[#e3ddd4]">
-                <Clock className="w-4 h-4 text-[#9d785e] mt-0.5 shrink-0" />
-                <div>
-                  <span className="font-bold block">Operating Hours</span>
-                  <span className="text-[#5f6c6e]">Open 7 Days a Week: 10:00 AM to 11:00 PM</span>
-                  <span className="block text-[11px] text-[#9d785e] mt-0.5 font-medium">Kitchen orders accepted until 10:30 PM</span>
+            {/* Col 2: Updated Address, Phone & Hours (Requested by user) */}
+            <div className="lg:col-span-5 space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Store Location &amp; Hours
+              </h4>
+              <div className="space-y-2.5 text-xs text-stone-300">
+                <div className="flex items-start space-x-2.5">
+                  <MapPin className="w-4 h-4 text-[#9d785e] mt-0.5 shrink-0" />
+                  <span className="leading-snug">
+                    Champasari Rd, Indrapally, Champasari, Siliguri, West Bengal 734003
+                  </span>
                 </div>
-              </div>
 
-              <div className="flex items-start space-x-3.5 p-3.5 sm:p-4 rounded-xl bg-plaster-subtle border border-[#e3ddd4]">
-                <Phone className="w-4 h-4 text-[#9d785e] mt-0.5 shrink-0" />
-                <div>
-                  <span className="font-bold block">Direct Telephone</span>
+                <div className="flex items-center space-x-2.5">
+                  <Phone className="w-4 h-4 text-[#9d785e] shrink-0" />
                   <a
-                    href="tel:+919382776017"
-                    className="text-[#9d785e] hover:text-[#86644d] font-mono font-medium transition-colors"
+                    href="tel:07585877937"
+                    className="hover:text-white font-mono font-medium transition-colors"
                   >
-                    +91 93827 76017
+                    075858 77937
                   </a>
                 </div>
+
+                <div className="flex items-center space-x-2.5">
+                  <Clock className="w-4 h-4 text-[#9d785e] shrink-0" />
+                  <span className="font-mono text-emerald-400 font-semibold">
+                    Open 7 Days a Week: 3–10 pm
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Amenities Strip */}
-            <div className="pt-2 flex flex-wrap gap-2 text-xs text-[#5f6c6e]">
-              <span className="px-3 py-1 rounded bg-[#f5f2ef] border border-[#e3ddd4]">Air Conditioned</span>
-              <span className="px-3 py-1 rounded bg-[#f5f2ef] border border-[#e3ddd4]">High-Speed Wi-Fi</span>
-              <span className="px-3 py-1 rounded bg-[#f5f2ef] border border-[#e3ddd4]">Contactless Table QR</span>
-              <span className="px-3 py-1 rounded bg-[#f5f2ef] border border-[#e3ddd4]">Pure Veg &amp; Non-Veg Stations</span>
+            {/* Col 3: Direct Dining Links */}
+            <div className="lg:col-span-3 space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Quick Navigation
+              </h4>
+              <div className="flex flex-col space-y-2 text-xs text-stone-300">
+                <button
+                  onClick={() => setIsTableQrScanOpen(true)}
+                  className="hover:text-white transition-colors cursor-pointer text-left flex items-center space-x-1.5"
+                >
+                  <Utensils className="w-3.5 h-3.5 text-[#9d785e]" />
+                  <span>Digital Table Menu</span>
+                </button>
+                <a href="#about" className="hover:text-white transition-colors">
+                  Concept &amp; Philosophy
+                </a>
+                <a href="#how-it-works" className="hover:text-white transition-colors">
+                  How QR Ordering Works
+                </a>
+                <button
+                  onClick={() => navigate('/privacy')}
+                  className="hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Privacy Policy
+                </button>
+                <button
+                  onClick={() => navigate('/terms')}
+                  className="hover:text-white transition-colors cursor-pointer text-left"
+                >
+                  Terms of Service
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Quick Direct Actions Box */}
-          <div className="lg:col-span-5 bg-plaster-subtle border border-[#c9c1b5] rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-7 space-y-4 shadow-sm w-full">
-            <h3 className="font-bold font-serif-display text-base text-[#223134] flex items-center space-x-2">
-              <Utensils className="w-4 h-4 text-[#9d785e]" />
-              <span>Direct Dining Links</span>
-            </h3>
-
-            <div className="space-y-2.5 text-xs">
-              <button
-                onClick={() => setIsTableQrScanOpen(true)}
-                className="w-full p-3 rounded-lg bg-white hover:bg-stone-50 text-left text-[#223134] border border-[#e3ddd4] transition-colors flex items-center justify-between cursor-pointer"
-              >
-                <div>
-                  <span className="font-bold text-[#223134] block">Digital Table Menu</span>
-                  <span className="text-[11px] text-[#5f6c6e]">Browse dishes, prices, and dietary tags</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#9d785e] shrink-0" />
-              </button>
-
-
-
-              <button
-                onClick={() => navigate('/privacy')}
-                className="w-full p-3 rounded-lg bg-white hover:bg-stone-50 text-left text-[#223134] border border-[#e3ddd4] transition-colors flex items-center justify-between cursor-pointer"
-              >
-                <div>
-                  <span className="font-bold text-[#223134] block">Privacy Policy</span>
-                  <span className="text-[11px] text-[#5f6c6e]">Data practices for diners and sessions</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#9d785e] shrink-0" />
-              </button>
-
-              <button
-                onClick={() => navigate('/terms')}
-                className="w-full p-3 rounded-lg bg-white hover:bg-stone-50 text-left text-[#223134] border border-[#e3ddd4] transition-colors flex items-center justify-between cursor-pointer"
-              >
-                <div>
-                  <span className="font-bold text-[#223134] block">Terms of Service</span>
-                  <span className="text-[11px] text-[#5f6c6e]">Ordering and service policies</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-[#9d785e] shrink-0" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================================
-          FOOTER
-          ========================================================================= */}
-      <footer className="border-t border-[#2d3a3d] bg-[#1a2528] py-10 sm:py-12 px-3 sm:px-6 lg:px-8 text-xs text-stone-400 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-[#9d785e] shadow-sm flex items-center justify-center text-white">
-              <Coffee className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <span className="font-serif-display font-bold text-white tracking-wider block text-sm">
-                Siliguri's Chai Addaa
+          {/* Bottom Attribution: Centered GrowOwl Agency Credits & Copyright */}
+          <div className="space-y-2.5 text-center text-xs">
+            <div className="flex items-center flex-wrap justify-center gap-2">
+              <span className="text-[11px] text-stone-400 tracking-wide font-sans">
+                Developed, Maintained &amp; Designed by
               </span>
-              <span className="text-[10px] text-stone-400 font-mono tracking-wider uppercase">
-                Artisan Tea House &amp; Digital Dining
-              </span>
+              <a
+                href="https://www.growowl.online/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center hover:opacity-80 transition-opacity"
+                title="GrowOwl"
+              >
+                <img
+                  src="/growowl-logo-white.webp"
+                  alt="GrowOwl"
+                  className="h-5 sm:h-6 w-auto object-contain brightness-105"
+                />
+              </a>
             </div>
-          </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-stone-300">
-            <a href="#about" className="hover:text-white transition-colors">Concept</a>
-            <a href="#specialties" className="hover:text-white transition-colors">Specialties</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-            <button onClick={() => setIsTableQrScanOpen(true)} className="hover:text-white transition-colors cursor-pointer">Menu</button>
-            <button onClick={() => navigate('/privacy')} className="hover:text-white transition-colors cursor-pointer">Privacy</button>
-            <button onClick={() => navigate('/terms')} className="hover:text-white transition-colors cursor-pointer">Terms</button>
+            <p className="text-stone-500 font-mono text-[11px]">
+              &copy; {new Date().getFullYear()} Siliguri's Chai Addaa. All rights reserved.
+            </p>
           </div>
-
-          <p className="text-stone-400 font-mono text-[11px] text-center md:text-right">
-            &copy; {new Date().getFullYear()} Siliguri's Chai Addaa. All rights reserved.
-          </p>
         </div>
       </footer>
 

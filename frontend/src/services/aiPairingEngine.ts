@@ -1,4 +1,5 @@
 import { MenuItem } from '../types/menu.types';
+import { SILIGURI_MENU_ITEMS } from '../data/menu';
 
 export interface AIPairingAddon {
   id: string;
@@ -399,3 +400,145 @@ export const AI_RECOMMENDED_PAIRINGS: AIPairingItem[] = [
     badge: 'Essential',
   },
 ];
+
+/**
+ * Dynamic Cart Pairing Suggestions Engine based on actual items currently in the diner's cart
+ * Strictly maps based on Siliguri Chai Addaa pairings logic:
+ * - Chai / Teas / Coffee -> Sandwiches, Burgers, Fries
+ * - Milkshakes / Boba / Shakes -> Ice cream, Packaged Mineral Water
+ * - Noodles / Fried Rice / Chowmein -> Appetisers, Chilled Drinks
+ * - Pastas -> Fries, Chilled Drinks, Mineral Water
+ * - Burgers / Sandwiches -> Fries, Chilled Drinks
+ * - Fries / Appetisers -> Chilled Drinks, Lime Soda
+ * - Universal rule: Always include ₹10 Packaged Mineral Water if not already in cart!
+ * - Never suggest items that are already in the user's cart!
+ */
+export const getDynamicCartPairings = (
+  cartItems: { menuItem: { id: number; name?: string; categoryName?: string; price: number }; quantity: number }[]
+): AIPairingItem[] => {
+  const inCartIds = new Set(cartItems.map((it) => it.menuItem.id));
+  const inCartNames = cartItems.map((it) => (it.menuItem.name || '').toLowerCase());
+  const inCartCategories = cartItems.map((it) => (it.menuItem.categoryName || '').toLowerCase());
+
+  const hasChaiOrCoffee = inCartCategories.some((c) => c.includes('chai') || c.includes('tea') || c.includes('coffee')) ||
+    inCartNames.some((n) => n.includes('tea') || n.includes('chai') || n.includes('coffee') || n.includes('cappuccino') || n.includes('latte'));
+
+  const hasShakes = inCartCategories.some((c) => c.includes('shake') || c.includes('boba') || c.includes('matcha')) ||
+    inCartNames.some((n) => n.includes('shake') || n.includes('blast') || n.includes('frappe') || n.includes('boba'));
+
+  const hasNoodlesOrRice = inCartCategories.some((c) => c.includes('noodle') || c.includes('rice') || c.includes('chowmein')) ||
+    inCartNames.some((n) => n.includes('noodle') || n.includes('rice') || n.includes('chowmein') || n.includes('fried rice'));
+
+  const hasPasta = inCartCategories.some((c) => c.includes('pasta')) ||
+    inCartNames.some((n) => n.includes('pasta') || n.includes('alfredo') || n.includes('arrabbiata'));
+
+  const hasBurgersOrSandwiches = inCartCategories.some((c) => c.includes('burger') || c.includes('sandwich')) ||
+    inCartNames.some((n) => n.includes('burger') || n.includes('sandwich'));
+
+  const hasAppetisersOrFries = inCartCategories.some((c) => c.includes('appetiser') || c.includes('fries')) ||
+    inCartNames.some((n) => n.includes('fries') || n.includes('nugget') || n.includes('babycorn'));
+
+  const candidateIds: { id: number; badge?: string }[] = [];
+
+  // 1. Universal: Always suggest Packaged Mineral Water (₹10) if not in cart
+  if (!inCartIds.has(95)) {
+    candidateIds.push({ id: 95, badge: 'Essential' });
+  }
+
+  // 2. Dynamic Rules based on cart contents
+  if (hasChaiOrCoffee) {
+    candidateIds.push(
+      { id: 41, badge: 'Chai Companion' }, // Veg Cheese Sandwich
+      { id: 49, badge: 'Crispy Favorite' }, // Peri Peri Fries
+      { id: 37, badge: 'Cafe Classic' },    // Veg Cheese Burger
+      { id: 48, badge: 'Quick Snack' },     // Classic Salted Fries
+      { id: 42, badge: 'Chef Special' }     // Corn & Cheese Grilled Sandwich
+    );
+  }
+
+  if (hasShakes) {
+    candidateIds.push(
+      { id: 89, badge: 'Sweet Indulgence' }, // Vanilla Ice Cream
+      { id: 48, badge: 'Salty & Sweet' },    // Classic Salted Fries
+      { id: 41, badge: 'Cafe Classic' }     // Veg Cheese Sandwich
+    );
+  }
+
+  if (hasNoodlesOrRice) {
+    candidateIds.push(
+      { id: 53, badge: 'Hot Appetiser' },     // Crispy Chilli Babycorn
+      { id: 70, badge: 'Chilled Drink' },     // Coke / Sprite
+      { id: 57, badge: 'Cheesy Bites' },      // Veg Cheese Corn Nuggets
+      { id: 71, badge: 'Spicy Cooler' },      // Masala Coke / Sprite
+      { id: 60, badge: 'Crispy Favorite' }    // Chicken Nuggets
+    );
+  }
+
+  if (hasPasta) {
+    candidateIds.push(
+      { id: 49, badge: 'Crispy Side' },      // Peri Peri Fries
+      { id: 70, badge: 'Chilled Drink' },     // Coke / Sprite
+      { id: 72, badge: 'Citrus Cooler' },     // Fresh Lime Soda
+      { id: 89, badge: 'Dessert Classic' }    // Vanilla Ice Cream
+    );
+  }
+
+  if (hasBurgersOrSandwiches) {
+    candidateIds.push(
+      { id: 49, badge: 'Burger Pair' },       // Peri Peri Fries
+      { id: 70, badge: 'Chilled Drink' },     // Coke / Sprite
+      { id: 72, badge: 'Citrus Cooler' }      // Fresh Lime Soda
+    );
+  }
+
+  if (hasAppetisersOrFries) {
+    candidateIds.push(
+      { id: 70, badge: 'Chilled Drink' },     // Coke / Sprite
+      { id: 71, badge: 'Spicy Cooler' },      // Masala Coke / Sprite
+      { id: 72, badge: 'Citrus Cooler' },     // Fresh Lime Soda
+      { id: 1, badge: 'Signature Chai' }      // Masala Tea
+    );
+  }
+
+  // 3. Fallback Best-sellers if cart has other items or candidates are few
+  const fallbackCandidates = [
+    { id: 49, badge: 'Bestseller' },     // Peri Peri Fries
+    { id: 41, badge: 'Cafe Favorite' },  // Veg Cheese Sandwich
+    { id: 70, badge: 'Chilled Drink' },  // Coke / Sprite
+    { id: 1, badge: 'Signature Chai' },  // Masala Tea
+    { id: 89, badge: 'Dessert' },        // Vanilla Ice Cream
+    { id: 7, badge: 'Cold Brew' },       // Cold Coffee
+  ];
+  candidateIds.push(...fallbackCandidates);
+
+  // 4. Filter out any items in cart, and deduplicate
+  const seenIds = new Set<number>();
+  const finalCandidates: { id: number; badge?: string }[] = [];
+
+  for (const item of candidateIds) {
+    if (!inCartIds.has(item.id) && !seenIds.has(item.id)) {
+      seenIds.add(item.id);
+      finalCandidates.push(item);
+    }
+  }
+
+  // 5. Hydrate candidates with real menu details from SILIGURI_MENU_ITEMS
+  const result: AIPairingItem[] = [];
+  for (const cand of finalCandidates) {
+    const menuItem = SILIGURI_MENU_ITEMS.find((it) => it.id === cand.id);
+    if (menuItem) {
+      result.push({
+        id: menuItem.id,
+        name: menuItem.name,
+        price: menuItem.price,
+        description: menuItem.description,
+        category: menuItem.categoryName,
+        imageUrl: menuItem.imageUrl,
+        badge: cand.badge,
+      });
+    }
+    if (result.length >= 8) break; // Keep up to 8 top pairings
+  }
+
+  return result;
+};

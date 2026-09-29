@@ -90,9 +90,6 @@ export const LoginPage: React.FC = () => {
         case 'KITCHEN':
           navigate('/kitchen');
           break;
-        case 'WAITER':
-          navigate('/waiter');
-          break;
         case 'RESTAURANT_OWNER':
         case 'OWNER':
         case 'ADMIN':
@@ -121,7 +118,6 @@ export const LoginPage: React.FC = () => {
   const quickRoles = [
     { role: 'OWNER', title: 'Restaurant Admin / Owner', email: 'owner@aura.com', pass: 'owner123', badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40', icon: <LayoutDashboard className="w-4 h-4 text-indigo-400" /> },
     { role: 'CHEF', title: 'Head Chef KDS', email: 'chef@aura.com', pass: 'chef123', badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <ChefHat className="w-4 h-4 text-amber-400" /> },
-    { role: 'WAITER', title: 'Floor Waiter', email: 'waiter@aura.com', pass: 'waiter123', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', icon: <UserCheck className="w-4 h-4 text-emerald-400" /> },
   ];
 
   return (

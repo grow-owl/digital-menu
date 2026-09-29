@@ -21,21 +21,23 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
     setIsLoading(true);
     try {
       // 1. Dispatch direct waiter call to backend Express API
-      await tableService.callWaiter(tableId, 'Call Waiter to Table');
+      await tableService.callWaiter(tableId, 'Call Service to Table');
 
       // 2. Local fallback sync for instant tab response
       const existingAlerts = JSON.parse(localStorage.getItem('aura_waiter_alerts') || '[]');
       const newAlert = {
         id: Date.now(),
         tableId,
-        reason: 'Call Waiter to Table',
+        reason: 'Call Service to Table',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'PENDING',
       };
       localStorage.setItem('aura_waiter_alerts', JSON.stringify([newAlert, ...existingAlerts]));
+      window.dispatchEvent(new CustomEvent('service_called', { detail: newAlert }));
+      window.dispatchEvent(new Event('storage'));
 
       setIsRequested(true);
-      showToast(`Waiter alerted for Table ${tableId}! Waiter will arrive shortly.`, 'success');
+      showToast(`Service assistance alerted for Table ${tableId}! Staff will attend shortly.`, 'success');
 
       // Reset requested state after 30 seconds
       setTimeout(() => {
@@ -43,7 +45,7 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
       }, 30000);
     } catch (err) {
       console.error('Failed to dispatch waiter call:', err);
-      showToast(`Waiter alerted for Table ${tableId}!`, 'success');
+      showToast(`Service assistance alerted for Table ${tableId}!`, 'success');
       setIsRequested(true);
       setTimeout(() => setIsRequested(false), 30000);
     } finally {
@@ -55,14 +57,14 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
     <button
       onClick={handleCallWaiter}
       disabled={isLoading}
-      className={`fixed z-40 p-2.5 sm:p-3 ${
+      className={`fixed z-40 p-2.5 sm:p-3.5 ${
         isRequested
-          ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-500 shadow-md'
-          : 'bg-[#F7D046] hover:bg-yellow-400 text-slate-900 border-yellow-300 shadow-md'
-      } font-bold rounded-xl transition-all duration-200 flex items-center space-x-2 border cursor-pointer active:scale-95 ${
+          ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-500 shadow-xl'
+          : 'bg-[#F7D046] hover:bg-yellow-400 text-slate-900 border-yellow-300 shadow-xl ring-2 ring-yellow-400/20'
+      } font-bold rounded-2xl transition-all duration-200 flex items-center space-x-2 border cursor-pointer active:scale-95 ${
         hasCart
-          ? 'bottom-[80px] right-3 sm:bottom-6 sm:right-6'
-          : 'bottom-3 right-3 sm:bottom-6 sm:right-6'
+          ? 'bottom-[76px] right-3.5 sm:bottom-6 sm:right-6'
+          : 'bottom-4 right-3.5 sm:bottom-6 sm:right-6'
       }`}
       title="Call Service to Table"
     >

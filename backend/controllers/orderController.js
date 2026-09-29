@@ -145,8 +145,9 @@ export const createOrder = asyncHandler(async (req, res) => {
       price,
       notes: String(it.notes || '').slice(0, 200),
       customizations: Array.isArray(it.customizations) ? it.customizations : [],
-      status: 'received',
-      isPrepared: false
+      status: 'preparing',
+      isPrepared: false,
+      preparationTimeMinutes: dbItem?.preparationTimeMinutes || it.preparationTimeMinutes || 5
     };
   });
 
@@ -214,7 +215,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       subtotal: verifiedSubtotal,
       tax: computedTax,
       total: calculatedTotal,
-      status: 'received'
+      status: 'preparing'
     });
   }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StatusBadge } from '../../components/ui/data-display/StatusBadge';
 import { adminService, AdminMetrics, ExecutiveAnalyticsData } from '../../services/admin.service';
@@ -92,13 +92,21 @@ export const AdminDashboardPage: React.FC = () => {
   const [availSearchQuery, setAvailSearchQuery] = useState('');
   const [togglingDishId, setTogglingDishId] = useState<string | number | null>(null);
 
+  // ─────────────────────────────────────────────────────────────
+  // CALL SERVICE MODAL ALERT (Blurred Background Backdrop)
+  // ─────────────────────────────────────────────────────────────
+  const [activeServiceCall, setActiveServiceCall] = useState<any | null>(null);
+  const activeServiceCallRef = useRef<any | null>(null);
+  activeServiceCallRef.current = activeServiceCall;
+
   // Lock background body scroll when any modal is open
   useBodyScrollLock(
     isDishModalOpen ||
     isCategoryModalOpen ||
     viewBillOrder !== null ||
     selectedTableForBilling !== null ||
-    isRefundModalOpen
+    isRefundModalOpen ||
+    activeServiceCall !== null
   );
 
   // Fetch all live data from database
@@ -127,10 +135,89 @@ export const AdminDashboardPage: React.FC = () => {
     }
   };
 
+  // Audio chime for urgent Call Service alert
+  const playAlertChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {}
+  };
+
+  const checkServiceCalls = async () => {
+    try {
+      const remoteCalls = await tableService.getWaiterCalls().catch(() => []);
+      const localCalls = JSON.parse(localStorage.getItem('aura_waiter_alerts') || '[]');
+      const combined = [...(Array.isArray(remoteCalls) ? remoteCalls : []), ...localCalls];
+      const pendingCalls = combined.filter((c: any) => c.status === 'PENDING');
+
+      if (pendingCalls.length > 0) {
+        const newest = pendingCalls[0];
+        if (!activeServiceCallRef.current || activeServiceCallRef.current.id !== newest.id) {
+          setActiveServiceCall(newest);
+          playAlertChime();
+        }
+      }
+    } catch (e) {}
+  };
+
+  const handleDismissServiceCall = async () => {
+    if (!activeServiceCall) return;
+    const alertId = activeServiceCall.id;
+    const tableId = activeServiceCall.tableId || activeServiceCall.tableNumber;
+    setActiveServiceCall(null);
+
+    try {
+      const localCalls = JSON.parse(localStorage.getItem('aura_waiter_alerts') || '[]');
+      const updated = localCalls.map((c: any) => (c.id === alertId ? { ...c, status: 'RESOLVED' } : c));
+      localStorage.setItem('aura_waiter_alerts', JSON.stringify(updated));
+    } catch (e) {}
+
+    try {
+      await tableService.resolveWaiterCall(alertId);
+    } catch (e) {}
+
+    showToast(`Service assistance for Table ${tableId} acknowledged!`, 'success');
+  };
+
   useEffect(() => {
     fetchData(true);
-    const interval = setInterval(() => fetchData(false), 5000);
-    return () => clearInterval(interval);
+    checkServiceCalls();
+
+    const interval = setInterval(() => {
+      fetchData(false);
+      checkServiceCalls();
+    }, 3000);
+
+    const handleServiceEvent = (e: any) => {
+      const alert = e?.detail;
+      if (alert) {
+        setActiveServiceCall(alert);
+        playAlertChime();
+      } else {
+        checkServiceCalls();
+      }
+    };
+
+    window.addEventListener('service_called', handleServiceEvent);
+    window.addEventListener('storage', checkServiceCalls);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('service_called', handleServiceEvent);
+      window.removeEventListener('storage', checkServiceCalls);
+    };
   }, []);
 
   // ─────────────────────────────────────────────────────────────
@@ -1594,6 +1681,61 @@ export const AdminDashboardPage: React.FC = () => {
         tables={allTables}
         onRefreshTables={() => fetchData(false)}
       />
+
+      {/* ─────────────────────────────────────────────────────────────
+          URGENT CALL SERVICE MODAL (With Blurred Background)
+      ───────────────────────────────────────────────────────────── */}
+      {activeServiceCall && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#0B0F19] border-2 border-amber-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 text-center relative overflow-hidden ring-8 ring-amber-500/20">
+            {/* Ambient Background Glow */}
+            <div className="absolute -top-16 -left-16 w-36 h-36 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-amber-600/20 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Pulsing Bell Badge */}
+            <div className="relative mx-auto w-20 h-20 rounded-3xl bg-amber-500/15 border-2 border-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+              <Bell className="w-10 h-10 text-amber-400 animate-bounce" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500" />
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-black uppercase tracking-widest rounded-full">
+                🚨 Service Request Alert
+              </span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-black text-white tracking-tight">
+                Table {activeServiceCall.tableId || activeServiceCall.tableNumber}
+              </h2>
+              <p className="text-sm font-medium text-slate-300">
+                {activeServiceCall.reason || 'Diner requested assistance at this table'}
+              </p>
+              <div className="inline-flex items-center space-x-1.5 text-xs font-mono text-slate-400 pt-1">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Requested at {activeServiceCall.timestamp || 'Just now'}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 space-y-2.5">
+              <button
+                onClick={handleDismissServiceCall}
+                className="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm uppercase tracking-wider rounded-2xl shadow-xl shadow-amber-500/25 transition-all cursor-pointer active:scale-95 flex items-center justify-center space-x-2"
+              >
+                <CheckCircle2 className="w-5 h-5 text-slate-950" />
+                <span>Acknowledge &amp; Attend Table</span>
+              </button>
+
+              <button
+                onClick={() => setActiveServiceCall(null)}
+                className="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                Dismiss Modal (Keep in Background)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

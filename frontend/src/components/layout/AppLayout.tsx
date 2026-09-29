@@ -33,7 +33,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const getRoleNavLinks = () => {
     const isOwner = userRole === 'OWNER' || userRole === 'ADMIN' || userRole === 'RESTAURANT_OWNER' || userRole === 'MANAGER';
     const isChef = userRole === 'CHEF' || userRole === 'KITCHEN';
-    const isWaiter = userRole === 'WAITER';
 
     const sections = [];
 
@@ -48,13 +47,10 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       });
     }
 
-    // Operations Section
+    // Operations Section (Kitchen KDS)
     const opsItems = [];
     if (isOwner || isChef) {
       opsItems.push({ name: 'Kitchen', shortName: 'Kitchen', path: '/kitchen', icon: ChefHat, accent: 'text-amber-400', activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-300' });
-    }
-    if (isOwner || isWaiter) {
-      opsItems.push({ name: 'Waiter', shortName: 'Waiter', path: '/waiter', icon: Layers, accent: 'text-cyan-400', activeBg: 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' });
     }
 
     if (opsItems.length > 0) {
@@ -91,13 +87,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         label: 'KITCHEN', 
         badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
         themeClass: 'page-theme-kitchen'
-      };
-    }
-    if (location.pathname.startsWith('/waiter')) {
-      return { 
-        label: 'WAITER', 
-        badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
-        themeClass: 'page-theme-waiter'
       };
     }
     return { 

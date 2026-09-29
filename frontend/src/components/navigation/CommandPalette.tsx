@@ -47,7 +47,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose 
     { id: 'nav-admin', title: 'Admin & Executive Portal (Finance, Live Kitchen & Floor)', category: 'Navigation', icon: ShieldCheck, action: () => { navigate('/admin'); onClose(); } },
     { id: 'nav-qr', title: 'Table QR Stands & Print Studio (All Tables)', category: 'Navigation', icon: QrCode, action: () => { navigate('/admin/qr-generator'); onClose(); } },
     { id: 'nav-kds', title: 'Kitchen Display System (KDS)', category: 'Navigation', icon: ChefHat, action: () => { navigate('/kitchen/kds'); onClose(); } },
-    { id: 'nav-waiter', title: 'Waiter Floor Mission Control', category: 'Navigation', icon: Layers, action: () => { navigate('/waiter/dashboard'); onClose(); } },
     { id: 'nav-menu', title: 'Customer Chai Addaa Menu', category: 'Navigation', icon: Sparkles, action: () => { navigate('/'); onClose(); } },
     { id: 'nav-settings', title: 'SaaS Platform Settings', category: 'Navigation', icon: Settings, action: () => { navigate('/settings'); onClose(); } },
     { id: 'nav-profile', title: 'Staff User Profile', category: 'Navigation', icon: User, action: () => { navigate('/profile'); onClose(); } },

@@ -8,7 +8,6 @@ import { MenuPage } from './pages/customer/MenuPage';
 import { OrderTrackingPage } from './pages/customer/OrderTrackingPage';
 import { DineScanPage } from './pages/customer/DineScanPage';
 import { KitchenDisplayPage } from './pages/kitchen/KitchenDisplayPage';
-import { WaiterDashboardPage } from './pages/waiter/WaiterDashboardPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { QrGeneratorPage } from './pages/admin/QrGeneratorPage';
@@ -54,11 +53,9 @@ export const App: React.FC = () => {
             <Route path="/kitchen/kds" element={<AppLayout><KitchenDisplayPage /></AppLayout>} />
           </Route>
 
-          {/* Waiter Dispatch Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['WAITER', 'OWNER']} />}>
-            <Route path="/waiter" element={<AppLayout><WaiterDashboardPage /></AppLayout>} />
-            <Route path="/waiter/dashboard" element={<AppLayout><WaiterDashboardPage /></AppLayout>} />
-          </Route>
+          {/* Legacy Waiter Route Redirects to Admin */}
+          <Route path="/waiter" element={<Navigate to="/admin" replace />} />
+          <Route path="/waiter/dashboard" element={<Navigate to="/admin" replace />} />
 
 
           {/* Owner & Management Routes */}

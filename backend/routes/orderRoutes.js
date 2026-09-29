@@ -33,15 +33,15 @@ router.get('/phone/:phone', getOrdersByPhone);
 router.get('/table/:tableId', getOrdersByTable);
 router.get('/:orderId', getOrderById);
 
-// Staff operational views: Kitchen, Waiter, Owner
-router.get(['/active', '/active/all'], protect, requireRole('chef', 'waiter', 'owner'), getActiveOrders);
+// Staff operational views: Kitchen, Owner
+router.get(['/active', '/active/all'], protect, requireRole('chef', 'owner'), getActiveOrders);
 router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
 
 // Kitchen / Staff status updates
-router.put('/:orderId/status', protect, requireRole('chef', 'waiter', 'owner'), updateOrderStatus);
+router.put('/:orderId/status', protect, requireRole('chef', 'owner'), updateOrderStatus);
 router.put('/:orderId/items/check', protect, requireRole('chef', 'owner'), toggleItemPrepared);
-router.put('/:orderId/items/:itemIndex/cancel', protect, requireRole('chef', 'waiter', 'owner'), cancelOrderItem);
-router.put('/:orderId/cancel', protect, requireRole('chef', 'waiter', 'owner'), cancelOrder);
+router.put('/:orderId/items/:itemIndex/cancel', protect, requireRole('chef', 'owner'), cancelOrderItem);
+router.put('/:orderId/cancel', protect, requireRole('chef', 'owner'), cancelOrder);
 
 // Owner financial operations
 router.post('/:orderId/refund', protect, requireRole('owner'), refundOrder);

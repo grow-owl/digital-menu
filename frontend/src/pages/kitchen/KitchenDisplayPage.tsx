@@ -8,6 +8,22 @@ import { useToast } from '../../components/feedback/ToastContainer';
 import { orderService } from '../../services/order.service';
 import { OrderCancelModal } from '../../components/orders/OrderCancelModal';
 import { OrderItemCancelModal } from '../../components/orders/OrderItemCancelModal';
+import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
+
+// Dynamic Dish Preparation Time Catalog Lookup (Minutes)
+const DISH_PREP_MAP = new Map<string, number>(
+  SILIGURI_MENU_ITEMS.map((item) => [item.name.toLowerCase().trim(), item.preparationTimeMinutes || 5])
+);
+
+const getDishCookMinutes = (name: string, override?: number): number => {
+  if (override && override > 0) return override;
+  const clean = String(name || '').toLowerCase().trim();
+  if (DISH_PREP_MAP.has(clean)) return DISH_PREP_MAP.get(clean)!;
+  for (const [k, v] of DISH_PREP_MAP.entries()) {
+    if (clean.includes(k) || k.includes(clean)) return v;
+  }
+  return 5; // standard fallback
+};
 
 interface KDSItem {
   name: string;
@@ -16,6 +32,7 @@ interface KDSItem {
   status?: string;
   isPrepared?: boolean;
   cancelReason?: string;
+  preparationTimeMinutes?: number;
 }
 
 interface KDSTicket {
@@ -37,16 +54,13 @@ interface CancelItemTarget {
 
 export const KitchenDisplayPage: React.FC = () => {
   const { showToast } = useToast();
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'received' | 'preparing'>('ALL');
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'cooking' | 'ready'>('ALL');
   const [tickets, setTickets] = useState<KDSTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [nowTimestamp, setNowTimestamp] = useState(Date.now());
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [cancelModalTicket, setCancelModalTicket] = useState<{ id: string; tableId: string } | null>(null);
   const [cancelItemTarget, setCancelItemTarget] = useState<CancelItemTarget | null>(null);
-
-  // Track individual item check state: `${ticketId}-${itemIndex}` -> boolean
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const prevTicketsRef = useRef<KDSTicket[]>([]);
 
   // Web Audio API Chime for New Order Notification
@@ -80,22 +94,35 @@ export const KitchenDisplayPage: React.FC = () => {
     try {
       const data = await orderService.getActiveOrders();
 
-      // Kitchen KDS shows active tickets needing kitchen preparation ('received' and 'preparing').
-      const activeKitchenData = data.filter((ord: any) => ord.status === 'received' || ord.status === 'preparing');
+      // Automatically accept any incoming 'received' orders into 'preparing'
+      const unaccepted = data.filter((ord: any) => ord.status === 'received');
+      if (unaccepted.length > 0) {
+        Promise.all(
+          unaccepted.map((ord: any) =>
+            orderService.updateOrderStatus(ord.orderId, 'preparing').catch(() => {})
+          )
+        );
+      }
+
+      // Kitchen KDS shows active tickets needing kitchen preparation
+      const activeKitchenData = data.filter(
+        (ord: any) => ord.status === 'received' || ord.status === 'preparing' || ord.status === 'ready'
+      );
 
       const newTicketList: KDSTicket[] = activeKitchenData.map((order: any) => ({
         id: order.orderId,
         _id: order._id,
         tableId: order.tableId,
         createdAt: order.createdAt,
-        status: order.status,
+        status: order.status === 'received' ? 'preparing' : order.status,
         items: (order.items || []).map((i: any) => ({
           name: i.name,
           quantity: i.quantity || i.qty || 1,
           notes: i.notes,
-          status: i.status || 'received',
+          status: i.status === 'received' ? 'preparing' : i.status || 'preparing',
           isPrepared: !!i.isPrepared,
           cancelReason: i.cancelReason,
+          preparationTimeMinutes: i.preparationTimeMinutes,
         })),
       }));
 
@@ -106,7 +133,7 @@ export const KitchenDisplayPage: React.FC = () => {
 
         if (newlyArrived.length > 0) {
           playAudioChime();
-          showToast(`🔔 ${newlyArrived.length} New Kitchen Ticket Received!`, 'success', 'New Kitchen Order');
+          showToast(`🔔 ${newlyArrived.length} New Order Auto-Accepted for Cooking!`, 'success', 'Kitchen Cooking Order');
         }
       }
 
@@ -129,39 +156,6 @@ export const KitchenDisplayPage: React.FC = () => {
       clearInterval(clockInterval);
     };
   }, []);
-
-  const handleAcceptOrder = async (orderId: string) => {
-    try {
-      await orderService.updateOrderStatus(orderId, 'preparing');
-      showToast(`Order #${orderId} accepted: cooking started!`, 'success');
-      fetchActiveOrders();
-    } catch (error) {
-      showToast(`Failed to start order #${orderId}`, 'error');
-    }
-  };
-
-  const handleConfirmAllReady = async (orderId: string) => {
-    try {
-      await orderService.updateOrderStatus(orderId, 'ready');
-      showToast(`Order #${orderId} ready: dispatched to service pass!`, 'success');
-      fetchActiveOrders();
-    } catch (error) {
-      showToast(`Failed to confirm order #${orderId}`, 'error');
-    }
-  };
-
-  const toggleItemDone = async (ticketId: string, itemIndex: number, currentStatus?: string, currentIsPrepared?: boolean) => {
-    if (currentStatus === 'served') return;
-    const key = `${ticketId}-${itemIndex}`;
-    const nextState = !currentIsPrepared && !checkedItems[key];
-    setCheckedItems((prev) => ({ ...prev, [key]: nextState }));
-
-    try {
-      await orderService.checkOrderItem(ticketId, itemIndex, nextState);
-    } catch (e) {
-      // Silence background error
-    }
-  };
 
   const getElapsedSeconds = (createdAt: string) => {
     const diffMs = Math.max(0, nowTimestamp - new Date(createdAt).getTime());
@@ -200,14 +194,28 @@ export const KitchenDisplayPage: React.FC = () => {
     };
   };
 
-  const filteredTickets = tickets.filter(
-    (t) => filterStatus === 'ALL' || t.status === filterStatus
-  );
+  const isTicketReady = (ticket: KDSTicket) => {
+    const active = ticket.items.filter((it) => it.status !== 'cancelled');
+    if (active.length === 0) return true;
+    const elapsed = getElapsedSeconds(ticket.createdAt);
+    return active.every((it) => {
+      const cookSecs = getDishCookMinutes(it.name, it.preparationTimeMinutes) * 60;
+      return it.status === 'served' || it.isPrepared || elapsed >= cookSecs;
+    });
+  };
+
+  const filteredTickets = tickets.filter((t) => {
+    if (filterStatus === 'ALL') return true;
+    const ready = isTicketReady(t);
+    if (filterStatus === 'ready') return ready;
+    if (filterStatus === 'cooking') return !ready;
+    return true;
+  });
 
   const activeCount = tickets.length;
-  const receivedCount = tickets.filter((t) => t.status === 'received').length;
-  const preparingCount = tickets.filter((t) => t.status === 'preparing').length;
-  const overdueCount = tickets.filter((t) => getElapsedSeconds(t.createdAt) > 900).length;
+  const readyTicketsCount = tickets.filter(isTicketReady).length;
+  const cookingTicketsCount = activeCount - readyTicketsCount;
+  const overdueCount = tickets.filter((t) => getElapsedSeconds(t.createdAt) > 900 && !isTicketReady(t)).length;
 
   const now = new Date(nowTimestamp);
   const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -274,7 +282,7 @@ export const KitchenDisplayPage: React.FC = () => {
 
         {/* Row 2: Queue Filter Tabs (Top) & Live Station Metrics (Neeche on Mobile, Inline on Desktop) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
-          {/* Filter Pills — 3 equal columns on mobile so all 3 fit without scrolling */}
+          {/* Filter Pills — 3 equal columns */}
           <div className="grid grid-cols-3 gap-1.5 w-full sm:w-auto sm:flex sm:items-center sm:space-x-1.5 py-0.5">
             <button
               onClick={() => setFilterStatus('ALL')}
@@ -292,25 +300,9 @@ export const KitchenDisplayPage: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setFilterStatus('received')}
+              onClick={() => setFilterStatus('cooking')}
               className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
-                filterStatus === 'received'
-                  ? 'bg-blue-600 text-white border-blue-400 shadow-md font-black'
-                  : 'bg-theme-bg text-blue-400 border-blue-500/30 hover:bg-blue-500/10'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 shrink-0" />
-              <span className="sm:hidden">New</span>
-              <span className="hidden sm:inline">New Incoming</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-blue-950/60 border border-blue-800 text-blue-300 font-bold">
-                {receivedCount}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setFilterStatus('preparing')}
-              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
-                filterStatus === 'preparing'
+                filterStatus === 'cooking'
                   ? 'bg-amber-600 text-white border-amber-400 shadow-md font-black'
                   : 'bg-theme-bg text-amber-400 border-amber-500/30 hover:bg-amber-500/10'
               }`}
@@ -319,22 +311,35 @@ export const KitchenDisplayPage: React.FC = () => {
               <span className="sm:hidden">Cooking</span>
               <span className="hidden sm:inline">Cooking Now</span>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-950/60 border border-amber-800 text-amber-300 font-bold">
-                {preparingCount}
+                {cookingTicketsCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setFilterStatus('ready')}
+              className={`px-1.5 sm:px-3 py-2 sm:py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center justify-center space-x-1 sm:space-x-1.5 border cursor-pointer ${
+                filterStatus === 'ready'
+                  ? 'bg-emerald-600 text-white border-emerald-400 shadow-md font-black'
+                  : 'bg-theme-bg text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="sm:hidden">Ready</span>
+              <span className="hidden sm:inline">Dishes Ready</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-300 font-bold">
+                {readyTicketsCount}
               </span>
             </button>
           </div>
 
-          {/* Quick Metrics Badges — Dedicated Bottom Row on Mobile, Inline on Desktop */}
+          {/* Quick Metrics Badges */}
           <div className="w-full sm:w-auto mt-2.5 pt-2.5 border-t border-slate-800/80 sm:border-t-0 sm:pt-0 sm:mt-0 sm:border-l sm:border-slate-800 sm:pl-3 pb-0.5">
-            <div className={`grid ${overdueCount > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 w-full sm:w-auto sm:flex sm:items-center sm:space-x-2 text-xs font-mono whitespace-nowrap`}>
+            <div className={`grid ${overdueCount > 0 ? 'grid-cols-3' : 'grid-cols-2'} gap-2 w-full sm:w-auto sm:flex sm:items-center sm:space-x-2 text-xs font-mono whitespace-nowrap`}>
               <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-theme-border text-slate-300 font-bold text-center text-[11px] sm:text-xs">
                 Orders: <strong className="text-white font-mono">{activeCount}</strong>
               </span>
-              <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-blue-500/30 text-blue-400 font-bold text-center text-[11px] sm:text-xs">
-                New: <strong className="font-mono">{receivedCount}</strong>
-              </span>
               <span className="px-2 py-2 sm:py-1.5 rounded-xl bg-theme-bg border border-amber-500/30 text-amber-400 font-bold text-center text-[11px] sm:text-xs">
-                Cooking: <strong className="font-mono">{preparingCount}</strong>
+                Cooking: <strong className="font-mono">{cookingTicketsCount}</strong>
               </span>
               {overdueCount > 0 && (
                 <span className="px-1.5 py-2 sm:py-1.5 rounded-xl bg-rose-950/30 border border-rose-500/60 text-rose-400 font-bold animate-pulse text-center text-[11px] sm:text-xs">
@@ -357,9 +362,9 @@ export const KitchenDisplayPage: React.FC = () => {
             <h2 className="font-serif text-base sm:text-lg font-bold text-white tracking-wide truncate">
               {filterStatus === 'ALL'
                 ? 'Live Cooking Pass'
-                : filterStatus === 'received'
-                ? 'New Incoming Orders'
-                : 'Active Cooking Line'}
+                : filterStatus === 'cooking'
+                ? 'Active Cooking Line'
+                : 'All Dishes Ready'}
             </h2>
             <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-300 font-mono text-[11px] sm:text-xs font-bold shrink-0">
               {filteredTickets.length} Tickets
@@ -396,25 +401,38 @@ export const KitchenDisplayPage: React.FC = () => {
               const timerFormatted = formatTimer(elapsedSecs);
               const urgency = getUrgencyConfig(elapsedSecs);
 
-              const activeItems = ticket.items.filter((it) => it.status !== 'cancelled');
-              const checkedCount = activeItems.filter(
-                (it) => {
-                  const originalIdx = ticket.items.indexOf(it);
-                  return checkedItems[`${ticket.id}-${originalIdx}`] || it.status === 'served' || it.isPrepared;
-                }
-              ).length;
-              const totalItems = activeItems.length;
-              const isAllChecked = totalItems > 0 && checkedCount === totalItems;
+              // Map each dish with its cooking duration and auto-done calculation
+              const itemsWithStatus = ticket.items.map((item, originalIdx) => {
+                const cookMins = getDishCookMinutes(item.name, item.preparationTimeMinutes);
+                const cookSecs = cookMins * 60;
+                const isCancelled = item.status === 'cancelled';
+                const isAutoDone = !isCancelled && elapsedSecs >= cookSecs;
+                const isDone = isCancelled ? false : (item.status === 'served' || item.isPrepared || isAutoDone);
+                const remainingSecs = Math.max(0, cookSecs - elapsedSecs);
+                return {
+                  item,
+                  originalIdx,
+                  cookMins,
+                  cookSecs,
+                  isCancelled,
+                  isAutoDone,
+                  isDone,
+                  remainingSecs
+                };
+              });
+
+              const activeItemsWithStatus = itemsWithStatus.filter((x) => !x.isCancelled);
+              const doneCount = activeItemsWithStatus.filter((x) => x.isDone).length;
+              const totalItems = activeItemsWithStatus.length;
+              const isAllDone = totalItems > 0 && doneCount === totalItems;
 
               return (
                 <div
                   key={ticket.id}
                   className={`bg-[#0A0D15] border rounded-2xl p-3 sm:p-5 space-y-3 sm:space-y-4 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden ${
-                    ticket.status === 'preparing'
-                      ? isAllChecked
-                        ? 'border-emerald-500 ring-2 ring-emerald-500/30'
-                        : urgency.cardBorder
-                      : 'border-slate-800 hover:border-slate-700'
+                    isAllDone
+                      ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+                      : urgency.cardBorder
                   }`}
                 >
                   <div className="space-y-3 sm:space-y-4">
@@ -427,12 +445,12 @@ export const KitchenDisplayPage: React.FC = () => {
                           </span>
                           <span
                             className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                              ticket.status === 'received'
-                                ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                              isAllDone
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                                 : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                             }`}
                           >
-                            {ticket.status === 'received' ? 'NEW' : 'IN PREP'}
+                            {isAllDone ? 'READY' : 'IN PREP'}
                           </span>
                         </div>
                         <span className="font-mono text-xs text-slate-400 font-bold">
@@ -442,7 +460,11 @@ export const KitchenDisplayPage: React.FC = () => {
 
                       <div className="text-right space-y-1">
                         <div
-                          className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${urgency.badgeStyle}`}
+                          className={`inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${
+                            isAllDone
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                              : urgency.badgeStyle
+                          }`}
                         >
                           <Clock className="w-3.5 h-3.5" />
                           <span>{timerFormatted}</span>
@@ -463,22 +485,17 @@ export const KitchenDisplayPage: React.FC = () => {
                           Active Dishes ({totalItems}
                           {ticket.items.length !== totalItems ? ` • ${ticket.items.length - totalItems} Cancelled` : ''})
                         </span>
-                        <span className={isAllChecked ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
-                          {totalItems === 0 ? 'All 86\'d' : `${checkedCount}/${totalItems} Done`}
+                        <span className={isAllDone ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>
+                          {totalItems === 0 ? 'All 86\'d' : `${doneCount}/${totalItems} Done`}
                         </span>
                       </div>
 
                       <div className="space-y-1.5">
-                        {ticket.items.map((item, idx) => {
-                          const itemKey = `${ticket.id}-${idx}`;
-                          const isCancelled = item.status === 'cancelled';
-                          const isServed = item.status === 'served';
-                          const isDone = isServed || item.isPrepared || !!checkedItems[itemKey];
-
+                        {itemsWithStatus.map(({ item, originalIdx, cookMins, isCancelled, isDone, remainingSecs }) => {
                           if (isCancelled) {
                             return (
                               <div
-                                key={idx}
+                                key={originalIdx}
                                 className="p-3 rounded-xl border border-rose-500/30 bg-rose-950/20 text-rose-300/80 flex items-start justify-between space-x-2 select-none"
                               >
                                 <div className="space-y-1 flex-1 min-w-0">
@@ -506,31 +523,39 @@ export const KitchenDisplayPage: React.FC = () => {
 
                           return (
                             <div
-                              key={idx}
-                              onClick={() => {
-                                if (ticket.status !== 'received' && !isServed) {
-                                  toggleItemDone(ticket.id, idx, item.status, item.isPrepared);
-                                }
-                              }}
+                              key={originalIdx}
                               className={`p-3 rounded-xl border transition-all flex items-start justify-between space-x-2 select-none ${
-                                isServed
-                                  ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300/80 cursor-default opacity-80'
-                                  : ticket.status === 'received'
-                                  ? 'bg-[#07090E] border-slate-800 text-slate-300 cursor-not-allowed opacity-90'
-                                  : isDone
-                                  ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200 line-through cursor-pointer'
-                                  : 'bg-[#07090E] border-slate-800/90 text-white hover:border-slate-700 cursor-pointer'
+                                isDone
+                                  ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-200'
+                                  : 'bg-[#07090E] border-slate-800/90 text-white'
                               }`}
                             >
-                              <div className="space-y-0.5 flex-1 min-w-0">
+                              <div className="space-y-1 flex-1 min-w-0">
                                 <div className="flex items-center space-x-2">
-                                  <span className="w-5 h-5 bg-amber-500/15 text-amber-400 text-xs font-mono font-bold rounded flex items-center justify-center flex-shrink-0 border border-amber-500/30">
+                                  <span className={`w-5 h-5 text-xs font-mono font-bold rounded flex items-center justify-center flex-shrink-0 border ${
+                                    isDone
+                                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                  }`}>
                                     {item.quantity}x
                                   </span>
-                                  <span className="font-bold text-xs leading-tight truncate">{item.name}</span>
+                                  <span className={`font-bold text-xs leading-tight truncate ${isDone ? 'line-through text-emerald-300/80' : 'text-white'}`}>
+                                    {item.name}
+                                  </span>
+                                  {isDone ? (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-[9px] font-bold shrink-0 uppercase flex items-center space-x-1">
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                      <span>Done ({cookMins}m)</span>
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 font-mono text-[9px] font-bold shrink-0 uppercase flex items-center space-x-1">
+                                      <Clock className="w-3 h-3 text-amber-400 animate-spin" />
+                                      <span>{formatTimer(remainingSecs)} left ({cookMins}m)</span>
+                                    </span>
+                                  )}
                                 </div>
                                 {item.notes && (
-                                  <div className="flex items-center space-x-1 pt-1 text-[10px] text-amber-400 font-medium italic">
+                                  <div className="flex items-center space-x-1 pt-0.5 text-[10px] text-amber-400 font-medium italic">
                                     <Flame className="w-3 h-3 text-amber-400 flex-shrink-0" />
                                     <span>Note: {item.notes}</span>
                                   </div>
@@ -538,38 +563,24 @@ export const KitchenDisplayPage: React.FC = () => {
                               </div>
 
                               <div className="flex items-center space-x-2 shrink-0">
-                                {/* Chef 86 / Cancel Dish Action */}
-                                {!isServed && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setCancelItemTarget({
-                                        orderId: ticket.id,
-                                        tableId: ticket.tableId,
-                                        itemIndex: idx,
-                                        itemName: item.name,
-                                        itemQuantity: item.quantity,
-                                      });
-                                    }}
-                                    title="Cancel / 86 this dish"
-                                    className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
-                                  >
-                                    <Ban className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-
-                                {isServed ? (
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-                                ) : ticket.status !== 'received' ? (
-                                  <div className="mt-0.5 flex-shrink-0">
-                                    {isDone ? (
-                                      <CheckSquare className="w-4 h-4 text-emerald-400" />
-                                    ) : (
-                                      <Square className="w-4 h-4 text-slate-600" />
-                                    )}
-                                  </div>
-                                ) : null}
+                                {/* Only Chef 86 / Cancel Dish Action */}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCancelItemTarget({
+                                      orderId: ticket.id,
+                                      tableId: ticket.tableId,
+                                      itemIndex: originalIdx,
+                                      itemName: item.name,
+                                      itemQuantity: item.quantity,
+                                    });
+                                  }}
+                                  title="Cancel / 86 this dish"
+                                  className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </button>
                               </div>
                             </div>
                           );
@@ -578,51 +589,11 @@ export const KitchenDisplayPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Operational Action Controls */}
-                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                    {/* Accept Order */}
-                    {ticket.status === 'received' && (
-                      <button
-                        onClick={() => handleAcceptOrder(ticket.id)}
-                        className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
-                      >
-                        <Flame className="w-4 h-4" />
-                        <span>Accept &amp; Fire Cook</span>
-                      </button>
-                    )}
-
-                    {/* Dispatch Order */}
-                    {ticket.status === 'preparing' && (
-                      <div className="space-y-1.5">
-                        {!isAllChecked ? (
-                          <div className="space-y-1">
-                            <button
-                              disabled
-                              className="w-full py-3 bg-slate-900 border border-slate-800 text-slate-500 font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 cursor-not-allowed opacity-70"
-                            >
-                              <Lock className="w-4 h-4 text-amber-400" />
-                              <span>Check Off All ({checkedCount}/{totalItems})</span>
-                            </button>
-                            <p className="text-[10px] text-amber-400/90 text-center font-mono">
-                              Check off all dishes above to unlock dispatch
-                            </p>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleConfirmAllReady(ticket.id)}
-                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center space-x-2 transition-all shadow-xl shadow-emerald-900/30 animate-pulse cursor-pointer"
-                          >
-                            <Check className="w-4 h-4 font-black" />
-                            <span>Dispatch to Waiter Pass</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Cancel Order */}
+                  {/* Operational Action Controls: Only Cancel / Void Ticket */}
+                  <div className="pt-3 border-t border-slate-800/80">
                     <button
                       onClick={() => setCancelModalTicket({ id: ticket.id, tableId: ticket.tableId })}
-                      className="w-full py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                      className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center space-x-1.5"
                     >
                       <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
                       <span>Void / Cancel Ticket</span>

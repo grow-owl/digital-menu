@@ -9,8 +9,9 @@ const orderItemSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['received', 'preparing', 'ready', 'served', 'cancelled'],
-    default: 'received'
+    default: 'preparing'
   },
+  preparationTimeMinutes: { type: Number, default: 5 },
   isPrepared: { type: Boolean, default: false },
   cancelReason: { type: String },
   cancelledAt: { type: Date },
@@ -33,7 +34,7 @@ const orderSchema = new mongoose.Schema({
   status: { 
     type: String, 
     enum: ['received', 'preparing', 'ready', 'served', 'completed', 'cancelled'],
-    default: 'received'
+    default: 'preparing'
   },
   subtotal: { type: Number, required: true },
   tax: { type: Number, required: true },

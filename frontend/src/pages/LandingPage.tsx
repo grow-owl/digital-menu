@@ -26,17 +26,6 @@ export const LandingPage: React.FC = () => {
       actionBg: "bg-[#9d785e] hover:bg-[#86644d] text-white"
     },
     {
-      title: "Waiter Floor Station",
-      role: "Floor Service Staff",
-      route: "/waiter",
-      icon: Layers,
-      description: "Manage table occupancy across dining zones, respond to guest assistance calls, record manual table orders, and monitor ready-for-pickup notifications.",
-      badge: "Staff Role",
-      badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
-      cta: "Floor Station",
-      actionBg: "bg-[#223134] hover:bg-[#1a2528] text-white"
-    },
-    {
       title: "Kitchen Display (KDS)",
       role: "Kitchen Line and Chefs",
       route: "/kitchen",

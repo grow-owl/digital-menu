@@ -48,13 +48,24 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
     }
   };
 
-  const handleCallWaiter = async (reason: string) => {
+  const handleCallService = async (reason: string = 'Call Service to Table') => {
     try {
       await tableService.callWaiter(tableId, reason);
-      showToast(`Waiter notified: "${reason}"`, 'success');
+      const existingAlerts = JSON.parse(localStorage.getItem('aura_waiter_alerts') || '[]');
+      const newAlert = {
+        id: Date.now(),
+        tableId,
+        reason,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        status: 'PENDING',
+      };
+      localStorage.setItem('aura_waiter_alerts', JSON.stringify([newAlert, ...existingAlerts]));
+      window.dispatchEvent(new CustomEvent('service_called', { detail: newAlert }));
+      window.dispatchEvent(new Event('storage'));
+      showToast(`Service assistance requested for Table ${tableId}!`, 'success');
       onClose();
     } catch (e) {
-      showToast('Waiter alert sent to floor staff.', 'info');
+      showToast(`Service call sent for Table ${tableId}.`, 'info');
       onClose();
     }
   };
@@ -152,22 +163,14 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
             </div>
           </div>
 
-          {/* Quick Waiter Call Shortcuts */}
-          <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-[10px] font-bold">
+          {/* Quick Call Service Shortcut */}
+          <div className="pt-2 border-t border-slate-200">
             <button
-              onClick={() => handleCallWaiter('Water Refill')}
-              className="p-2 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-[#0C831F] rounded-xl transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm"
+              onClick={() => handleCallService('Call Service to Table')}
+              className="w-full p-2.5 bg-[#F7D046] hover:bg-yellow-400 text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-sm text-xs active:scale-95"
             >
-              <Bell className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Water Refill</span>
-            </button>
-
-            <button
-              onClick={() => handleCallWaiter('Call Waiter')}
-              className="p-2 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-[#0C831F] rounded-xl transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm"
-            >
-              <Bell className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Call Waiter</span>
+              <Bell className="w-4 h-4 text-slate-900" />
+              <span>Call Service</span>
             </button>
           </div>
         </div>

@@ -7,7 +7,6 @@ import {
   ChevronLeft, ChevronRight, Check, Award
 } from 'lucide-react';
 import { CallWaiterButton } from '../../components/customer/CallWaiterButton';
-import { WaterRefillButton } from '../../components/customer/WaterRefillButton';
 import { DishDetailModal } from '../../components/menu/DishDetailModal';
 import { CartDrawer } from '../../components/cart/CartDrawer';
 import { useCartStore } from '../../store/use-cart-store';
@@ -1051,10 +1050,7 @@ export const OrderTrackingPage: React.FC = () => {
         onClose={() => setSelectedDish(null)}
       />
 
-      {/* Floating 1-Tap Water Refill (Directly above Call Waiter) */}
-      <WaterRefillButton tableId={tableId} />
-
-      {/* Floating Call Waiter Button */}
+      {/* Floating Call Service Button */}
       <CallWaiterButton tableId={tableId} />
     </div>
   );

@@ -41,8 +41,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       sections.push({
         section: 'MANAGEMENT',
         items: [
-          { name: 'Admin Operations & Billing', shortName: 'Admin', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
-          { name: 'QR Table Stands & Print', shortName: 'QR Studio', path: '/admin/qr-generator', icon: QrCode, accent: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' },
+          { name: 'Admin', shortName: 'Admin', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
+          { name: 'QR Section', shortName: 'QR Section', path: '/admin/qr-generator', icon: QrCode, accent: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' },
         ]
       });
     }
@@ -77,7 +77,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const getPortalMeta = () => {
     if (location.pathname.startsWith('/admin')) {
       return { 
-        label: 'ADMIN & OPERATIONS PORTAL', 
+        label: 'ADMIN', 
         badgeColor: 'bg-theme-primary-light text-theme-primary border-theme-primary/30',
         themeClass: 'page-theme-admin'
       };

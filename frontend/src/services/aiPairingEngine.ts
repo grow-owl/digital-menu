@@ -39,28 +39,66 @@ export interface SpendMoreTier {
 }
 
 /**
- * Expanded Universal Popular Add-ons added to every dish selection
+ * Universal Mineral Water Add-on (Must be present on every food & beverage dish)
+ */
+export const MINERAL_WATER_ADDON: AIPairingAddon = {
+  id: 'addon-mineral-water-10',
+  name: 'Packaged Mineral Water (500ml)',
+  price: 10,
+  reason: 'Sealed 500ml Bottle',
+  isPopular: true,
+};
+
+/**
+ * Universal Popular Add-ons based strictly on Siliguri Chai Addaa real menu
  */
 export const POPULAR_UNIVERSAL_ADDONS: AIPairingAddon[] = [
-  { id: 'add-chai-biscuit', name: 'Handmade Chai Biscuits (2 pcs)', price: 20, reason: 'Chai Dipping Classic', isPopular: true },
-  { id: 'add-bun-maska', name: 'Warm Bun Maska Slice', price: 35, reason: 'Buttered Cafe Classic', isPopular: true },
-  { id: 'add-cheese-slice', name: 'Melted Amul Cheese Slice', price: 25, reason: 'Gooey Melt', isPopular: true },
-  { id: 'add-dalle-chutney', name: 'Darjeeling Dalle Chilli Dip', price: 20, reason: 'Fiery Himalayan Kick', isPopular: true },
-  { id: 'add-garlic-mayo', name: 'House Garlic Mayo Dip', price: 20, reason: 'Creamy Dip', isPopular: true },
-  { id: 'add-vanilla-scoop', name: 'Vanilla Ice Cream Scoop', price: 35, reason: 'Sweet Float', isPopular: true },
+  MINERAL_WATER_ADDON,
+  { id: 'add-classic-fries', name: 'Classic Salted Fries', price: 100, reason: 'Crispy Snack', isPopular: true },
+  { id: 'add-veg-sandwich', name: 'Veg Cheese Sandwich', price: 100, reason: 'Toasted Cafe Classic', isPopular: true },
+  { id: 'add-coke-sprite', name: 'Coke / Sprite (Chilled Can)', price: 50, reason: 'Chilled Drink', isPopular: true },
 ];
 
 /**
- * Dynamic Per-Dish AI Add-on Generator for Siliguri's Chai Addaa
+ * Dynamic Per-Dish Add-on Generator for Siliguri's Chai Addaa
+ * Strictly matches genuine physical menu items with exact prices and zero hallucinations.
  */
 export const getSmartAddonsForDish = (dish: MenuItem): AIPairingAddon[] => {
   const name = (dish.name || '').toLowerCase();
   const category = (dish.categoryName || '').toLowerCase();
+  const isDishMineralWater = name.includes('mineral water') || dish.id === 95;
 
   let specificAddons: AIPairingAddon[] = [];
 
-  // 1. Chai & Artisan Teas & Coffees
+  // 1. Milkshakes & Shakes (Matching physical menu: Ice Cream Add On ₹30)
   if (
+    category.includes('shake') ||
+    category.includes('boba') ||
+    category.includes('matcha') ||
+    name.includes('shake') ||
+    name.includes('blast') ||
+    name.includes('cream') ||
+    name.includes('frappe')
+  ) {
+    specificAddons = [
+      { id: `add-${dish.id}-icecream`, name: 'Ice Cream Add-on', price: 30, reason: 'Make it even more indulgent!' },
+    ];
+  }
+  // 2. Artisanal Pastas (Matching physical menu: Garlic Bread ₹59, Extra Cheese ₹49, Extra Chicken ₹79)
+  else if (
+    category.includes('pasta') ||
+    name.includes('pasta') ||
+    name.includes('arrabbiata') ||
+    name.includes('alfredo')
+  ) {
+    specificAddons = [
+      { id: `add-${dish.id}-garlic-bread`, name: 'Garlic Bread (2 pcs)', price: 59, reason: 'Italian Classic' },
+      { id: `add-${dish.id}-extra-cheese`, name: 'Extra Cheese', price: 49, reason: 'Melted Mozzarella' },
+      { id: `add-${dish.id}-extra-chicken`, name: 'Extra Chicken', price: 79, reason: 'Seared Chicken Strips' },
+    ];
+  }
+  // 3. Chai & Hot Teas & Coffees (Pair with Sandwiches, Burgers, Fries from actual menu)
+  else if (
     category.includes('chai') ||
     category.includes('tea') ||
     category.includes('coffee') ||
@@ -68,169 +106,172 @@ export const getSmartAddonsForDish = (dish: MenuItem): AIPairingAddon[] => {
     name.includes('chai') ||
     name.includes('coffee') ||
     name.includes('cappuccino') ||
+    name.includes('latte') ||
     name.includes('espresso') ||
-    name.includes('americano')
+    name.includes('brew')
   ) {
     specificAddons = [
-      { id: `add-${dish.id}-biscuits`, name: 'Handmade Chai Biscuits (2 pcs)', price: 20, reason: 'Chai Dipping Classic' },
-      { id: `add-${dish.id}-ginger-elaichi`, name: 'Fresh Crushed Ginger & Elaichi', price: 15, reason: 'Aromatic Infusion' },
-      { id: `add-${dish.id}-bun-maska`, name: 'Warm Bun Maska Slice', price: 35, reason: 'Traditional Cafe Pairing' },
-      { id: `add-${dish.id}-honey`, name: 'Pure Honey Drizzle', price: 20, reason: 'Natural Sweetener' },
+      { id: `add-${dish.id}-salted-fries`, name: 'Classic Salted Fries', price: 100, reason: 'Crispy Snack' },
+      { id: `add-${dish.id}-veg-sandwich`, name: 'Veg Cheese Sandwich', price: 100, reason: 'Toasted Cafe Classic' },
+      { id: `add-${dish.id}-veg-burger`, name: 'Veg Cheese Burger', price: 100, reason: 'Hearty Bite' },
+      { id: `add-${dish.id}-peri-fries`, name: 'Peri Peri Fries', price: 120, reason: 'Spicy & Crispy' },
     ];
   }
-  // 2. Boba Teas, Shakes & Cold Refreshers
+  // 4. Noodles & Fried Rice (Pair with Appetisers & Cold Drinks from actual menu)
   else if (
-    category.includes('boba') ||
-    category.includes('refresher') ||
-    category.includes('shake') ||
-    name.includes('boba') ||
-    name.includes('shake') ||
-    name.includes('mojito') ||
-    name.includes('soda') ||
-    name.includes('lassi')
+    category.includes('noodle') ||
+    category.includes('rice') ||
+    category.includes('chowmein') ||
+    name.includes('chowmein') ||
+    name.includes('noodle') ||
+    name.includes('fried rice')
   ) {
+    const isChickenDish = name.includes('chicken') || dish.isNonVeg;
     specificAddons = [
-      { id: `add-${dish.id}-boba`, name: 'Extra Tapioca Boba Pearls', price: 30, reason: 'Chewy & Sweet' },
-      { id: `add-${dish.id}-icecream`, name: 'Vanilla Ice Cream Scoop', price: 35, reason: 'Creamy Float' },
-      { id: `add-${dish.id}-choco-drizzle`, name: 'Rich Chocolate Drizzle', price: 20, reason: 'Sweet Topping' },
+      { id: `add-${dish.id}-chilli-babycorn`, name: 'Crispy Chilli Babycorn', price: 160, reason: 'Hot Appetiser' },
+      isChickenDish
+        ? { id: `add-${dish.id}-chicken-nuggets`, name: 'Chicken Nuggets (8pcs)', price: 150, reason: 'Crispy Non-Veg' }
+        : { id: `add-${dish.id}-cheese-nuggets`, name: 'Veg Cheese Corn Nuggets (8pcs)', price: 150, reason: 'Cheesy Bites' },
+      { id: `add-${dish.id}-coke-sprite`, name: 'Coke / Sprite (Chilled Can)', price: 50, reason: 'Chilled Drink' },
+      { id: `add-${dish.id}-masala-coke`, name: 'Masala Coke / Sprite', price: 70, reason: 'Spicy Cooler' },
     ];
   }
-  // 3. Momos (Steamed, Fried, Kurkure)
-  else if (category.includes('momo') || name.includes('momo')) {
-    specificAddons = [
-      { id: `add-${dish.id}-dalle-dip`, name: 'Spicy Darjeeling Dalle Chilli Dip', price: 20, reason: 'Fiery Himalayan Kick' },
-      { id: `add-${dish.id}-garlic-mayo`, name: 'Creamy Garlic Mayo Dip', price: 25, reason: 'Cooling Dip' },
-      { id: `add-${dish.id}-momo-soup`, name: 'Warm Clear Momo Soup Bowl', price: 30, reason: 'Comfort Broth' },
-    ];
-  }
-  // 4. Burgers, Sandwiches, Quick Bites & Fries
+  // 5. Burgers & Sandwiches
   else if (
     category.includes('burger') ||
     category.includes('sandwich') ||
-    category.includes('quick bite') ||
-    category.includes('fries') ||
     name.includes('burger') ||
-    name.includes('sandwich') ||
-    name.includes('fries') ||
-    name.includes('spring roll')
+    name.includes('sandwich')
   ) {
     specificAddons = [
-      { id: `add-${dish.id}-cheese-slice`, name: 'Melted Amul Cheese Slice', price: 25, reason: 'Gooey Melt' },
-      { id: `add-${dish.id}-peri-peri`, name: 'Peri Peri Seasoning Shake', price: 15, reason: 'Zesty Kick' },
-      { id: `add-${dish.id}-garlic-dip`, name: 'Signature House Mayo Dip', price: 20, reason: 'Creamy Sauce' },
+      { id: `add-${dish.id}-peri-fries`, name: 'Peri Peri Fries', price: 120, reason: 'Signature Fries' },
+      { id: `add-${dish.id}-coke-sprite`, name: 'Coke / Sprite (Chilled Can)', price: 50, reason: 'Chilled Drink' },
+      { id: `add-${dish.id}-pizza-fingers`, name: 'Cheesy Pizza Fingers', price: 170, reason: 'Crunchy Bites' },
     ];
   }
-  // 5. Maggi & Noodles
+  // 6. Crispy Fries & Appetisers
   else if (
-    category.includes('maggi') ||
-    category.includes('noodle') ||
-    name.includes('maggi') ||
-    name.includes('wai wai') ||
-    name.includes('hakka') ||
-    name.includes('noodles')
+    category.includes('fries') ||
+    category.includes('appetiser') ||
+    name.includes('fries') ||
+    name.includes('nuggets') ||
+    name.includes('paneer pops')
   ) {
     specificAddons = [
-      { id: `add-${dish.id}-cheese-grated`, name: 'Grated Amul Cheese Topping', price: 30, reason: 'Cheesy Twist' },
-      { id: `add-${dish.id}-egg`, name: 'Fried Sunny / Boiled Egg', price: 20, reason: 'Protein Boost' },
-      { id: `add-${dish.id}-veggies`, name: 'Extra Veggie Toss', price: 20, reason: 'Fresh Crunch' },
+      { id: `add-${dish.id}-coke-sprite`, name: 'Coke / Sprite (Chilled Can)', price: 50, reason: 'Chilled Drink' },
+      { id: `add-${dish.id}-masala-coke`, name: 'Masala Coke / Sprite', price: 70, reason: 'Spicy Cooler' },
+      { id: `add-${dish.id}-lime-soda`, name: 'Fresh Lime Soda', price: 60, reason: 'Sparkling Citrus' },
     ];
   }
-  // 6. Pastas
-  else if (category.includes('pasta') || name.includes('pasta') || name.includes('arrabbiata') || name.includes('alfredo')) {
+  // 7. Desserts & Ice Cream
+  else if (
+    category.includes('dessert') ||
+    category.includes('ice cream') ||
+    name.includes('ice cream') ||
+    name.includes('brownie')
+  ) {
     specificAddons = [
-      { id: `add-${dish.id}-garlic-toast`, name: 'Crispy Garlic Toast (2 pcs)', price: 35, reason: 'Crispy Bread' },
-      { id: `add-${dish.id}-extra-cheese`, name: 'Extra Melted Mozzarella', price: 35, reason: 'Cheese Pull' },
-      { id: `add-${dish.id}-herbs`, name: 'Herb & Chilli Flakes Toss', price: 15, reason: 'Aromatic Seasoning' },
+      { id: `add-${dish.id}-extra-scoop`, name: 'Extra Ice Cream Scoop', price: 30, reason: 'Double Indulgence' },
     ];
   }
-  // 7. Bakery & Desserts
-  else if (category.includes('dessert') || category.includes('bakery') || name.includes('brownie') || name.includes('cheesecake') || name.includes('cake')) {
+  // 8. Coolers & Traditional Lassi
+  else if (
+    category.includes('cooler') ||
+    category.includes('lassi') ||
+    name.includes('lassi') ||
+    name.includes('mojito') ||
+    name.includes('soda')
+  ) {
     specificAddons = [
-      { id: `add-${dish.id}-vanilla-gelato`, name: 'Vanilla Ice Cream Scoop', price: 35, reason: 'Hot & Cold Contrast' },
-      { id: `add-${dish.id}-choco-fudge`, name: 'Warm Chocolate Fudge Drizzle', price: 25, reason: 'Decadent Cocoa' },
+      { id: `add-${dish.id}-salted-fries`, name: 'Classic Salted Fries', price: 100, reason: 'Crispy Snack' },
+      { id: `add-${dish.id}-veg-sandwich`, name: 'Veg Cheese Sandwich', price: 100, reason: 'Cafe Classic' },
     ];
   }
-  // 8. General Cafe Default
+  // 9. Chef's Specials & Tandoor
   else {
     specificAddons = [
-      { id: `add-${dish.id}-biscuits`, name: 'Handmade Chai Biscuits (2 pcs)', price: 20, reason: 'Chai Dipping Classic' },
-      { id: `add-${dish.id}-bun-maska`, name: 'Warm Bun Maska Slice', price: 35, reason: 'Traditional Cafe Pairing' },
-      { id: `add-${dish.id}-cheese-slice`, name: 'Melted Amul Cheese Slice', price: 25, reason: 'Gooey Melt' },
+      { id: `add-${dish.id}-coke-sprite`, name: 'Coke / Sprite (Chilled Can)', price: 50, reason: 'Chilled Drink' },
+      { id: `add-${dish.id}-lime-soda`, name: 'Fresh Lime Soda', price: 60, reason: 'Sparkling Citrus' },
+      { id: `add-${dish.id}-peri-fries`, name: 'Peri Peri Fries', price: 120, reason: 'Crispy Snack' },
     ];
   }
 
-  // Cap to 4 relevant pairings for clear, un-cluttered display on mobile
-  return specificAddons.slice(0, 4);
+  // Prepend Packaged Mineral Water (+₹10) to every dish (except when ordering mineral water itself)
+  if (!isDishMineralWater) {
+    return [MINERAL_WATER_ADDON, ...specificAddons];
+  }
+
+  return specificAddons;
 };
 
 /**
- * Spend-More Gamified Tiered Discount & Freebie Calculator
+ * Spend-More Tiered Discount & Freebie Calculator (100% Real Menu Items)
  */
 export const getSpendMoreProgress = (subtotal: number): SpendMoreTier => {
   const TIER_1_OPTIONS: SpendMoreRewardOption[] = [
     {
-      id: 9902,
-      name: 'Wood-Fired Garlic Butter Naan (Free)',
+      id: 95,
+      name: 'Packaged Mineral Water 500ml (Free)',
       price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=400&q=80',
-      description: 'Clay-oven naan brushed with garlic herb butter (Save ₹90)',
+      imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=400&q=80',
+      description: 'Chilled sealed packaged mineral water bottle (Save ₹10)',
     },
     {
-      id: 9903,
-      name: 'Chilled Coca-Cola 330ml (Free)',
+      id: 70,
+      name: 'Chilled Coke / Sprite (Free)',
       price: 0,
       imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=400&q=80',
-      description: 'Ice-cold classic Coca-Cola can (Save ₹60)',
+      description: 'Ice-cold classic Coke or Sprite can (Save ₹50)',
     },
   ];
 
   const TIER_2_OPTIONS: SpendMoreRewardOption[] = [
     {
-      id: 9904,
-      name: 'Fresh Mint Lime Soda (Free)',
+      id: 72,
+      name: 'Fresh Lime Soda (Free)',
       price: 0,
       imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=400&q=80',
-      description: 'Sparkling mint lime mocktail (Save ₹85)',
+      description: 'Sparkling freshly squeezed mint lime soda (Save ₹60)',
     },
     {
-      id: 9906,
-      name: 'Artisanal Truffle Butter Dip (Free)',
+      id: 48,
+      name: 'Classic Salted French Fries (Free)',
       price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=400&q=80',
-      description: 'Rich French black truffle butter dip (Save ₹65)',
+      imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=400&q=80',
+      description: 'Golden crispy thin-cut fries with sea salt (Save ₹100)',
     },
   ];
 
   const TIER_3_OPTIONS: SpendMoreRewardOption[] = [
     {
-      id: 9907,
-      name: 'Valrhona Chocolate Lava Cake (Free)',
-      price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=400&q=80',
-      description: 'Warm molten Belgian chocolate lava cake (Save ₹220)',
-    },
-    {
-      id: 9908,
-      name: 'Madagascar Vanilla Gelato (Free)',
+      id: 89,
+      name: 'Vanilla Ice Cream (3 scoops) (Free)',
       price: 0,
       imageUrl: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=400&q=80',
-      description: 'Slow-churned Bourbon vanilla gelato (Save ₹140)',
+      description: 'Madagascar vanilla bean ice cream (Save ₹120)',
+    },
+    {
+      id: 49,
+      name: 'Peri Peri Fries (Free)',
+      price: 0,
+      imageUrl: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=400&q=80',
+      description: 'Crispy fries tossed in African peri peri seasoning (Save ₹120)',
     },
   ];
 
   const QUICK_BOOSTERS = [
-    { id: 201, name: 'Chilled Coca-Cola', price: 60, imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=200&q=80' },
-    { id: 202, name: 'Extra Melted Cheese', price: 75, imageUrl: 'https://images.unsplash.com/photo-1552590635-27c2c2128abf?auto=format&fit=crop&w=200&q=80' },
-    { id: 203, name: 'Garlic Butter Naan', price: 90, imageUrl: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=200&q=80' },
-    { id: 204, name: 'Fresh Mint Lime Soda', price: 85, imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=200&q=80' },
-    { id: 205, name: 'Garlic Mayo Dip', price: 45, imageUrl: 'https://images.unsplash.com/photo-1452195100486-9cc805987862?auto=format&fit=crop&w=200&q=80' },
-    { id: 206, name: 'Truffle Fries Side', price: 180, imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=200&q=80' },
+    { id: 95, name: 'Mineral Water 500ml', price: 10, imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=200&q=80' },
+    { id: 70, name: 'Coke / Sprite', price: 50, imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=200&q=80' },
+    { id: 72, name: 'Fresh Lime Soda', price: 60, imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=200&q=80' },
+    { id: 48, name: 'Classic French Fries', price: 100, imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=200&q=80' },
+    { id: 41, name: 'Veg Cheese Sandwich', price: 100, imageUrl: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=200&q=80' },
+    { id: 49, name: 'Peri Peri Fries', price: 120, imageUrl: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=200&q=80' },
   ];
 
   if (subtotal >= 2000) {
     return {
       target: 2000,
-      reward: '👑 TIER 3 VIP: Free Valrhona Lava Cake or Gelato (Save ₹220)',
+      reward: '👑 TIER 3 VIP: Free Vanilla Ice Cream (3 scoops) or Peri Peri Fries (Save ₹120)',
       tierLevel: 3,
       rewardOptions: TIER_3_OPTIONS,
       percent: 100,
@@ -243,13 +284,13 @@ export const getSpendMoreProgress = (subtotal: number): SpendMoreTier => {
   if (subtotal >= 1000) {
     return {
       target: 1000,
-      reward: '🍹 TIER 2: Free Mint Lime Soda or Truffle Dip (Save ₹85)',
+      reward: '🍹 TIER 2: Free Fresh Lime Soda or Classic Fries (Save up to ₹100)',
       tierLevel: 2,
       rewardOptions: TIER_2_OPTIONS,
       percent: 100,
       amountNeeded: 2000 - subtotal,
       isUnlocked: true,
-      nextTier: { target: 2000, reward: 'Valrhona Chocolate Lava Cake (₹220)' },
+      nextTier: { target: 2000, reward: 'Vanilla Ice Cream (3 scoops) (₹120)' },
       quickBoosters: QUICK_BOOSTERS,
     };
   }
@@ -257,104 +298,104 @@ export const getSpendMoreProgress = (subtotal: number): SpendMoreTier => {
   if (subtotal >= 500) {
     return {
       target: 500,
-      reward: '🫓 TIER 1: Free Garlic Butter Naan or Coca-Cola (Save ₹90)',
+      reward: '🥤 TIER 1: Free Chilled Coke / Sprite or Mineral Water (Save ₹50)',
       tierLevel: 1,
       rewardOptions: TIER_1_OPTIONS,
       percent: 100,
       amountNeeded: 1000 - subtotal,
       isUnlocked: true,
-      nextTier: { target: 1000, reward: 'Fresh Mint Lime Soda (₹85)' },
+      nextTier: { target: 1000, reward: 'Fresh Lime Soda / Classic Fries (₹100)' },
       quickBoosters: QUICK_BOOSTERS,
     };
   }
 
   return {
     target: 500,
-    reward: 'Free Garlic Naan / Drink (Save ₹90)',
+    reward: 'Free Chilled Coke / Sprite (Save ₹50)',
     tierLevel: 1,
     rewardOptions: TIER_1_OPTIONS,
     percent: Math.min(100, Math.round((subtotal / 500) * 100)),
     amountNeeded: 500 - subtotal,
     isUnlocked: false,
-    nextTier: { target: 500, reward: 'Free Garlic Naan / Drink (₹90)' },
+    nextTier: { target: 500, reward: 'Free Chilled Drink (₹50)' },
     quickBoosters: QUICK_BOOSTERS,
   };
 };
 
 /**
- * Expanded AI Recommended Pairings for Cart & Menu Detail Modals
+ * Authentic AI Recommended Pairings for Cart & Menu Detail Modals (Real Menu Items Only)
  */
 export const AI_RECOMMENDED_PAIRINGS: AIPairingItem[] = [
   {
     id: 1,
     name: 'Masala Tea',
     price: 40,
-    description: 'A hot glass of milk tea, rich with visible whole spices and aromatics.',
+    description: 'Hot clay-cup milk tea with visible whole spices, fresh ginger and cardamom.',
     category: 'Chai & Hot Teas',
     imageUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80',
-    badge: 'Adda Bestseller',
+    badge: 'Signature Chai',
   },
   {
-    id: 20,
+    id: 49,
     name: 'Peri Peri Fries',
-    price: 90,
-    description: 'French fries dusted with fiery, zesty peri peri spice seasoning.',
+    price: 120,
+    description: 'Crispy golden French fries tossed in fiery African peri peri spice.',
     category: 'Crispy Fries & Appetisers',
-    imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=800&q=80',
     badge: 'Crispy Favorite',
   },
   {
     id: 7,
     name: 'Cold Coffee',
     price: 120,
-    description: 'A frosted glass of thick blended cold coffee topped with cocoa powder.',
+    description: 'Thick blended artisanal cold coffee with rich cocoa dusting.',
     category: 'Coffee & Brews',
     imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=800&q=80',
     badge: 'Cafe Bestseller',
   },
   {
-    id: 27,
-    name: 'Kala Khatta',
-    price: 80,
-    description: 'Tangy, sweet, and spiced blackberry cooler served over crushed ice.',
-    category: 'Coolers & Traditional Lassi',
-    imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80',
-    badge: 'Local Special',
-  },
-  {
-    id: 5,
-    name: 'Peach Ice Tea',
-    price: 150,
-    description: 'A tall, condensation-covered glass of iced tea with peach slices.',
-    category: 'Chai & Hot Teas',
-    imageUrl: 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=800&q=80',
-    badge: 'Cool Refresher',
-  },
-  {
-    id: 14,
+    id: 26,
     name: 'Oreo Blast Milkshake',
     price: 130,
-    description: 'Thick creamy milkshake blended with Oreo cookies and chocolate drizzle.',
+    description: 'Thick creamy milkshake blended with crunchy Oreo cookies & chocolate drizzle.',
     category: 'Matcha, Boba & Shakes',
-    imageUrl: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
-    badge: 'Sweet Finish',
+    imageUrl: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=800&q=80',
+    badge: 'Sweet Special',
   },
   {
-    id: 31,
-    name: 'Vanilla Ice Cream',
-    price: 50,
-    description: 'Classic velvety vanilla ice cream served in a glass dessert cup.',
+    id: 41,
+    name: 'Veg Cheese Sandwich',
+    price: 100,
+    description: 'Toasted golden sandwich with crisp fresh veggies & melted cheese, served with fries.',
+    category: 'Burgers & Sandwiches',
+    imageUrl: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=800&q=80',
+    badge: 'All-Day Favorite',
+  },
+  {
+    id: 89,
+    name: 'Vanilla Ice Cream (3 scoops)',
+    price: 120,
+    description: 'Rich & creamy Madagascar vanilla bean ice cream served chilled.',
     category: 'Desserts & Ice Cream',
     imageUrl: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=800&q=80',
-    badge: 'Dessert',
+    badge: 'Dessert Classic',
   },
   {
-    id: 19,
-    name: 'Salted Classic French Fries',
-    price: 80,
-    description: 'Crispy skin-on french fries seasoned with fine sea salt.',
+    id: 48,
+    name: 'Classic Salted French Fries',
+    price: 100,
+    description: 'Crispy golden French fries tossed in fine sea salt.',
     category: 'Crispy Fries & Appetisers',
-    imageUrl: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80',
     badge: 'Quick Snack',
+  },
+  {
+    id: 95,
+    name: 'Packaged Mineral Water (500ml)',
+    price: 10,
+    description: 'Chilled sealed packaged mineral water bottle (500ml).',
+    category: 'Coolers & Traditional Lassi',
+    imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80',
+    badge: 'Essential',
   },
 ];

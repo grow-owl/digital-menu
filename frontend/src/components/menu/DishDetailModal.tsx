@@ -279,7 +279,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
             <div className="p-3 sm:p-3.5 bg-gradient-to-br from-[#FCFBF8] via-[#F8F3EC] to-[#F3ECE1] border border-[#E5D7C7] rounded-xl sm:rounded-2xl space-y-2 shadow-2xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-[#3B2818] uppercase tracking-wider">
-                  Chef's Recommended Pairings
+                  Add-ons &amp; Chef Pairings
                 </span>
               </div>
 

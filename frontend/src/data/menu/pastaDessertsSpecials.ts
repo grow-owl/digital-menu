@@ -32,7 +32,6 @@ export const PASTA_DESSERTS_SPECIALS_ITEMS: MenuItem[] = [
     calories: 420,
     rating: 4.93,
     preparationTimeMinutes: 12,
-    customizationGroups: PASTA_CUSTOMIZATION_GROUPS,
   },
   {
     id: 86,
@@ -52,7 +51,6 @@ export const PASTA_DESSERTS_SPECIALS_ITEMS: MenuItem[] = [
     calories: 520,
     rating: 4.96,
     preparationTimeMinutes: 14,
-    customizationGroups: PASTA_CUSTOMIZATION_GROUPS,
   },
   {
     id: 87,
@@ -70,7 +68,6 @@ export const PASTA_DESSERTS_SPECIALS_ITEMS: MenuItem[] = [
     calories: 540,
     rating: 4.95,
     preparationTimeMinutes: 12,
-    customizationGroups: PASTA_CUSTOMIZATION_GROUPS,
   },
   {
     id: 88,
@@ -91,7 +88,6 @@ export const PASTA_DESSERTS_SPECIALS_ITEMS: MenuItem[] = [
     calories: 640,
     rating: 4.98,
     preparationTimeMinutes: 14,
-    customizationGroups: PASTA_CUSTOMIZATION_GROUPS,
   },
 
   // ── DESSERTS & ICE CREAM ────────────────────────────────────────────────────

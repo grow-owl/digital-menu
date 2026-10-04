@@ -14,6 +14,7 @@ import {
   downloadStandCard,
   downloadQrOnly,
   batchDownloadAllStands,
+  getGoogleReviewsQrDataUrl,
 } from '../../utils/standCardGenerator';
 import {
   QrCode,
@@ -73,13 +74,15 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
 
   // Cache of locally generated QR code data URLs (tableNumber -> dataUrl)
   const [qrCache, setQrCache] = useState<{ [key: string]: string }>({});
+  const [reviewQrDataUrl, setReviewQrDataUrl] = useState<string>('');
 
-  // Sync config when modal opens
+  // Sync config & Google Reviews QR when modal opens
   useEffect(() => {
     if (isOpen) {
       const active = getVenueConfig();
       setConfig(active);
       setDraftConfig(active);
+      getGoogleReviewsQrDataUrl(300).then(setReviewQrDataUrl).catch(console.error);
     }
   }, [isOpen]);
 
@@ -606,110 +609,112 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                 return (
                   <div
                     key={table.tableNumber}
-                    className={`rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col justify-between space-y-3 transition-all duration-300 relative group shadow-xl ${themeStyle.cardBg} ${themeStyle.frameBorder}`}
+                    className="rounded-2xl sm:rounded-3xl p-4 sm:p-5 flex flex-col justify-between space-y-3 transition-all duration-300 relative group shadow-xl bg-[#090D16] border border-slate-800 hover:border-amber-500/50"
                   >
-                    {/* Inner Decorative Border */}
-                    <div
-                      className={`absolute inset-2 rounded-2xl pointer-events-none ${themeStyle.innerBorder}`}
-                    />
-
-                    {/* Stand Header: Brand & Table Plaque */}
-                    <div className="relative z-10 space-y-2 border-b border-white/10 pb-3">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-[10px] tracking-widest font-black uppercase font-serif ${themeStyle.accentText}`}>
-                          ✦ {config.brandName.toUpperCase()} ✦
+                    {/* Header: Table Number & Status */}
+                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-serif font-black text-lg sm:text-xl text-white tracking-wide">
+                          TABLE {table.tableNumber}
                         </span>
-                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-white/10 text-slate-300 border border-white/20">
-                          {`Cap: ${table.capacity || 4}`}
-                        </span>
-                      </div>
-
-                      {/* Prominent Table Plaque */}
-                      <div
-                        className={`py-2 px-3 rounded-xl border flex items-center justify-between shadow-md ${themeStyle.plaqueBg}`}
-                      >
-                        <div>
-                          <div className="font-serif font-black text-xl sm:text-2xl tracking-wider leading-none">
-                            TABLE {table.tableNumber}
-                          </div>
-                          <div className="text-[10px] opacity-75 font-mono mt-0.5">
-                            Dine &amp; Dispatch
-                          </div>
-                        </div>
-
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-black/40 text-emerald-400 border border-emerald-500/40 uppercase font-bold">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase font-bold">
                           Active
                         </span>
                       </div>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        Cap: {table.capacity || 4} Guests
+                      </span>
                     </div>
 
-                    {/* QR Code Plaque Centerpiece with Center Medallion */}
-                    <div className="relative z-10 flex flex-col items-center justify-center py-2 space-y-2">
-                      <div className="relative p-2.5 bg-white rounded-2xl shadow-2xl border-2 border-white/80 group-hover:scale-[1.02] transition-transform">
+                    {/* Authentic Stand Card Preview matching the physical template */}
+                    <div className="relative w-full aspect-[682/1024] rounded-2xl overflow-hidden shadow-2xl border border-amber-900/40 bg-[#FAF7F2] select-none group-hover:shadow-amber-500/10 transition-shadow">
+                      {/* Stand Template Background */}
+                      <img
+                        src="/images/chai_addaa_stand_template.png"
+                        alt="Stand Template"
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
+
+                      {/* Upper White Box: Table-Specific Dine QR (Menu QR) */}
+                      <div
+                        className="absolute flex items-center justify-center pointer-events-none"
+                        style={{
+                          top: '26.4%',
+                          left: '26.5%',
+                          width: '46.9%',
+                          height: '31.2%',
+                        }}
+                      >
                         {qrDataUrl ? (
-                          <div className="relative w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center">
-                            <img
-                              src={qrDataUrl}
-                              alt={`Table ${table.tableNumber} QR`}
-                              className="w-full h-full object-contain select-none"
-                            />
-                            {/* Center Favicon Badge */}
-                            <div className="absolute inset-0 m-auto w-9 h-9 p-0.5 bg-white rounded-lg shadow-md border-2 border-amber-500 flex items-center justify-center pointer-events-none">
-                              <img
-                                src="/favicon.svg"
-                                alt="Siliguri's Chai Addaa"
-                                className="w-full h-full object-contain rounded-md select-none"
-                              />
-                            </div>
-                          </div>
+                          <img
+                            src={qrDataUrl}
+                            alt={`Table ${table.tableNumber} QR`}
+                            className="w-full h-full object-contain"
+                          />
                         ) : (
-                          <div className="w-36 h-36 sm:w-40 sm:h-40 bg-slate-100 rounded-xl animate-pulse flex items-center justify-center text-slate-400">
-                            <QrCode className="w-12 h-12" />
+                          <div className="w-full h-full bg-white/80 rounded-lg animate-pulse flex items-center justify-center text-slate-400">
+                            <QrCode className="w-8 h-8 animate-spin" />
                           </div>
                         )}
                       </div>
 
-                      {/* 3 Step Visual Guidance */}
-                      <div className="w-full bg-black/30 rounded-xl p-2 border border-white/10 text-center space-y-1">
-                        <div className="grid grid-cols-3 text-[9px] font-bold opacity-90 divide-x divide-white/10">
-                          <div>📷 Camera</div>
-                          <div>🎯 Point QR</div>
-                          <div>🍽️ Order</div>
-                        </div>
-                        <p className="text-[9px] opacity-70 tracking-wide font-sans">
-                          No app required • Instant contactless dining
-                        </p>
+                      {/* Lower Small White Box: Constant Google Reviews QR */}
+                      <div
+                        className="absolute flex items-center justify-center pointer-events-none"
+                        style={{
+                          top: '76.4%',
+                          left: '32.0%',
+                          width: '18.5%',
+                          height: '12.3%',
+                        }}
+                      >
+                        {reviewQrDataUrl ? (
+                          <img
+                            src={reviewQrDataUrl}
+                            alt="Google Reviews QR"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-white/80 rounded-md animate-pulse" />
+                        )}
                       </div>
 
-                      {/* Optional Wi-Fi Badge on Card */}
-                      {config.showWifi && config.wifiSsid && (
-                        <div className="w-full py-1 px-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-[10px] text-center font-mono text-emerald-300 truncate">
-                          📶 Wi-Fi: <strong>{config.wifiSsid}</strong> {config.wifiPassword && `• Pass: ${config.wifiPassword}`}
+                      {/* Bottom Footer: Dynamic Table Number */}
+                      <div
+                        className="absolute w-full flex items-center justify-center text-center pointer-events-none px-4"
+                        style={{ top: '94.3%', left: 0, right: 0 }}
+                      >
+                        <div className="flex items-center justify-center space-x-1.5 w-full">
+                          <span className="h-[1.5px] bg-[#422010] flex-1 max-w-[50px] sm:max-w-[70px]" />
+                          <span className="font-serif font-black text-[9px] sm:text-[10px] text-[#422010] tracking-wider uppercase truncate">
+                            {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {table.tableNumber}
+                          </span>
+                          <span className="h-[1.5px] bg-[#422010] flex-1 max-w-[50px] sm:max-w-[70px]" />
                         </div>
-                      )}
+                      </div>
                     </div>
 
-                    {/* Masked URL Bar */}
-                    <div className="relative z-10 bg-black/50 p-2 rounded-xl border border-white/10 space-y-0.5">
+                    {/* Masked Customer Dine URL */}
+                    <div className="bg-black/50 p-2 rounded-xl border border-white/10 space-y-0.5">
                       <div className="flex items-center justify-between text-[9px] opacity-70 font-mono">
-                        <span>Target Customer URL:</span>
-                        <span className="text-emerald-400 font-bold">128-bit Token</span>
+                        <span>Target Customer Dine URL:</span>
+                        <span className="text-emerald-400 font-bold">Encrypted Token</span>
                       </div>
                       <div className="text-[10px] font-mono opacity-90 truncate select-all px-1.5 py-0.5 rounded bg-black/40 border border-white/5">
                         {dineUrl}
                       </div>
                     </div>
 
-                    {/* Stand Action Buttons */}
-                    <div className="relative z-10 space-y-2 pt-1">
-                      {/* Primary Actions: Download Stand Card vs Download QR */}
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-1">
+                      {/* Primary Actions: Download Stand Card vs QR Only */}
                       <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
                           onClick={() => handleDownloadStand(table)}
                           disabled={isDownloadingThis}
-                          className="py-2 px-2.5 bg-gradient-to-r from-emerald-600 to-[#0C831F] hover:from-emerald-500 hover:to-emerald-600 text-white text-xs font-bold rounded-xl shadow-md flex items-center justify-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
-                          title="Download High-Res 1200x1750 Acrylic Stand Card (PNG)"
+                          className="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-[#0C831F] hover:from-emerald-500 hover:to-emerald-600 text-white text-xs font-bold rounded-xl shadow-md flex items-center justify-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+                          title="Download High-Res 1364x2048 Printable Acrylic Stand Card (PNG)"
                         >
                           {isDownloadingThis ? (
                             <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -722,7 +727,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDownloadQrOnly(table)}
-                          className="py-2 px-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                          className="py-2.5 px-3 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/20 flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
                           title="Download 1024x1024 QR Code Only (PNG)"
                         >
                           <QrCode className="w-3.5 h-3.5" />
@@ -824,63 +829,55 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
             return (
               <div
                 key={`print_${table.tableNumber}`}
-                className="printable-qr-card w-[135mm] h-[195mm] mx-auto my-6 p-6 border-4 border-slate-900 rounded-3xl flex flex-col justify-between items-center text-center bg-white shadow-none break-after-page"
+                className="printable-qr-card relative w-[135mm] h-[202mm] mx-auto my-6 overflow-hidden rounded-3xl bg-[#FAF7F2] break-after-page shadow-none"
                 style={{ pageBreakAfter: 'always' }}
               >
-                {/* Stand Header */}
-                <div className="space-y-1 w-full border-b-2 border-slate-900 pb-3">
-                  <div className="font-serif font-black text-2xl tracking-widest text-slate-900 uppercase">
-                    ✦ {config.brandName.toUpperCase()} ✦
-                  </div>
-                  <p className="text-xs text-slate-600 font-serif italic">
-                    {config.tagline || 'Scan with Camera to Explore Menu & Order Instantly'}
-                  </p>
-                </div>
+                <img
+                  src="/images/chai_addaa_stand_template.png"
+                  alt="Stand Template"
+                  className="w-full h-full object-cover"
+                />
 
-                {/* Table Number Emblem */}
-                <div className="my-2 py-3 px-8 border-2 border-slate-900 rounded-2xl bg-slate-100 w-full max-w-[260px]">
-                  <div className="font-serif font-black text-4xl text-slate-950 tracking-wider">
-                    TABLE {table.tableNumber}
-                  </div>
-                  <div className="text-[11px] font-mono font-bold text-slate-700 uppercase mt-0.5">
-                    {`Table ${table.tableNumber}`}
-                  </div>
-                </div>
-
-                {/* Big Clean High-Contrast Scannable QR */}
-                <div className="p-3 border-2 border-slate-900 rounded-2xl bg-white my-2 shadow-sm">
+                {/* Table Dine QR in Upper White Box */}
+                <div
+                  className="absolute flex items-center justify-center"
+                  style={{ top: '26.4%', left: '26.5%', width: '46.9%', height: '31.2%' }}
+                >
                   {qrDataUrl && (
                     <img
                       src={qrDataUrl}
                       alt={`Table ${table.tableNumber} QR`}
-                      className="w-56 h-56 object-contain"
+                      className="w-full h-full object-contain"
                     />
                   )}
                 </div>
 
-                {/* Step Instructions */}
-                <div className="w-full bg-slate-100 border border-slate-300 rounded-xl p-3 my-2 space-y-1 text-slate-900">
-                  <div className="grid grid-cols-3 text-xs font-bold divide-x divide-slate-300">
-                    <div>1. Open Camera</div>
-                    <div>2. Point at QR</div>
-                    <div>3. Order Dishes</div>
-                  </div>
-                  <p className="text-[10px] text-slate-600 font-semibold">
-                    No App Required • Contactless &amp; Fast Table Dispatch
-                  </p>
+                {/* Google Reviews QR in Lower Small White Box */}
+                <div
+                  className="absolute flex items-center justify-center"
+                  style={{ top: '76.4%', left: '32.0%', width: '18.5%', height: '12.3%' }}
+                >
+                  {reviewQrDataUrl && (
+                    <img
+                      src={reviewQrDataUrl}
+                      alt="Google Reviews QR"
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                 </div>
 
-                {/* Wi-Fi Info */}
-                {config.showWifi && config.wifiSsid && (
-                  <div className="text-xs font-mono border border-slate-400 rounded-lg py-1 px-4 text-slate-800">
-                    📶 Free Wi-Fi: <strong>{config.wifiSsid}</strong> {config.wifiPassword && `• Password: ${config.wifiPassword}`}
+                {/* Dynamic Footer Table Label */}
+                <div
+                  className="absolute w-full flex items-center justify-center text-center px-8"
+                  style={{ top: '94.3%', left: 0, right: 0 }}
+                >
+                  <div className="flex items-center justify-center space-x-2 w-full">
+                    <span className="h-[1.5px] bg-[#422010] flex-1 max-w-[80px]" />
+                    <span className="font-serif font-black text-xs text-[#422010] tracking-wider uppercase truncate">
+                      {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {table.tableNumber}
+                    </span>
+                    <span className="h-[1.5px] bg-[#422010] flex-1 max-w-[80px]" />
                   </div>
-                )}
-
-                {/* Security Footer & Masked URL */}
-                <div className="w-full border-t border-slate-300 pt-2 text-[9px] font-mono text-slate-500">
-                  <div>Scannable Destination: {dineUrl}</div>
-                  <div>128-bit Cryptographic Session Token • Siliguri's Chai Addaa Systems</div>
                 </div>
               </div>
             );

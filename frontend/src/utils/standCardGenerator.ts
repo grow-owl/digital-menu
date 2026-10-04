@@ -48,6 +48,52 @@ function roundRect(
   ctx.closePath();
 }
 
+export const GOOGLE_REVIEWS_URL = 'https://share.google/fpQYpNSriMbsBasZS';
+export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png';
+
+let cachedTemplateImg: HTMLImageElement | null = null;
+let cachedGoogleReviewQrDataUrl: string | null = null;
+
+/**
+ * Loads the base Siliguri's Chai Addaa stand card template image into an HTMLImageElement (cached in-memory).
+ */
+export const loadStandTemplateImage = (): Promise<HTMLImageElement | null> => {
+  if (cachedTemplateImg && cachedTemplateImg.complete && cachedTemplateImg.naturalWidth > 0) {
+    return Promise.resolve(cachedTemplateImg);
+  }
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      cachedTemplateImg = img;
+      resolve(img);
+    };
+    img.onerror = () => {
+      console.warn('Failed to load stand template image from', STAND_TEMPLATE_IMAGE_URL);
+      resolve(null);
+    };
+    img.src = STAND_TEMPLATE_IMAGE_URL;
+  });
+};
+
+/**
+ * Generates and caches the Google Reviews QR code data URL (constant for all tables).
+ */
+export const getGoogleReviewsQrDataUrl = async (size = 300): Promise<string> => {
+  if (cachedGoogleReviewQrDataUrl) return cachedGoogleReviewQrDataUrl;
+  const dataUrl = await generateQrDataUrl(GOOGLE_REVIEWS_URL, {
+    size,
+    darkColor: '#000000',
+    lightColor: '#ffffff',
+  });
+  cachedGoogleReviewQrDataUrl = dataUrl;
+  return dataUrl;
+};
+
 let cachedFaviconImg: HTMLImageElement | null = null;
 
 /**
@@ -72,16 +118,19 @@ const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
 };
 
 /**
- * Generates a clean high-resolution printable Table QR Card rendered on an HTML5 Canvas.
- * Contains ONLY the high-res QR code with center brand favicon and the bottom label: BRAND NAME • TABLE {num}.
- * Exactly matches the preview card without any extra clutter.
+ * Generates an ultra high-resolution printable Table QR Stand Card rendered on an HTML5 Canvas (1364 x 2048 px).
+ * Renders the authentic Siliguri's Chai Addaa vintage parchment template:
+ * 1. Upper large white space: Table-specific customer dine ordering QR code.
+ * 2. Lower small white space: Constant Google Reviews QR code (https://share.google/fpQYpNSriMbsBasZS).
+ * 3. Bottom footer: Dynamically updated table number: SILIGURI'S CHAI ADDAA • TABLE {num}.
  */
 export const generateStandCardCanvas = async (
   table: TableResponse,
   config: VenueQrConfig
 ): Promise<HTMLCanvasElement> => {
-  const width = 1000;
-  const height = 1140;
+  // Ultra high-definition canvas (2x of 682x1024 base template = 1364x2048)
+  const width = 1364;
+  const height = 2048;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -93,74 +142,103 @@ export const generateStandCardCanvas = async (
   const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
   const dineUrl = computeTableDineUrl(token, config);
 
-  // 1. Clean White Rounded Card Background
-  ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, 0, 0, width, height, 48);
-  ctx.fill();
+  // 1. Draw Authentic Siliguri's Chai Addaa Template Background
+  const templateImg = await loadStandTemplateImage();
+  if (templateImg) {
+    ctx.drawImage(templateImg, 0, 0, width, height);
+  } else {
+    // Graceful fallback if background template image is unavailable
+    ctx.fillStyle = '#FAF7F2';
+    roundRect(ctx, 0, 0, width, height, 48);
+    ctx.fill();
+    ctx.strokeStyle = '#3D1D0C';
+    ctx.lineWidth = 6;
+    roundRect(ctx, 16, 16, width - 32, height - 32, 40);
+    ctx.stroke();
+  }
 
-  // Subtle Outer Border
-  ctx.strokeStyle = '#E2E8F0';
-  ctx.lineWidth = 4;
-  roundRect(ctx, 2, 2, width - 4, height - 4, 46);
-  ctx.stroke();
+  // 2. High-Resolution Table QR Code in Upper Large White Space (Menu QR)
+  // Coordinates mapped to 2x scale: Center (681, 860), Size 640x640
+  const tableQrSize = 640;
+  const tableQrX = 681 - tableQrSize / 2; // 361
+  const tableQrY = 860 - tableQrSize / 2; // 540
 
-  // 2. High-Resolution QR Code (Level H: 30% error recovery)
-  const qrSize = 820;
-  const qrX = (width - qrSize) / 2;
-  const qrY = 70;
-
-  const qrDataUrl = await generateQrDataUrl(dineUrl, {
-    size: qrSize,
+  const tableQrDataUrl = await generateQrDataUrl(dineUrl, {
+    size: tableQrSize,
     darkColor: '#000000',
     lightColor: '#FFFFFF',
   });
 
-  const qrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+  const tableQrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = reject;
-    img.src = qrDataUrl;
+    img.src = tableQrDataUrl;
   });
 
-  ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+  ctx.drawImage(tableQrImg, tableQrX, tableQrY, tableQrSize, tableQrSize);
 
-  // 3. Center Favicon Badge (Matches preview card exactly)
-  const faviconImg = await loadFaviconImage();
-  const badgeSize = 136;
-  const badgeX = (width - badgeSize) / 2;
-  const badgeY = qrY + (qrSize - badgeSize) / 2;
+  // 3. Constant Google Reviews QR Code in Lower Small White Space
+  // Coordinates mapped to 2x scale: Center (563, 1690), Size 252x252
+  const reviewQrSize = 252;
+  const reviewQrX = 563 - reviewQrSize / 2; // 437
+  const reviewQrY = 1690 - reviewQrSize / 2; // 1564
 
-  // Crisp white backing plate behind favicon with gold/amber border
-  ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, badgeX - 6, badgeY - 6, badgeSize + 12, badgeSize + 12, 28);
-  ctx.fill();
+  const reviewQrDataUrl = await getGoogleReviewsQrDataUrl(reviewQrSize);
+  const reviewQrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = reviewQrDataUrl;
+  });
 
-  ctx.strokeStyle = '#F59E0B';
-  ctx.lineWidth = 5;
-  roundRect(ctx, badgeX - 6, badgeY - 6, badgeSize + 12, badgeSize + 12, 28);
-  ctx.stroke();
+  ctx.drawImage(reviewQrImg, reviewQrX, reviewQrY, reviewQrSize, reviewQrSize);
 
-  if (faviconImg) {
-    ctx.save();
-    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 22);
-    ctx.clip();
-    ctx.drawImage(faviconImg, badgeX, badgeY, badgeSize, badgeSize);
-    ctx.restore();
-  }
-
-  // 4. Bottom Label: BRAND NAME • TABLE {tableNum}
+  // 4. Dynamic Footer Table Line & Number
   const brandName = (config.brandName || "SILIGURI'S CHAI ADDAA").toUpperCase();
-  const footerText = `${brandName} • TABLE ${tableNum}`;
+  const footerText = `${brandName}  •  TABLE ${tableNum}`;
 
+  ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#1E3A5F'; // Deep navy blue matching the preview
-  ctx.font = 'bold 36px "Cinzel", "Playfair Display", Georgia, serif';
+  ctx.fillStyle = '#422010';
+  ctx.font = 'bold 26px "Playfair Display", "Times New Roman", Georgia, serif';
   if ('letterSpacing' in ctx) {
-    (ctx as any).letterSpacing = '2px';
+    (ctx as any).letterSpacing = '1.5px';
   }
-  ctx.fillText(footerText, width / 2, qrY + qrSize + 95);
+
+  const cx = 681;
+  const cy = 1948; // Scaled footer line position (974 * 2)
+  const textMetrics = ctx.measureText(footerText);
+  const textWidth = textMetrics.width;
+  const textStartX = cx - textWidth / 2;
+  const textEndX = cx + textWidth / 2;
+  const linePadding = 18;
+
+  ctx.strokeStyle = '#422010';
+  ctx.lineWidth = 3;
+
+  // Left decorative divider line (x: 230 to textStartX - linePadding)
+  if (textStartX - linePadding > 230) {
+    ctx.beginPath();
+    ctx.moveTo(230, cy);
+    ctx.lineTo(textStartX - linePadding, cy);
+    ctx.stroke();
+  }
+
+  // Right decorative divider line (x: textEndX + linePadding to 1144)
+  if (1144 > textEndX + linePadding) {
+    ctx.beginPath();
+    ctx.moveTo(textEndX + linePadding, cy);
+    ctx.lineTo(1144, cy);
+    ctx.stroke();
+  }
+
+  // Centered footer label
+  ctx.fillText(footerText, cx, cy);
+  ctx.restore();
 
   return canvas;
 };

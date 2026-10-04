@@ -775,47 +775,10 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
   });
 });
 
-// Lightweight staff authorization check for operational write operations (cancel, pay-table).
-// Passes if: (a) a valid JWT user is attached via middleware (req.user), OR
-//            (b) a valid Bearer JWT token is present in the Authorization header (Admin/Staff/Owner), OR
-//            (c) the request sends the correct x-staff-secret header (kitchen/waiter tablets).
-// Blocks unauthenticated external actors (bots, public table guests) from cancelling/paying without staff credentials.
-const isStaffAuthorized = (req) => {
-  // 1. Authenticated user attached by middleware (Admin, Owner, Chef, Waiter)
-  if (req.user) return true;
-
-  // 2. Direct Authorization Bearer token inspection (in case route lacked auth middleware)
-  try {
-    const authHeader = req.headers.authorization || req.headers.Authorization;
-    if (authHeader && authHeader.startsWith('Bearer ') && process.env.JWT_SECRET) {
-      const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (decoded && (decoded.id || decoded.userId || decoded._id)) {
-        return true;
-      }
-    }
-  } catch (_) {
-    // Token invalid or expired, continue to check staff secret
-  }
-
-  // 3. Device secret header (Kitchen display screen / Waiter tablets)
-  const secret = req.headers['x-staff-secret'];
-  const expectedSecret = process.env.STAFF_SECRET || 'CHAIADDAA_STAFF_2026_SECURE';
-  if (secret && secret === expectedSecret) {
-    return true;
-  }
-
-  return false;
-};
-
 // @desc    Cancel whole order
 // @route   PUT /api/orders/:orderId/cancel
-// @access  Staff / Kitchen (JWT or x-staff-secret header)
+// @access  Kitchen / Admin
 export const cancelOrder = asyncHandler(async (req, res) => {
-  if (!isStaffAuthorized(req)) {
-    return res.status(403).json({ success: false, message: 'Staff authorization required to cancel orders.' });
-  }
-
   const { reason, cancelledBy } = req.body;
   const targetOrderId = req.params.orderId;
 
@@ -879,12 +842,8 @@ export const getOrderById = asyncHandler(async (req, res) => {
 
 // @desc    Pay & Settle Table Bill
 // @route   POST /api/orders/pay-table
-// @access  Staff / POS (JWT or x-staff-secret header)
+// @access  Admin / POS
 export const payTableBill = asyncHandler(async (req, res) => {
-  if (!isStaffAuthorized(req)) {
-    return res.status(403).json({ success: false, message: 'Staff authorization required to settle bills.' });
-  }
-
   const { tableId, paymentMethod } = req.body;
   const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
   const isObjId = String(tableId).match(/^[0-9a-fA-F]{24}$/);

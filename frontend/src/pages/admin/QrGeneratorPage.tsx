@@ -236,7 +236,7 @@ export const QrGeneratorPage: React.FC = () => {
     try {
       if (format === 'STAND') {
         await downloadStandCard(table, config);
-        showToast(`Table ${table.tableNumber} Stand Card downloaded!`, 'success');
+        showToast(`Table ${table.tableNumber} QR Card downloaded!`, 'success');
       } else if (format === 'POSTER') {
         await downloadBoardPoster(table, config);
         showToast(`Table ${table.tableNumber} Board Poster downloaded!`, 'success');
@@ -530,7 +530,7 @@ export const QrGeneratorPage: React.FC = () => {
                         ) : (
                           <Download className="w-3.5 h-3.5" />
                         )}
-                        <span>Download Stand Card</span>
+                        <span>Download Table QR</span>
                       </button>
 
                       {/* Token Regenerate & Delete Footer */}

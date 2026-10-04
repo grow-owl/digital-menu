@@ -72,15 +72,16 @@ const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
 };
 
 /**
- * Generates an ultra-luxurious, printable table stand card rendered on an HTML5 Canvas.
- * Resolution: 1200 x 1750 px (equivalent to standard 4x6" or 5x7" high-DPI acrylic table tent card).
+ * Generates a clean high-resolution printable Table QR Card rendered on an HTML5 Canvas.
+ * Contains ONLY the high-res QR code with center brand favicon and the bottom label: BRAND NAME • TABLE {num}.
+ * Exactly matches the preview card without any extra clutter.
  */
 export const generateStandCardCanvas = async (
   table: TableResponse,
   config: VenueQrConfig
 ): Promise<HTMLCanvasElement> => {
-  const width = 1200;
-  const height = 1750;
+  const width = 1000;
+  const height = 1140;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -88,214 +89,29 @@ export const generateStandCardCanvas = async (
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not initialize 2D canvas context');
 
-  const theme = config.themeStyle || 'EMERALD_GOLD';
   const tableNum = String(table.tableNumber);
   const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
   const dineUrl = computeTableDineUrl(token, config);
 
-  // Theme palettes
-  let bgGradient: CanvasGradient;
-  let frameColor: string;
-  let frameInnerColor: string;
-  let textPrimary: string;
-  let textSecondary: string;
-  let accentColor: string;
-  let plaqueBg: string;
-  let plaqueBorder: string;
-  let plaqueText: string;
-  let qrBgColor: string;
+  // 1. Clean White Rounded Card Background
+  ctx.fillStyle = '#FFFFFF';
+  roundRect(ctx, 0, 0, width, height, 48);
+  ctx.fill();
 
-  if (theme === 'EMERALD_GOLD') {
-    bgGradient = ctx.createLinearGradient(0, 0, width, height);
-    bgGradient.addColorStop(0, '#04150F');
-    bgGradient.addColorStop(0.5, '#08251B');
-    bgGradient.addColorStop(1, '#051911');
-
-    frameColor = '#D97706'; // Gold
-    frameInnerColor = 'rgba(245, 158, 11, 0.45)';
-    textPrimary = '#F8FAFC';
-    textSecondary = '#94A3B8';
-    accentColor = '#F59E0B'; // Bright Gold
-    plaqueBg = '#0B3325';
-    plaqueBorder = '#F59E0B';
-    plaqueText = '#FEF08A';
-    qrBgColor = '#FFFFFF';
-  } else if (theme === 'ROYAL_NOIR') {
-    bgGradient = ctx.createLinearGradient(0, 0, width, height);
-    bgGradient.addColorStop(0, '#06080F');
-    bgGradient.addColorStop(0.5, '#0B1120');
-    bgGradient.addColorStop(1, '#080C17');
-
-    frameColor = '#38BDF8'; // Sky Cyan
-    frameInnerColor = 'rgba(56, 189, 248, 0.35)';
-    textPrimary = '#F8FAFC';
-    textSecondary = '#94A3B8';
-    accentColor = '#38BDF8';
-    plaqueBg = '#111827';
-    plaqueBorder = '#38BDF8';
-    plaqueText = '#E0F2FE';
-    qrBgColor = '#FFFFFF';
-  } else if (theme === 'SUNSET_AMBER') {
-    bgGradient = ctx.createLinearGradient(0, 0, width, height);
-    bgGradient.addColorStop(0, '#1C0E07');
-    bgGradient.addColorStop(0.5, '#2D160C');
-    bgGradient.addColorStop(1, '#180B05');
-
-    frameColor = '#F97316'; // Orange / Amber
-    frameInnerColor = 'rgba(249, 115, 22, 0.4)';
-    textPrimary = '#FFF7ED';
-    textSecondary = '#FED7AA';
-    accentColor = '#FB923C';
-    plaqueBg = '#371B10';
-    plaqueBorder = '#F97316';
-    plaqueText = '#FFEDD5';
-    qrBgColor = '#FFFFFF';
-  } else if (theme === 'CYBER_NEON') {
-    bgGradient = ctx.createLinearGradient(0, 0, width, height);
-    bgGradient.addColorStop(0, '#08080E');
-    bgGradient.addColorStop(0.5, '#0F0E1E');
-    bgGradient.addColorStop(1, '#08080F');
-
-    frameColor = '#A855F7'; // Purple / Neon Violet
-    frameInnerColor = 'rgba(168, 85, 247, 0.45)';
-    textPrimary = '#FAF5FF';
-    textSecondary = '#C084FC';
-    accentColor = '#22C55E'; // Neon Green
-    plaqueBg = '#1E1435';
-    plaqueBorder = '#A855F7';
-    plaqueText = '#4ADE80';
-    qrBgColor = '#FFFFFF';
-  } else {
-    // MINIMAL_IVORY (Print / Ink-Friendly)
-    bgGradient = ctx.createLinearGradient(0, 0, width, height);
-    bgGradient.addColorStop(0, '#FAF9F6');
-    bgGradient.addColorStop(1, '#F3F2EE');
-
-    frameColor = '#18181B'; // Charcoal
-    frameInnerColor = 'rgba(24, 24, 27, 0.3)';
-    textPrimary = '#18181B';
-    textSecondary = '#52525B';
-    accentColor = '#059669'; // Emerald green
-    plaqueBg = '#18181B';
-    plaqueBorder = '#27272A';
-    plaqueText = '#FFFFFF';
-    qrBgColor = '#FFFFFF';
-  }
-
-  // 1. Fill Background
-  ctx.fillStyle = bgGradient;
-  ctx.fillRect(0, 0, width, height);
-
-  // 2. Draw Decorative Double Outer Frame
-  const margin = 48;
-  const innerMargin = 62;
-
-  // Outer gold/charcoal line
-  ctx.strokeStyle = frameColor;
+  // Subtle Outer Border
+  ctx.strokeStyle = '#E2E8F0';
   ctx.lineWidth = 4;
-  roundRect(ctx, margin, margin, width - margin * 2, height - margin * 2, 28);
+  roundRect(ctx, 2, 2, width - 4, height - 4, 46);
   ctx.stroke();
 
-  // Inner thin border
-  ctx.strokeStyle = frameInnerColor;
-  ctx.lineWidth = 1.5;
-  roundRect(ctx, innerMargin, innerMargin, width - innerMargin * 2, height - innerMargin * 2, 20);
-  ctx.stroke();
+  // 2. High-Resolution QR Code (Level H: 30% error recovery)
+  const qrSize = 820;
+  const qrX = (width - qrSize) / 2;
+  const qrY = 70;
 
-  // Corner Art-Deco Ornaments
-  const cornerSize = 28;
-  const corners = [
-    [margin + 12, margin + 12],
-    [width - margin - 12, margin + 12],
-    [margin + 12, height - margin - 12],
-    [width - margin - 12, height - margin - 12],
-  ];
-
-  ctx.fillStyle = frameColor;
-  corners.forEach(([cx, cy]) => {
-    ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Corner decorative diamond
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - 14);
-    ctx.lineTo(cx + 14, cy);
-    ctx.lineTo(cx, cy + 14);
-    ctx.lineTo(cx - 14, cy);
-    ctx.closePath();
-    ctx.strokeStyle = frameColor;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  });
-
-  // 3. Header Crest / Icon
-  ctx.textAlign = 'center';
-  ctx.fillStyle = accentColor;
-  ctx.font = 'bold 36px "Cinzel", "Playfair Display", Georgia, serif';
-  ctx.fillText('✦  GOOD FOOD • BETTER CHAI • HAPPIER PEOPLE  ✦', width / 2, 135);
-
-  // 4. Brand Name
-  ctx.fillStyle = textPrimary;
-  ctx.font = 'bold 46px "Cinzel", "Playfair Display", "Times New Roman", serif';
-  ctx.fillText(config.brandName.toUpperCase(), width / 2, 195);
-
-  // 5. Tagline / Slogan
-  ctx.fillStyle = textSecondary;
-  ctx.font = 'italic 24px "Inter", "Sora", sans-serif';
-  ctx.fillText(config.tagline || 'Scan with Camera to Explore Menu & Order Instantly', width / 2, 235);
-
-  // Thin separator divider
-  ctx.strokeStyle = frameInnerColor;
-  ctx.beginPath();
-  ctx.moveTo(width / 2 - 200, 260);
-  ctx.lineTo(width / 2 + 200, 260);
-  ctx.stroke();
-
-  // 6. Grand Table Number Plaque
-  const plaqueWidth = 520;
-  const plaqueHeight = 110;
-  const plaqueX = (width - plaqueWidth) / 2;
-  const plaqueY = 280;
-
-  ctx.fillStyle = plaqueBg;
-  roundRect(ctx, plaqueX, plaqueY, plaqueWidth, plaqueHeight, 24);
-  ctx.fill();
-
-  ctx.strokeStyle = plaqueBorder;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // Table Plaque Text
-  ctx.fillStyle = plaqueText;
-  ctx.font = 'bold 54px "Cinzel", "Playfair Display", "Times New Roman", serif';
-  ctx.fillText(`TABLE ${tableNum}`, width / 2, plaqueY + 62);
-
-  // Table Capacity / Zone
-  ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#D4D4D8' : '#94A3B8';
-  ctx.font = '500 20px "Inter", monospace, sans-serif';
-  const zone = table.capacity ? `SEATS ${table.capacity} GUESTS` : 'FINE DINING';
-  ctx.fillText(zone, width / 2, plaqueY + 94);
-
-  // 7. Render High-Resolution QR Code in White Container
-  const qrContainerSize = 620;
-  const qrContainerX = (width - qrContainerSize) / 2;
-  const qrContainerY = 415;
-
-  // White base card with soft rounded shadow
-  ctx.fillStyle = qrBgColor;
-  roundRect(ctx, qrContainerX, qrContainerY, qrContainerSize, qrContainerSize, 32);
-  ctx.fill();
-
-  // Subtle outer border for QR card
-  ctx.strokeStyle = theme === 'MINIMAL_IVORY' ? '#E4E4E7' : 'rgba(255, 255, 255, 0.2)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Generate QR code image
   const qrDataUrl = await generateQrDataUrl(dineUrl, {
-    size: 540,
-    darkColor: '#0A0E1A',
+    size: qrSize,
+    darkColor: '#000000',
     lightColor: '#FFFFFF',
   });
 
@@ -307,109 +123,44 @@ export const generateStandCardCanvas = async (
     img.src = qrDataUrl;
   });
 
-  const qrDrawSize = 540;
-  const qrDrawX = (width - qrDrawSize) / 2;
-  const qrDrawY = qrContainerY + (qrContainerSize - qrDrawSize) / 2;
-  ctx.drawImage(qrImg, qrDrawX, qrDrawY, qrDrawSize, qrDrawSize);
+  ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-  // Center Favicon Badge on QR (Safe within Level H error correction)
+  // 3. Center Favicon Badge (Matches preview card exactly)
   const faviconImg = await loadFaviconImage();
-  const badgeSize = 84;
+  const badgeSize = 136;
   const badgeX = (width - badgeSize) / 2;
-  const badgeY = qrDrawY + (qrDrawSize - badgeSize) / 2;
+  const badgeY = qrY + (qrSize - badgeSize) / 2;
 
-  // White base plate with rounded corners
+  // Crisp white backing plate behind favicon with gold/amber border
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, badgeX - 5, badgeY - 5, badgeSize + 10, badgeSize + 10, 18);
+  roundRect(ctx, badgeX - 6, badgeY - 6, badgeSize + 12, badgeSize + 12, 28);
   ctx.fill();
 
-  ctx.strokeStyle = frameColor;
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#F59E0B';
+  ctx.lineWidth = 5;
+  roundRect(ctx, badgeX - 6, badgeY - 6, badgeSize + 12, badgeSize + 12, 28);
   ctx.stroke();
 
   if (faviconImg) {
+    ctx.save();
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 22);
+    ctx.clip();
     ctx.drawImage(faviconImg, badgeX, badgeY, badgeSize, badgeSize);
+    ctx.restore();
   }
 
-  // 8. Scanning Instructions Box (3 Easy Steps)
-  const stepsY = 1070;
-  const stepsBoxWidth = 1040;
-  const stepsBoxHeight = 160;
-  const stepsBoxX = (width - stepsBoxWidth) / 2;
+  // 4. Bottom Label: BRAND NAME • TABLE {tableNum}
+  const brandName = (config.brandName || "SILIGURI'S CHAI ADDAA").toUpperCase();
+  const footerText = `${brandName} • TABLE ${tableNum}`;
 
-  ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#FFFFFF' : 'rgba(255, 255, 255, 0.05)';
-  roundRect(ctx, stepsBoxX, stepsY, stepsBoxWidth, stepsBoxHeight, 22);
-  ctx.fill();
-
-  ctx.strokeStyle = frameInnerColor;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // Step 1: Open Camera
-  const stepColWidth = stepsBoxWidth / 3;
-  const stepIcons = ['📷  STEP 1', '🎯  STEP 2', '🍽️  STEP 3'];
-  const stepTitles = ['Open Camera', 'Point at QR', 'Order Dishes'];
-  const stepSub = ['iOS or Android', 'Tap banner', 'Kitchen sends direct'];
-
-  for (let i = 0; i < 3; i++) {
-    const colCenterX = stepsBoxX + stepColWidth * i + stepColWidth / 2;
-
-    ctx.fillStyle = accentColor;
-    ctx.font = 'bold 22px "Inter", sans-serif';
-    ctx.fillText(stepIcons[i], colCenterX, stepsY + 45);
-
-    ctx.fillStyle = textPrimary;
-    ctx.font = 'bold 26px "Inter", "Sora", sans-serif';
-    ctx.fillText(stepTitles[i], colCenterX, stepsY + 84);
-
-    ctx.fillStyle = textSecondary;
-    ctx.font = '500 18px "Inter", sans-serif';
-    ctx.fillText(stepSub[i], colCenterX, stepsY + 118);
-
-    // Column separator lines
-    if (i < 2) {
-      ctx.strokeStyle = frameInnerColor;
-      ctx.beginPath();
-      ctx.moveTo(stepsBoxX + stepColWidth * (i + 1), stepsY + 25);
-      ctx.lineTo(stepsBoxX + stepColWidth * (i + 1), stepsY + stepsBoxHeight - 25);
-      ctx.stroke();
-    }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#1E3A5F'; // Deep navy blue matching the preview
+  ctx.font = 'bold 36px "Cinzel", "Playfair Display", Georgia, serif';
+  if ('letterSpacing' in ctx) {
+    (ctx as any).letterSpacing = '2px';
   }
-
-  // 9. Optional Wi-Fi Badge Box
-  let currentY = 1260;
-  if (config.showWifi && config.wifiSsid) {
-    const wifiBoxWidth = 860;
-    const wifiBoxHeight = 75;
-    const wifiBoxX = (width - wifiBoxWidth) / 2;
-
-    ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#F4F4F5' : 'rgba(16, 185, 129, 0.12)';
-    roundRect(ctx, wifiBoxX, currentY, wifiBoxWidth, wifiBoxHeight, 18);
-    ctx.fill();
-
-    ctx.strokeStyle = theme === 'MINIMAL_IVORY' ? '#D4D4D8' : 'rgba(16, 185, 129, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = textPrimary;
-    ctx.font = '600 24px "Inter", sans-serif';
-    const wifiText = `📶 Free Dining Wi-Fi: ${config.wifiSsid}   •   Password: ${config.wifiPassword || 'None'}`;
-    ctx.fillText(wifiText, width / 2, currentY + 47);
-
-    currentY += 95;
-  } else {
-    currentY += 20;
-  }
-
-  // 10. Dining Guarantee Badge
-  ctx.fillStyle = accentColor;
-  ctx.font = 'bold 24px "Inter", sans-serif';
-  ctx.fillText('⚡ NO APP REQUIRED   •   INSTANT CONTACTLESS ORDERING   •   DIRECT KITCHEN DISPATCH', width / 2, currentY + 50);
-
-  // 11. Clean Brand & Table Tag
-  ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#71717A' : '#94A3B8';
-  ctx.font = '600 20px "Cinzel", "Inter", serif';
-  ctx.fillText(`✦   ${config.brandName.toUpperCase()}   •   ATMOSPHERIC DINING   •   TABLE ${tableNum}   ✦`, width / 2, currentY + 95);
+  ctx.fillText(footerText, width / 2, qrY + qrSize + 95);
 
   return canvas;
 };
@@ -656,7 +407,8 @@ export const generateBoardPosterCanvas = async (
 };
 
 /**
- * Generates a Compact Square Table Sticker / Coaster Canvas (1000 x 1000 px).
+ * Generates a Compact Square Table Sticker Canvas (1000 x 1000 px).
+ * Contains ONLY the clean QR code with center favicon badge and bottom table label.
  */
 export const generateTableStickerCanvas = async (
   table: TableResponse,
@@ -669,69 +421,26 @@ export const generateTableStickerCanvas = async (
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not initialize 2D canvas context');
 
-  const theme = config.themeStyle || 'EMERALD_GOLD';
   const tableNum = String(table.tableNumber);
   const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
   const dineUrl = computeTableDineUrl(token, config);
 
-  let bgColor = '#04150F';
-  let borderCol = '#D97706';
-  let textPrimary = '#FFFFFF';
-  let accentCol = '#F59E0B';
-
-  if (theme === 'ROYAL_NOIR') {
-    bgColor = '#080C17';
-    borderCol = '#38BDF8';
-    textPrimary = '#FFFFFF';
-    accentCol = '#38BDF8';
-  } else if (theme === 'SUNSET_AMBER') {
-    bgColor = '#1C0E07';
-    borderCol = '#F97316';
-    textPrimary = '#FFFFFF';
-    accentCol = '#FB923C';
-  } else if (theme === 'CYBER_NEON') {
-    bgColor = '#0A0914';
-    borderCol = '#A855F7';
-    textPrimary = '#FFFFFF';
-    accentCol = '#22C55E';
-  } else if (theme === 'MINIMAL_IVORY') {
-    bgColor = '#FFFFFF';
-    borderCol = '#18181B';
-    textPrimary = '#18181B';
-    accentCol = '#059669';
-  }
-
   // Background
-  ctx.fillStyle = bgColor;
-  roundRect(ctx, 0, 0, size, size, 80);
+  ctx.fillStyle = '#FFFFFF';
+  roundRect(ctx, 0, 0, size, size, 48);
   ctx.fill();
 
-  // Outer Decorative Ring
-  ctx.strokeStyle = borderCol;
-  ctx.lineWidth = 8;
-  roundRect(ctx, 30, 30, size - 60, size - 60, 60);
+  ctx.strokeStyle = '#E2E8F0';
+  ctx.lineWidth = 4;
+  roundRect(ctx, 2, 2, size - 4, size - 4, 46);
   ctx.stroke();
 
-  // Header Brand & Table
-  ctx.textAlign = 'center';
-  ctx.fillStyle = accentCol;
-  ctx.font = 'bold 30px "Cinzel", Georgia, serif';
-  ctx.fillText(`✦  ${(config.brandName || "SILIGURI'S CHAI ADDAA").toUpperCase()}  ✦`, size / 2, 85);
+  // QR Code
+  const qrSize = 750;
+  const qrX = (size - qrSize) / 2;
+  const qrY = 60;
 
-  ctx.fillStyle = textPrimary;
-  ctx.font = 'bold 54px "Cinzel", Georgia, serif';
-  ctx.fillText(`TABLE ${tableNum}`, size / 2, 150);
-
-  // QR Container
-  const qrBox = 580;
-  const qrBoxX = (size - qrBox) / 2;
-  const qrBoxY = 180;
-
-  ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, qrBoxX, qrBoxY, qrBox, qrBox, 28);
-  ctx.fill();
-
-  const qrDataUrl = await generateQrDataUrl(dineUrl, { size: 520 });
+  const qrDataUrl = await generateQrDataUrl(dineUrl, { size: qrSize });
   const qrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -740,43 +449,43 @@ export const generateTableStickerCanvas = async (
     img.src = qrDataUrl;
   });
 
-  const qrDrawSize = 520;
-  const qrDrawX = (size - qrDrawSize) / 2;
-  const qrDrawY = qrBoxY + (qrBox - qrDrawSize) / 2;
-  ctx.drawImage(qrImg, qrDrawX, qrDrawY, qrDrawSize, qrDrawSize);
+  ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
   // Center Favicon Badge on Sticker QR
   const stickerFaviconImg = await loadFaviconImage();
-  const stickerBadgeSize = 80;
+  const stickerBadgeSize = 124;
   const stickerBadgeX = (size - stickerBadgeSize) / 2;
-  const stickerBadgeY = qrDrawY + (qrDrawSize - stickerBadgeSize) / 2;
+  const stickerBadgeY = qrY + (qrSize - stickerBadgeSize) / 2;
 
   ctx.fillStyle = '#FFFFFF';
-  roundRect(ctx, stickerBadgeX - 4, stickerBadgeY - 4, stickerBadgeSize + 8, stickerBadgeSize + 8, 16);
+  roundRect(ctx, stickerBadgeX - 5, stickerBadgeY - 5, stickerBadgeSize + 10, stickerBadgeSize + 10, 24);
   ctx.fill();
 
-  ctx.strokeStyle = borderCol;
-  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = '#F59E0B';
+  ctx.lineWidth = 4;
+  roundRect(ctx, stickerBadgeX - 5, stickerBadgeY - 5, stickerBadgeSize + 10, stickerBadgeSize + 10, 24);
   ctx.stroke();
 
   if (stickerFaviconImg) {
+    ctx.save();
+    roundRect(ctx, stickerBadgeX, stickerBadgeY, stickerBadgeSize, stickerBadgeSize, 18);
+    ctx.clip();
     ctx.drawImage(stickerFaviconImg, stickerBadgeX, stickerBadgeY, stickerBadgeSize, stickerBadgeSize);
+    ctx.restore();
   }
 
-  // Footer Instructions
-  ctx.fillStyle = textPrimary;
-  ctx.font = 'bold 32px "Inter", sans-serif';
-  ctx.fillText('SCAN TO EXPLORE MENU & ORDER', size / 2, 820);
+  // Bottom Label: BRAND NAME • TABLE {tableNum}
+  const brandName = (config.brandName || "SILIGURI'S CHAI ADDAA").toUpperCase();
+  const footerText = `${brandName} • TABLE ${tableNum}`;
 
-  ctx.fillStyle = accentCol;
-  ctx.font = '600 22px "Inter", sans-serif';
-  ctx.fillText('⚡ CONTACTLESS DINING • NO APP REQUIRED', size / 2, 865);
-
-  if (config.showWifi && config.wifiSsid) {
-    ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#52525B' : '#94A3B8';
-    ctx.font = '500 20px "Inter", sans-serif';
-    ctx.fillText(`Wi-Fi: ${config.wifiSsid} (${config.wifiPassword || 'Open'})`, size / 2, 915);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#1E3A5F';
+  ctx.font = 'bold 34px "Cinzel", "Playfair Display", Georgia, serif';
+  if ('letterSpacing' in ctx) {
+    (ctx as any).letterSpacing = '2px';
   }
+  ctx.fillText(footerText, size / 2, qrY + qrSize + 90);
 
   return canvas;
 };
@@ -803,8 +512,8 @@ export const downloadCanvasAsPng = (canvas: HTMLCanvasElement, filename: string)
  */
 export const downloadStandCard = async (table: TableResponse, config: VenueQrConfig): Promise<void> => {
   const canvas = await generateStandCardCanvas(table, config);
-  const cleanBrand = (config.brandName || 'Aura').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const filename = `${cleanBrand}_Table_${table.tableNumber}_Stand_Card.png`;
+  const cleanBrand = (config.brandName || 'Chai_Addaa').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `${cleanBrand}_Table_${table.tableNumber}_QR.png`;
   downloadCanvasAsPng(canvas, filename);
 };
 

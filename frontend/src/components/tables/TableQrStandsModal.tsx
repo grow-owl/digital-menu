@@ -169,7 +169,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
     setDownloadingTable(table.tableNumber);
     try {
       await downloadStandCard(table, config);
-      showToast(`Table ${table.tableNumber} acrylic stand card downloaded (PNG)!`, 'success');
+      showToast(`Table ${table.tableNumber} QR card downloaded (PNG)!`, 'success');
     } catch (err) {
       console.error(err);
       showToast('Failed to generate stand image', 'error');
@@ -716,7 +716,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                           ) : (
                             <Download className="w-3.5 h-3.5" />
                           )}
-                          <span>Download Stand</span>
+                          <span>Download QR</span>
                         </button>
 
                         <button

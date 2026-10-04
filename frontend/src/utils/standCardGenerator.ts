@@ -124,6 +124,14 @@ const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
  * 2. Lower small white space: Constant Google Reviews QR code (https://share.google/fpQYpNSriMbsBasZS).
  * 3. Bottom footer: Dynamically updated table number: SILIGURI'S CHAI ADDAA • TABLE {num}.
  */
+/**
+ * Retrieves the constant, permanent QR token for physical table stand prints.
+ * Guarantees that printed QR codes will never break, expire, or change.
+ */
+export const getTablePermanentToken = (table: TableResponse): string => {
+  return (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
+};
+
 export const generateStandCardCanvas = async (
   table: TableResponse,
   config: VenueQrConfig
@@ -139,7 +147,7 @@ export const generateStandCardCanvas = async (
   if (!ctx) throw new Error('Could not initialize 2D canvas context');
 
   const tableNum = String(table.tableNumber);
-  const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+  const token = getTablePermanentToken(table);
   const dineUrl = computeTableDineUrl(token, config);
 
   // 1. Draw Authentic Siliguri's Chai Addaa Template Background
@@ -261,7 +269,7 @@ export const generateBoardPosterCanvas = async (
 
   const theme = config.themeStyle || 'EMERALD_GOLD';
   const tableNum = String(table.tableNumber);
-  const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+  const token = getTablePermanentToken(table);
   const dineUrl = computeTableDineUrl(token, config);
 
   let bgGradient: CanvasGradient;
@@ -500,7 +508,7 @@ export const generateTableStickerCanvas = async (
   if (!ctx) throw new Error('Could not initialize 2D canvas context');
 
   const tableNum = String(table.tableNumber);
-  const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+  const token = getTablePermanentToken(table);
   const dineUrl = computeTableDineUrl(token, config);
 
   // Background
@@ -619,7 +627,7 @@ export const downloadTableSticker = async (table: TableResponse, config: VenueQr
  * Downloads only the raw high-resolution QR code PNG (1024x1024).
  */
 export const downloadQrOnly = async (table: TableResponse, config: VenueQrConfig): Promise<void> => {
-  const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+  const token = getTablePermanentToken(table);
   const dineUrl = computeTableDineUrl(token, config);
   const dataUrl = await generateQrDataUrl(dineUrl, { size: 1024 });
 

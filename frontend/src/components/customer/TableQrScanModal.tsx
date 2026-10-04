@@ -109,8 +109,8 @@ export const TableQrScanModal: React.FC<TableQrScanModalProps> = ({
         return;
       }
 
-      // Priority 2: If raw QR data is just a plain token string
-      if (/^[a-f0-9]{32}$/i.test(clean) || /^tok_/.test(clean)) {
+      // Priority 2: If raw QR data is a token or table string
+      if (/^[a-f0-9]{24,64}$/i.test(clean) || /^tok_/i.test(clean) || /^table-?\d+$/i.test(clean) || /^\d+$/.test(clean)) {
         stopCamera();
         setScannedSuccess('...');
         setTimeout(() => {

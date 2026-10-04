@@ -177,7 +177,7 @@ export const OrderRefundModal: React.FC<OrderRefundModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto no-print"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full max-w-xl bg-[#0B0F19] border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden my-auto text-slate-200 font-sans">

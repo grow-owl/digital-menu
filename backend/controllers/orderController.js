@@ -302,6 +302,12 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   if (clientQrToken) {
     physicalTable = await Table.findOne({ qrToken: clientQrToken });
+    if (!physicalTable) {
+      const matchNum = String(clientQrToken).match(/\d+/);
+      if (matchNum) {
+        physicalTable = await Table.findOne({ tableNumber: matchNum[0] });
+      }
+    }
   }
 
   if (!physicalTable && sessionId) {

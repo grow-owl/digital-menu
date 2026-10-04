@@ -26,23 +26,18 @@ import {
   Download,
   Copy,
   ExternalLink,
-  RotateCcw,
   Search,
   Check,
   Settings,
-  Globe,
   Wifi,
   Layers,
   Plus,
-  Trash2,
   Edit3,
   CheckCircle2,
   RefreshCw,
-  Maximize2,
   Grid,
   FileText,
   CreditCard,
-  Sliders,
   ArrowLeft,
 } from 'lucide-react';
 
@@ -54,7 +49,7 @@ const INITIAL_TABLES: TableResponse[] = Array.from({ length: 30 }, (_, i) => {
     tableNumber: num,
     capacity: num % 4 === 0 ? 6 : num % 2 === 0 ? 4 : 2,
     status: 'AVAILABLE' as any,
-    qrCodeToken: `tok_aura_tbl_${String(num).padStart(2, '0')}_secure`,
+    qrCodeToken: `table-${num}`,
   };
 });
 
@@ -86,8 +81,7 @@ export const QrGeneratorPage: React.FC = () => {
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
   const [isBatchRunning, setIsBatchRunning] = useState(false);
 
-  // Bulk Generator State
-  const [bulkCount, setBulkCount] = useState<number>(30);
+
 
   // Print Mode State ('STAND_SINGLE', 'POSTER_SINGLE', 'STICKER_SINGLE', 'ALL_STANDS', 'ALL_POSTERS', 'STICKER_SHEET')
   const [printTarget, setPrintTarget] = useState<{
@@ -130,7 +124,7 @@ export const QrGeneratorPage: React.FC = () => {
     const generateAll = async () => {
       const cache: { [key: string]: string } = {};
       for (const t of tables) {
-        const token = t.qrCodeToken || (t as any).qrToken || `tok_${t.tableNumber}`;
+        const token = (t as any).qrToken || t.qrCodeToken || `table-${t.tableNumber}`;
         const url = computeTableDineUrl(token, config);
         try {
           const dataUrl = await generateQrDataUrl(url, { size: 400 });
@@ -191,39 +185,6 @@ export const QrGeneratorPage: React.FC = () => {
     setCopiedKey(String(tableNum));
     showToast(`Table ${tableNum} Dine URL copied!`, 'success');
     setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  const handleRotateQrToken = async (table: TableResponse) => {
-    const tId = table._id || table.tableNumber;
-    try {
-      await tableService.rotateQrToken(tId);
-      showToast(`Regenerated cryptographic token for Table ${table.tableNumber}!`, 'success');
-      fetchTables();
-    } catch (err: any) {
-      const newToken = `tok_aura_${table.tableNumber}_${Math.random().toString(36).substring(2, 8)}`;
-      setTables((prev) =>
-        prev.map((t) => (t.tableNumber === table.tableNumber ? { ...t, qrCodeToken: newToken } : t))
-      );
-      showToast(`Generated new client-side token for Table ${table.tableNumber}`, 'success');
-    }
-  };
-
-  // Bulk Generator for N Tables
-  const handleGenerateBulkTables = (count: number) => {
-    const targetCount = Math.max(1, Math.min(100, count));
-    const newTablesList: TableResponse[] = Array.from({ length: targetCount }, (_, i) => {
-      const num = i + 1;
-      return {
-        _id: `tbl-${num}`,
-        tableNumber: num,
-        capacity: num % 4 === 0 ? 6 : num % 2 === 0 ? 4 : 2,
-        status: 'AVAILABLE' as any,
-        qrCodeToken: `tok_aura_tbl_${String(num).padStart(2, '0')}_secure`,
-      };
-    });
-    setTables(newTablesList);
-    setSelectedTableNumber(1);
-    showToast(`Generated QR codes for all ${targetCount} tables!`, 'success');
   };
 
   // Download Handlers
@@ -295,18 +256,7 @@ export const QrGeneratorPage: React.FC = () => {
       window.print();
     }, 180);
   };
-  // Delete Table
-  const handleDeleteTable = (num: number | string) => {
-    if (tables.length <= 1) {
-      showToast('At least one table must remain.', 'error');
-      return;
-    }
-    setTables((prev) => prev.filter((t) => String(t.tableNumber) !== String(num)));
-    if (String(selectedTableNumber) === String(num)) {
-      setSelectedTableNumber(tables[0]?.tableNumber || 1);
-    }
-    showToast(`Table ${num} removed.`, 'info');
-  };
+
 
   // ─────────────────────────────────────────────────────────────
   // Theme styling helpers for Screen Preview
@@ -412,26 +362,6 @@ export const QrGeneratorPage: React.FC = () => {
           </div>
         </header>
 
-        {/* Custom Table Count Setup Bar */}
-        <div className="bg-[#080D1A] border-b border-slate-800 px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center space-x-2.5">
-            <span className="text-slate-400 font-medium">Custom Count:</span>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={bulkCount}
-              onChange={(e) => setBulkCount(Number(e.target.value) || 1)}
-              className="w-20 px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white text-center font-bold focus:outline-none focus:border-emerald-500 font-mono"
-            />
-            <button
-              onClick={() => handleGenerateBulkTables(bulkCount)}
-              className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm"
-            >
-              Set
-            </button>
-          </div>
-        </div>
 
         {/* ─────────────────────────────────────────────────────────────
             TAB 1: ALL TABLES GRID VIEW
@@ -466,7 +396,7 @@ export const QrGeneratorPage: React.FC = () => {
             {/* Table Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
               {filteredTables.map((table) => {
-                const token = table.qrCodeToken || (table as any).qrToken || `tok_${table.tableNumber}`;
+                const token = (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
                 const dineUrl = computeTableDineUrl(token, config);
                 const qrImgUrl = qrCache[String(table.tableNumber)];
 
@@ -533,25 +463,6 @@ export const QrGeneratorPage: React.FC = () => {
                         <span>Download Table QR</span>
                       </button>
 
-                      {/* Token Regenerate & Delete Footer */}
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                        <button
-                          onClick={() => handleRotateQrToken(table)}
-                          className="hover:text-amber-400 transition-colors flex items-center space-x-1 cursor-pointer"
-                          title="Regenerate Security QR Token"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>Rotate Token</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteTable(table.tableNumber)}
-                          className="hover:text-rose-400 transition-colors p-1 cursor-pointer"
-                          title="Remove Table"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
                     </div>
                   </div>
                 );
@@ -889,32 +800,12 @@ export const QrGeneratorPage: React.FC = () => {
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                    Security Token / QR Signature
+                    Permanent QR Token
                   </label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="text"
-                      value={activeFocusTable.qrCodeToken || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTables((prev) =>
-                          prev.map((t) =>
-                            String(t.tableNumber) === String(selectedTableNumber)
-                              ? { ...t, qrCodeToken: val }
-                              : t
-                          )
-                        );
-                      }}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
-                    />
-                    <button
-                      onClick={() => handleRotateQrToken(activeFocusTable)}
-                      className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl border border-slate-700 shrink-0 cursor-pointer"
-                      title="Generate New Cryptographic Token"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
+                  <div className="px-3 py-2 bg-slate-900 border border-emerald-800/50 rounded-xl text-xs font-mono text-emerald-300 select-all">
+                    {activeFocusTable.qrCodeToken || `table-${activeFocusTable.tableNumber}`}
                   </div>
+                  <p className="text-[10px] text-slate-500 mt-1">🔒 Locked — this token never changes. Safe to print on physical stand cards.</p>
                 </div>
 
                 <div>

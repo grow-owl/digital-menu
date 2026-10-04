@@ -34,6 +34,9 @@ connectDB().catch((err) => {
 
 const app = express();
 
+// Trust reverse proxy (Vercel, Cloudflare, Nginx, Render) for accurate client IP rate limiting
+app.set('trust proxy', 1);
+
 // 1. Helmet HTTP Security Headers (prevents clickjacking, MIME sniffing, XSS)
 app.use(
   helmet({
@@ -124,6 +127,14 @@ app.get(['/', '/api/health'], (req, res) => {
     status: 'online',
     system: "Siliguri's Chai Addaa Operating System",
     timestamp: new Date().toISOString()
+  });
+});
+
+// 404 Not Found Handler for unmatched API routes
+app.use('/api', (req, res, next) => {
+  res.status(404).json({
+    success: false,
+    message: `API endpoint not found: ${req.method} ${req.originalUrl}`
   });
 });
 

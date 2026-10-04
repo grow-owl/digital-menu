@@ -16,6 +16,7 @@ import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicyPage';
 import { TermsPage } from './pages/legal/TermsPage';
 import { ProtectedRoute } from './routes/ProtectedRoute';
 import { TableSessionRoute } from './routes/TableSessionRoute';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export const App: React.FC = () => {
   return (
@@ -71,8 +72,9 @@ export const App: React.FC = () => {
             <Route path="/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
           </Route>
 
-          {/* Fallback wildcard redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Dedicated 404 Not Found Page */}
+          <Route path="/404" element={<NotFoundPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </ToastProvider>

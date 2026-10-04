@@ -93,17 +93,24 @@ const orderRateLimiter = rateLimit({
 
 /**
  * General API Rate Limiter
- * Max 1000 requests per 15 minutes
+ * 600 requests per minute per IP (~10 req/sec).
+ * Exempts all safe, idempotent GET requests (polling, menu browsing, table status, KDS) and preflights.
  */
 const generalRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 1000,
-  skip: () => process.env.NODE_ENV !== 'production',
+  windowMs: 60 * 1000, // 1-minute rolling window
+  max: 600,
+  skip: (req) => {
+    if (process.env.NODE_ENV !== 'production') return true;
+    if (req.method === 'OPTIONS' || req.path === '/health' || req.path === '/') return true;
+    // Safe idempotent GET requests across restaurant POS, menu, order tracking, and KDS never trigger rate limit
+    if (req.method === 'GET') return true;
+    return false;
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'API rate limit exceeded. Please slow down your requests.'
+    message: 'API rate limit exceeded. Please wait a moment before trying again.'
   }
 });
 

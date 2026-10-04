@@ -45,6 +45,39 @@ export const menuService = {
       let items = response.data.data || [];
       if (items.length === 0) {
         items = SILIGURI_MENU_ITEMS;
+      } else {
+        // Backfill missing imageUrl from local static data so admin-created items
+        // without images still display properly on the customer-facing menu
+        items = items.map((dbItem) => {
+          if (!dbItem.imageUrl || dbItem.imageUrl.trim() === '') {
+            // Try matching by id first, then by normalized name
+            const localMatch = SILIGURI_MENU_ITEMS.find(
+              (local) =>
+                local.id === dbItem.id ||
+                local.name.toLowerCase().trim() === String(dbItem.name || '').toLowerCase().trim()
+            );
+            if (localMatch?.imageUrl) {
+              return { ...dbItem, imageUrl: localMatch.imageUrl };
+            }
+            // Category-aware fallback images for common restaurant categories
+            const CATEGORY_FALLBACKS: Record<number, string> = {
+              1: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80', // Tea/Coffee
+              2: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80', // Snacks
+              3: 'https://images.unsplash.com/photo-1525385133512-2f3bdd039054?auto=format&fit=crop&w=800&q=80', // Boba/Shakes
+              4: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80', // Pasta/Desserts
+              5: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80', // Salads
+              6: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?auto=format&fit=crop&w=800&q=80', // Coolers/Lassi
+              7: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80', // Burgers
+              8: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=800&q=80', // Noodles
+            };
+            return {
+              ...dbItem,
+              imageUrl: CATEGORY_FALLBACKS[dbItem.categoryId] ||
+                'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80'
+            };
+          }
+          return dbItem;
+        });
       }
 
       if (params?.categoryId) {

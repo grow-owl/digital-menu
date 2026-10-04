@@ -49,7 +49,19 @@ export const AdminDashboardPage: React.FC = () => {
   const [billingPaymentMethod, setBillingPaymentMethod] = useState<'UPI' | 'CARD_SWIPE' | 'CASH'>('UPI');
   const [billingDiscountPercent, setBillingDiscountPercent] = useState<number>(0);
   const [isSettlingBill, setIsSettlingBill] = useState(false);
-  const [settledSuccessData, setSettledSuccessData] = useState<{ invoiceNumber: string; tableNumber: number; total: number } | null>(null);
+  const [settledSuccessData, setSettledSuccessData] = useState<{
+    invoiceNumber: string;
+    tableNumber: number;
+    guestCount?: number;
+    total: number;
+    subtotal: number;
+    tax: number;
+    discountPercent?: number;
+    discountAmount?: number;
+    paymentMethod: string;
+    items: any[];
+    paidAt?: string;
+  } | null>(null);
 
   // ─────────────────────────────────────────────────────────────
   // PART 2: BILLING HISTORY STATE
@@ -111,25 +123,35 @@ export const AdminDashboardPage: React.FC = () => {
     activeServiceCall !== null
   );
 
-  // Fetch all live data from database
-  const fetchData = async (showLoading = false) => {
+  // Fetch live data from database: full load on mount/actions, lightweight refresh for periodic polling
+  const fetchData = async (showLoading = false, fullRefresh = true) => {
     if (showLoading) setIsLoading(true);
     try {
-      const [tables, active, settled, refunded, cats, items] = await Promise.all([
-        tableService.getAllTables().catch(() => []),
-        orderService.getActiveOrders().catch(() => []),
-        orderService.getSettledOrders().catch(() => []),
-        orderService.getRefundedOrders().catch(() => []),
-        menuService.getCategories().catch(() => []),
-        menuService.getMenuItems().catch(() => []),
-      ]);
+      if (fullRefresh) {
+        const [tables, active, settled, refunded, cats, items] = await Promise.all([
+          tableService.getAllTables().catch(() => []),
+          orderService.getActiveOrders().catch(() => []),
+          orderService.getSettledOrders().catch(() => []),
+          orderService.getRefundedOrders().catch(() => []),
+          menuService.getCategories().catch(() => []),
+          menuService.getMenuItems().catch(() => []),
+        ]);
 
-      setAllTables(tables || []);
-      setRealActiveOrders(active || []);
-      setRealSettledOrders(Array.isArray(settled) ? settled : (settled?.data || []));
-      setRealRefundedOrders(refunded || []);
-      setCategories(cats || []);
-      setMenuItems(items || []);
+        setAllTables(tables || []);
+        setRealActiveOrders(active || []);
+        setRealSettledOrders(Array.isArray(settled) ? settled : (settled?.data || []));
+        setRealRefundedOrders(refunded || []);
+        setCategories(cats || []);
+        setMenuItems(items || []);
+      } else {
+        // Fast background poll: only refresh dynamic tables & active orders
+        const [tables, active] = await Promise.all([
+          tableService.getAllTables().catch(() => null),
+          orderService.getActiveOrders().catch(() => null),
+        ]);
+        if (tables) setAllTables(tables);
+        if (active) setRealActiveOrders(active);
+      }
     } catch (err) {
       console.error('Failed to load admin data:', err);
     } finally {
@@ -185,13 +207,13 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData(true);
+    fetchData(true, true);
     checkServiceCalls();
 
     const interval = setInterval(() => {
-      fetchData(false);
+      fetchData(false, false);
       checkServiceCalls();
-    }, 3000);
+    }, 5000);
 
     const handleServiceEvent = (e: any) => {
       const alert = e?.detail;
@@ -320,10 +342,21 @@ export const AdminDashboardPage: React.FC = () => {
         `Table ${tableNum} bill settled successfully via ${billingPaymentMethod}! Invoice #${invoiceNumber}`,
         'success'
       );
+      const discountAmount = Math.round(selectedTableForBilling.total * (billingDiscountPercent / 100));
+      const grandTotal = Math.round(selectedTableForBilling.total - discountAmount);
+
       setSettledSuccessData({
         invoiceNumber,
         tableNumber: tableNum,
-        total: Math.round(selectedTableForBilling.total * (1 - billingDiscountPercent / 100)),
+        guestCount: selectedTableForBilling.guestCount,
+        total: grandTotal,
+        subtotal: selectedTableForBilling.subtotal,
+        tax: selectedTableForBilling.tax,
+        discountPercent: billingDiscountPercent,
+        discountAmount,
+        paymentMethod: billingPaymentMethod,
+        items: selectedTableForBilling.items || [],
+        paidAt: new Date().toISOString(),
       });
       fetchData(false);
     } catch (err: any) {
@@ -332,6 +365,41 @@ export const AdminDashboardPage: React.FC = () => {
       setIsSettlingBill(false);
     }
   };
+
+  const handleCloseSettleModal = () => {
+    setSelectedTableForBilling(null);
+    setSettledSuccessData(null);
+    setBillingDiscountPercent(0);
+  };
+
+  // Dedicated active receipt to print for standard / thermal receipt printing
+  const activePrintReceipt = useMemo(() => {
+    if (viewBillOrder) {
+      const subtotal = viewBillOrder.subtotal || viewBillOrder.total || 0;
+      const tax = viewBillOrder.tax !== undefined && viewBillOrder.tax !== null
+        ? viewBillOrder.tax
+        : Math.round(subtotal * 0.05);
+      const discountAmount = viewBillOrder.discountAmount || 0;
+      const discountPercent = viewBillOrder.discountPercent || (discountAmount > 0 && subtotal > 0 ? Math.round((discountAmount / subtotal) * 100) : 0);
+      return {
+        invoiceNumber: viewBillOrder.invoiceNumber || viewBillOrder.orderId || 'INV-001',
+        tableNumber: viewBillOrder.tableNumber || viewBillOrder.tableId || 1,
+        guestCount: viewBillOrder.guestCount,
+        paymentMethod: viewBillOrder.paymentMethod || 'UPI',
+        items: viewBillOrder.items || [],
+        subtotal,
+        tax,
+        discountAmount,
+        discountPercent,
+        total: viewBillOrder.total || (subtotal + tax - discountAmount),
+        paidAt: viewBillOrder.paidAt || viewBillOrder.createdAt || new Date().toISOString(),
+      };
+    }
+    if (settledSuccessData) {
+      return settledSuccessData;
+    }
+    return null;
+  }, [viewBillOrder, settledSuccessData]);
 
   // Filtered Billing History Log
   const filteredBillingHistory = useMemo(() => {
@@ -535,7 +603,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   return (
     <div className="page-theme-admin h-full overflow-y-auto p-2 sm:p-6 font-sans text-theme-text bg-theme-bg">
-      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-6 pb-24">
+      <div className="max-w-7xl mx-auto space-y-3 sm:space-y-6 pb-24 no-print">
         {/* ─────────────────────────────────────────────────────────────
             TOP HEADER BANNER (Mobile-Responsive Header)
         ───────────────────────────────────────────────────────────── */}
@@ -1324,8 +1392,8 @@ export const AdminDashboardPage: React.FC = () => {
       ───────────────────────────────────────────────────────────── */}
       {selectedTableForBilling && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
-          onClick={(e) => { if (e.target === e.currentTarget) setSelectedTableForBilling(null); }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 no-print"
+          onClick={(e) => { if (e.target === e.currentTarget) handleCloseSettleModal(); }}
         >
           <div className="bg-theme-surface border border-theme-border rounded-t-3xl sm:rounded-3xl max-w-lg w-full shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden">
             {/* Header */}
@@ -1338,7 +1406,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <p className="text-xs text-theme-muted">{selectedTableForBilling.guestCount} Guests</p>
               </div>
               <button
-                onClick={() => setSelectedTableForBilling(null)}
+                onClick={handleCloseSettleModal}
                 className="p-1.5 text-slate-400 hover:text-white rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1453,21 +1521,67 @@ export const AdminDashboardPage: React.FC = () => {
                     <p className="text-xs text-slate-400 mt-1">Invoice #{settledSuccessData.invoiceNumber} • Table {settledSuccessData.tableNumber}</p>
                     <p className="text-emerald-400 text-lg font-black mt-2">₹{settledSuccessData.total.toLocaleString('en-IN')}</p>
                   </div>
+
+                  {/* Quick Summary of items & payment */}
+                  <div className="bg-theme-bg p-3 rounded-xl border border-theme-border text-left space-y-1 text-xs">
+                    <div className="flex justify-between text-slate-400 text-[11px]">
+                      <span>Items Settled:</span>
+                      <span className="font-bold text-white">{(settledSuccessData.items || []).length} items</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400 text-[11px]">
+                      <span>Payment Method:</span>
+                      <span className="font-bold text-emerald-400 uppercase">{settledSuccessData.paymentMethod}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-400 text-[11px]">
+                      <span>Bill Status:</span>
+                      <span className="font-bold text-emerald-400">PAID &amp; SETTLED</span>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <button
+                      type="button"
                       onClick={() => {
                         window.print();
                       }}
-                      className="flex-1 py-3 bg-theme-bg border border-theme-border text-white font-bold text-xs uppercase rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer"
+                      className="flex-1 py-3 bg-theme-bg hover:bg-theme-surface border border-theme-border text-white font-bold text-xs uppercase rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer shadow-lg transition-all"
                     >
                       <Printer className="w-4 h-4" />
                       <span>Print Receipt</span>
                     </button>
                     <button
-                      onClick={() => setSelectedTableForBilling(null)}
-                      className="flex-1 py-3 bg-theme-primary text-black font-black text-xs uppercase rounded-xl cursor-pointer"
+                      type="button"
+                      onClick={handleCloseSettleModal}
+                      className="flex-1 py-3 bg-theme-primary text-black font-black text-xs uppercase rounded-xl cursor-pointer hover:brightness-110 transition-all"
                     >
                       Done
+                    </button>
+                  </div>
+
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewBillOrder({
+                          invoiceNumber: settledSuccessData.invoiceNumber,
+                          orderId: settledSuccessData.invoiceNumber,
+                          tableNumber: settledSuccessData.tableNumber,
+                          tableId: settledSuccessData.tableNumber,
+                          paymentMethod: settledSuccessData.paymentMethod,
+                          items: settledSuccessData.items,
+                          subtotal: settledSuccessData.subtotal,
+                          tax: settledSuccessData.tax,
+                          discountAmount: settledSuccessData.discountAmount,
+                          discountPercent: settledSuccessData.discountPercent,
+                          total: settledSuccessData.total,
+                          paidAt: settledSuccessData.paidAt,
+                          guestCount: settledSuccessData.guestCount,
+                        });
+                        setSelectedTableForBilling(null);
+                      }}
+                      className="text-[11px] text-theme-primary hover:underline font-mono cursor-pointer"
+                    >
+                      View Full Tax Invoice On Screen →
                     </button>
                   </div>
                 </div>
@@ -1482,10 +1596,10 @@ export const AdminDashboardPage: React.FC = () => {
       ───────────────────────────────────────────────────────────── */}
       {viewBillOrder && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 no-print"
           onClick={(e) => { if (e.target === e.currentTarget) setViewBillOrder(null); }}
         >
-          <div className="printable-invoice bg-white text-gray-900 rounded-3xl max-w-md w-full shadow-2xl p-5 sm:p-6 space-y-4 relative font-mono text-xs max-h-[90vh] overflow-y-auto">
+          <div className="bg-white text-gray-900 rounded-3xl max-w-md w-full shadow-2xl p-5 sm:p-6 space-y-4 relative font-mono text-xs max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setViewBillOrder(null)}
               className="no-print absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
@@ -1523,15 +1637,20 @@ export const AdminDashboardPage: React.FC = () => {
                 <span className="col-span-2 text-center">Qty</span>
                 <span className="col-span-4 text-right">Total</span>
               </div>
-              {(viewBillOrder.items || []).map((it: any, i: number) => (
-                <div key={i} className="grid grid-cols-12 text-xs py-0.5 text-gray-800">
-                  <span className="col-span-6 truncate font-medium">{it.name}</span>
-                  <span className="col-span-2 text-center text-gray-500">{it.quantity || it.qty || 1}</span>
-                  <span className="col-span-4 text-right font-bold">
-                    ₹{((it.quantity || it.qty || 1) * (it.price || 0)).toLocaleString('en-IN')}
-                  </span>
-                </div>
-              ))}
+              {(viewBillOrder.items || []).map((it: any, i: number) => {
+                const qty = it.quantity || it.qty || 1;
+                const price = it.price || it.unitPrice || 0;
+                const total = it.totalPrice || (qty * price);
+                return (
+                  <div key={i} className="grid grid-cols-12 text-xs py-0.5 text-gray-800">
+                    <span className="col-span-6 truncate font-medium">{it.name || it.itemName || 'Dish Item'}</span>
+                    <span className="col-span-2 text-center text-gray-500">{qty}</span>
+                    <span className="col-span-4 text-right font-bold">
+                      ₹{total.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="space-y-1 text-xs">
@@ -1539,6 +1658,12 @@ export const AdminDashboardPage: React.FC = () => {
                 <span>Subtotal</span>
                 <span>₹{(viewBillOrder.subtotal || viewBillOrder.total || 0).toLocaleString('en-IN')}</span>
               </div>
+              {Boolean(viewBillOrder.discountAmount && viewBillOrder.discountAmount > 0) && (
+                <div className="flex justify-between text-emerald-700 font-bold">
+                  <span>Discount</span>
+                  <span>-₹{Number(viewBillOrder.discountAmount).toLocaleString('en-IN')}</span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-600">
                 <span>CGST (2.5%)</span>
                 <span>₹{((viewBillOrder.tax || (viewBillOrder.total * 0.05)) / 2).toFixed(2)}</span>
@@ -1555,15 +1680,17 @@ export const AdminDashboardPage: React.FC = () => {
 
             <div className="no-print flex space-x-2 pt-2">
               <button
+                type="button"
                 onClick={() => window.print()}
-                className="flex-1 py-2.5 bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer"
+                className="flex-1 py-2.5 bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1.5 cursor-pointer shadow-md transition-all"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Invoice</span>
               </button>
               <button
+                type="button"
                 onClick={() => setViewBillOrder(null)}
-                className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl cursor-pointer"
+                className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl cursor-pointer transition-all"
               >
                 Close
               </button>
@@ -1576,7 +1703,7 @@ export const AdminDashboardPage: React.FC = () => {
           DISH ADD / EDIT MODAL
       ───────────────────────────────────────────────────────────── */}
       {isDishModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 no-print">
           <div className="bg-theme-surface border border-theme-border rounded-2xl sm:rounded-3xl p-5 sm:p-7 max-w-xl w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-theme-border pb-3">
               <div className="flex items-center space-x-2.5">
@@ -1743,7 +1870,7 @@ export const AdminDashboardPage: React.FC = () => {
           URGENT CALL SERVICE MODAL (With Blurred Background)
       ───────────────────────────────────────────────────────────── */}
       {activeServiceCall && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in no-print">
           <div className="bg-[#0B0F19] border-2 border-amber-500 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 text-center relative overflow-hidden ring-8 ring-amber-500/20">
             {/* Ambient Background Glow */}
             <div className="absolute -top-16 -left-16 w-36 h-36 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -1790,6 +1917,118 @@ export const AdminDashboardPage: React.FC = () => {
                 Dismiss Modal (Keep in Background)
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          DEDICATED PRINTABLE GST TAX INVOICE & THERMAL RECEIPT
+          Rendered strictly when window.print() is called
+      ───────────────────────────────────────────────────────────── */}
+      {activePrintReceipt && (
+        <div className="printable-invoice hidden print:block text-black bg-white p-4 font-mono text-xs max-w-sm mx-auto">
+          {/* Header */}
+          <div className="text-center space-y-1 border-b-2 border-dashed border-gray-400 pb-3 mb-3">
+            <div className="flex justify-center items-center space-x-2">
+              <Utensils className="w-5 h-5 text-gray-900" />
+              <h2 className="font-serif font-black text-xl text-black tracking-wider">SILIGURI'S CHAI ADDAA</h2>
+            </div>
+            <p className="text-[11px] text-gray-700 font-sans font-medium">Artisan Tea House &amp; Comfort Dining</p>
+            <p className="text-[10px] text-gray-600">Sevoke Road, Siliguri, WB • Ph: +91 98765 43210</p>
+            <p className="text-[9px] text-gray-500 font-mono">FSSAI: 11521001000456 • GSTIN: 19AAEC8849J1Z9</p>
+            <div className="pt-1 font-bold text-xs uppercase tracking-widest text-black">
+              *** TAX INVOICE ***
+            </div>
+          </div>
+
+          {/* Meta Details */}
+          <div className="space-y-1 bg-gray-50 p-2.5 rounded-lg border border-gray-300 text-[11px] mb-3">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Invoice No:</span>
+              <span className="font-bold text-black">{activePrintReceipt.invoiceNumber}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Table / Dine-In:</span>
+              <span className="font-bold text-black">
+                Table {activePrintReceipt.tableNumber}
+                {activePrintReceipt.guestCount ? ` (${activePrintReceipt.guestCount} Guests)` : ''}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Date &amp; Time:</span>
+              <span className="font-medium text-black">
+                {new Date(activePrintReceipt.paidAt || Date.now()).toLocaleDateString([], {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Payment Mode:</span>
+              <span className="font-bold uppercase text-black">
+                {activePrintReceipt.paymentMethod} • PAID
+              </span>
+            </div>
+          </div>
+
+          {/* Itemized Dish Rows */}
+          <div className="space-y-1.5 border-b-2 border-dashed border-gray-400 pb-2 mb-3">
+            <div className="grid grid-cols-12 text-[10px] font-bold uppercase text-gray-700 border-b border-gray-300 pb-1">
+              <span className="col-span-6">Item</span>
+              <span className="col-span-2 text-center">Qty</span>
+              <span className="col-span-4 text-right">Amount</span>
+            </div>
+            {(activePrintReceipt.items || []).map((it: any, i: number) => {
+              const name = it.name || it.itemName || 'Dish Item';
+              const qty = it.quantity || it.qty || 1;
+              const price = it.price || it.unitPrice || 0;
+              const total = it.totalPrice || (qty * price);
+              return (
+                <div key={i} className="grid grid-cols-12 text-[11px] py-0.5 text-gray-900">
+                  <span className="col-span-6 truncate font-medium">{name}</span>
+                  <span className="col-span-2 text-center text-gray-700">{qty}</span>
+                  <span className="col-span-4 text-right font-bold">
+                    ₹{total.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Totals & GST Summary */}
+          <div className="space-y-1 text-xs text-gray-800">
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>₹{(activePrintReceipt.subtotal || 0).toLocaleString('en-IN')}</span>
+            </div>
+            {Boolean(activePrintReceipt.discountAmount && activePrintReceipt.discountAmount > 0) && (
+              <div className="flex justify-between text-emerald-700 font-bold">
+                <span>Discount ({activePrintReceipt.discountPercent || 0}%)</span>
+                <span>-₹{Number(activePrintReceipt.discountAmount).toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-gray-600">
+              <span>CGST (2.5%)</span>
+              <span>₹{((activePrintReceipt.tax || 0) / 2).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>SGST (2.5%)</span>
+              <span>₹{((activePrintReceipt.tax || 0) / 2).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-base font-black text-black pt-2 border-t-2 border-black mt-2">
+              <span>GRAND TOTAL</span>
+              <span>₹{(activePrintReceipt.total || 0).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+
+          {/* Footer Receipt Notice */}
+          <div className="text-center pt-4 border-t-2 border-dashed border-gray-400 mt-4 space-y-1">
+            <p className="font-bold text-xs text-gray-900">Thank you for dining with us!</p>
+            <p className="text-[10px] text-gray-600">Please visit again • Have a wonderful day</p>
+            <p className="text-[9px] text-gray-400 font-sans pt-1">Siliguri Chai Addaa POS System</p>
           </div>
         </div>
       )}

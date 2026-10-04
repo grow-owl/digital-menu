@@ -264,8 +264,8 @@ export const OrderTrackingPage: React.FC = () => {
 
   useEffect(() => {
     fetchTableOrders();
-    // 2-second fast polling for responsive live kitchen sync
-    const pollInterval = setInterval(fetchTableOrders, 2000);
+    // 5-second polling for responsive live kitchen sync without exhausting rate limits
+    const pollInterval = setInterval(fetchTableOrders, 5000);
     // 1-second clock tick for smooth timer / progress progression
     const clockInterval = setInterval(() => setTickTime(Date.now()), 1000);
 

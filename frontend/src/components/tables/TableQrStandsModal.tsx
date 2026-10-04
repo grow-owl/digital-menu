@@ -94,7 +94,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
     const generateAllQrs = async () => {
       const newCache: { [key: string]: string } = {};
       for (const table of tables) {
-        const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+        const token = (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
         const url = computeTableDineUrl(token, config);
         try {
           const dataUrl = await generateQrDataUrl(url, { size: 400 });
@@ -598,7 +598,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
               </div>
             ) : (
               filteredTables.map((table) => {
-                const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+                const token = (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
                 const dineUrl = computeTableDineUrl(token, config);
                 const qrDataUrl = qrCache[String(table.tableNumber)];
                 const isCopied = copiedTable === table.tableNumber;
@@ -821,7 +821,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
             return String(t.tableNumber) === String(printingTableNumber);
           })
           .map((table) => {
-            const token = table.qrCodeToken || (table as any).qrToken || 'demo-token';
+            const token = (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
             const dineUrl = computeTableDineUrl(token, config);
             const qrDataUrl = qrCache[String(table.tableNumber)];
             const isVip = Number(table.tableNumber) === 10;

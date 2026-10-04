@@ -130,7 +130,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       ───────────────────────────────────────────────────────────── */}
       {!isOperationalRoute && (
         <aside
-          className={`hidden md:flex flex-col flex-shrink-0 bg-theme-surface border-r border-theme-border transition-all duration-300 z-30 select-none ${
+          className={`hidden md:flex flex-col flex-shrink-0 bg-theme-surface border-r border-theme-border transition-all duration-300 z-30 select-none no-print ${
             isSidebarCollapsed ? 'w-18' : 'w-60'
           }`}
         >
@@ -269,7 +269,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       ───────────────────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header Bar */}
-        <header className="h-14 px-3 sm:px-6 bg-theme-surface/95 backdrop-blur-xl border-b border-theme-border flex items-center justify-between z-20 flex-shrink-0">
+        <header className="h-14 px-3 sm:px-6 bg-theme-surface/95 backdrop-blur-xl border-b border-theme-border flex items-center justify-between z-20 flex-shrink-0 no-print">
           {/* Left: Menu Toggle & Workspace Identifier */}
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <button

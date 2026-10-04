@@ -148,7 +148,7 @@ export const KitchenDisplayPage: React.FC = () => {
 
   useEffect(() => {
     fetchActiveOrders();
-    const pollInterval = setInterval(() => fetchActiveOrders(false), 3000);
+    const pollInterval = setInterval(() => fetchActiveOrders(false), 5000);
     const clockInterval = setInterval(() => setNowTimestamp(Date.now()), 1000);
     return () => {
       clearInterval(pollInterval);

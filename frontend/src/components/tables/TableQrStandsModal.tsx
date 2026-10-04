@@ -23,7 +23,7 @@ import {
   Printer,
   RotateCcw,
   ShieldCheck,
-  Sparkles,
+  Coffee,
   Search,
   Check,
   Download,
@@ -654,10 +654,10 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                               alt={`Table ${table.tableNumber} QR`}
                               className="w-full h-full object-contain select-none"
                             />
-                            {/* Center Cutlery / Sparkle Medallion */}
+                            {/* Center Chai Cup Medallion (Favicon Icon) */}
                             <div className="absolute inset-0 m-auto w-9 h-9 rounded-full bg-white shadow-md border-2 border-amber-500 flex items-center justify-center">
-                              <div className="w-7 h-7 rounded-full bg-[#08251B] flex items-center justify-center text-amber-400 font-serif font-black text-xs">
-                                ✦
+                              <div className="w-7 h-7 rounded-full bg-[#08251B] flex items-center justify-center text-amber-400">
+                                <Coffee className="w-3.5 h-3.5" />
                               </div>
                             </div>
                           </div>

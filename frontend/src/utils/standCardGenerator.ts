@@ -309,32 +309,20 @@ export const generateStandCardCanvas = async (
   ctx.fillStyle = theme === 'EMERALD_GOLD' ? '#08251B' : (theme === 'ROYAL_NOIR' ? '#0F172A' : '#18181B');
   ctx.fill();
 
-  // Stylized fork & knife emblem icon drawn with canvas paths
+  // Stylized Chai / Coffee Cup emblem icon (matches favicon icon)
+  ctx.save();
   ctx.strokeStyle = accentColor;
-  ctx.fillStyle = accentColor;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 3.2;
   ctx.lineCap = 'round';
-
-  // Knife
-  ctx.beginPath();
-  ctx.moveTo(emblemX - 10, emblemY + 16);
-  ctx.lineTo(emblemX - 10, emblemY - 8);
-  ctx.quadraticCurveTo(emblemX - 10, emblemY - 18, emblemX - 4, emblemY - 18);
-  ctx.lineTo(emblemX - 4, emblemY - 8);
-  ctx.lineTo(emblemX - 10, emblemY - 4);
-  ctx.stroke();
-
-  // Fork
-  ctx.beginPath();
-  ctx.moveTo(emblemX + 10, emblemY + 16);
-  ctx.lineTo(emblemX + 10, emblemY - 4);
-  ctx.moveTo(emblemX + 6, emblemY - 4);
-  ctx.lineTo(emblemX + 6, emblemY - 18);
-  ctx.moveTo(emblemX + 10, emblemY - 4);
-  ctx.lineTo(emblemX + 10, emblemY - 18);
-  ctx.moveTo(emblemX + 14, emblemY - 4);
-  ctx.lineTo(emblemX + 14, emblemY - 18);
-  ctx.stroke();
+  ctx.lineJoin = 'round';
+  ctx.translate(emblemX, emblemY);
+  const cupScale = 1.35;
+  ctx.scale(cupScale, cupScale);
+  const coffeePath = new Path2D(
+    'M -8 -3 h 14 v 8 a 4 4 0 0 1 -4 4 h -6 a 4 4 0 0 1 -4 -4 Z M 6 -3 h 1 a 4 4 0 1 1 0 7 h -1 M -5 -9 v 2.5 M -1 -9 v 2.5 M 3 -9 v 2.5'
+  );
+  ctx.stroke(coffeePath);
+  ctx.restore();
 
   // 8. Scanning Instructions Box (3 Easy Steps)
   const stepsY = 1070;
@@ -591,31 +579,22 @@ export const generateBoardPosterCanvas = async (
   ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#18181B' : '#08251B';
   ctx.fill();
 
-  ctx.strokeStyle = accentColor;
-  ctx.fillStyle = accentColor;
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
+  // Stylized Chai / Coffee Cup emblem on QR (matches favicon icon)
   const cx = width / 2;
   const cy = qrDrawY + qrDrawSize / 2;
-  // Knife
-  ctx.beginPath();
-  ctx.moveTo(cx - 12, cy + 20);
-  ctx.lineTo(cx - 12, cy - 10);
-  ctx.quadraticCurveTo(cx - 12, cy - 24, cx - 5, cy - 24);
-  ctx.lineTo(cx - 5, cy - 10);
-  ctx.lineTo(cx - 12, cy - 5);
-  ctx.stroke();
-  // Fork
-  ctx.beginPath();
-  ctx.moveTo(cx + 12, cy + 20);
-  ctx.lineTo(cx + 12, cy - 5);
-  ctx.moveTo(cx + 7, cy - 5);
-  ctx.lineTo(cx + 7, cy - 24);
-  ctx.moveTo(cx + 12, cy - 5);
-  ctx.lineTo(cx + 12, cy - 24);
-  ctx.moveTo(cx + 17, cy - 5);
-  ctx.lineTo(cx + 17, cy - 24);
-  ctx.stroke();
+  ctx.save();
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.translate(cx, cy);
+  const posterCupScale = 1.8;
+  ctx.scale(posterCupScale, posterCupScale);
+  const posterCoffeePath = new Path2D(
+    'M -8 -3 h 14 v 8 a 4 4 0 0 1 -4 4 h -6 a 4 4 0 0 1 -4 -4 Z M 6 -3 h 1 a 4 4 0 1 1 0 7 h -1 M -5 -9 v 2.5 M -1 -9 v 2.5 M 3 -9 v 2.5'
+  );
+  ctx.stroke(posterCoffeePath);
+  ctx.restore();
 
   // 3-Step Instruction Cards
   const stepY = 1530;

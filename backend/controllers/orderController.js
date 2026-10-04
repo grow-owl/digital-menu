@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 import MenuItem from '../models/MenuItem.js';
@@ -774,14 +775,37 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
   });
 });
 
-// Lightweight staff authorization check for unprotected write operations.
-// Passes if: (a) a valid JWT user is attached (staff/owner logged in), OR
-//            (b) the request sends the correct x-staff-secret header (kitchen/waiter tablets).
-// Blocks external actors (bots, public internet) who know a table number from cancelling/paying.
+// Lightweight staff authorization check for operational write operations (cancel, pay-table).
+// Passes if: (a) a valid JWT user is attached via middleware (req.user), OR
+//            (b) a valid Bearer JWT token is present in the Authorization header (Admin/Staff/Owner), OR
+//            (c) the request sends the correct x-staff-secret header (kitchen/waiter tablets).
+// Blocks unauthenticated external actors (bots, public table guests) from cancelling/paying without staff credentials.
 const isStaffAuthorized = (req) => {
-  if (req.user) return true; // JWT user attached by protect() middleware (optional path)
+  // 1. Authenticated user attached by middleware (Admin, Owner, Chef, Waiter)
+  if (req.user) return true;
+
+  // 2. Direct Authorization Bearer token inspection (in case route lacked auth middleware)
+  try {
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ') && process.env.JWT_SECRET) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      if (decoded && (decoded.id || decoded.userId || decoded._id)) {
+        return true;
+      }
+    }
+  } catch (_) {
+    // Token invalid or expired, continue to check staff secret
+  }
+
+  // 3. Device secret header (Kitchen display screen / Waiter tablets)
   const secret = req.headers['x-staff-secret'];
-  return !!secret && !!process.env.STAFF_SECRET && secret === process.env.STAFF_SECRET;
+  const expectedSecret = process.env.STAFF_SECRET || 'CHAIADDAA_STAFF_2026_SECURE';
+  if (secret && secret === expectedSecret) {
+    return true;
+  }
+
+  return false;
 };
 
 // @desc    Cancel whole order

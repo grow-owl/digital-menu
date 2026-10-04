@@ -17,7 +17,7 @@ import {
   payTableBill,
 } from '../controllers/orderController.js';
 
-import { protect, requireRole } from '../middleware/authMiddleware.js';
+import { protect, requireRole, optionalAuth } from '../middleware/authMiddleware.js';
 import { orderRateLimiter } from '../middleware/securityMiddleware.js';
 
 const router = express.Router();
@@ -40,13 +40,13 @@ router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
 // Kitchen / Staff status updates
 router.put('/:orderId/status', updateOrderStatus);
 router.put('/:orderId/items/check', toggleItemPrepared);
-router.put('/:orderId/items/:itemIndex/cancel', cancelOrderItem);
-router.put('/:orderId/cancel', cancelOrder);
+router.put('/:orderId/items/:itemIndex/cancel', optionalAuth, cancelOrderItem);
+router.put('/:orderId/cancel', optionalAuth, cancelOrder);
 
 // Owner financial operations
 router.post('/:orderId/refund', protect, requireRole('owner'), refundOrder);
 router.get('/refunds/all', protect, requireRole('owner'), getRefunds);
-router.post('/pay-table', payTableBill);
+router.post('/pay-table', optionalAuth, payTableBill);
 
 // Auto-cancel orders in 'received' status older than 15 minutes (Kitchen Timeout)
 const autoCancelStaleOrders = async () => {

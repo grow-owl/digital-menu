@@ -48,6 +48,29 @@ function roundRect(
   ctx.closePath();
 }
 
+let cachedFaviconImg: HTMLImageElement | null = null;
+
+/**
+ * Loads the brand favicon SVG image into an HTMLImageElement for canvas rendering (cached in-memory).
+ */
+const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
+  if (cachedFaviconImg) return Promise.resolve(cachedFaviconImg);
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      cachedFaviconImg = img;
+      resolve(img);
+    };
+    img.onerror = () => resolve(null);
+    img.src = '/favicon.svg';
+  });
+};
+
 /**
  * Generates an ultra-luxurious, printable table stand card rendered on an HTML5 Canvas.
  * Resolution: 1200 x 1750 px (equivalent to standard 4x6" or 5x7" high-DPI acrylic table tent card).
@@ -289,40 +312,24 @@ export const generateStandCardCanvas = async (
   const qrDrawY = qrContainerY + (qrContainerSize - qrDrawSize) / 2;
   ctx.drawImage(qrImg, qrDrawX, qrDrawY, qrDrawSize, qrDrawSize);
 
-  // Center Cutlery / Sparkle Medallion on QR (Safe within Level H error correction)
-  const emblemRadius = 42;
-  const emblemX = width / 2;
-  const emblemY = qrDrawY + qrDrawSize / 2;
+  // Center Favicon Badge on QR (Safe within Level H error correction)
+  const faviconImg = await loadFaviconImage();
+  const badgeSize = 84;
+  const badgeX = (width - badgeSize) / 2;
+  const badgeY = qrDrawY + (qrDrawSize - badgeSize) / 2;
 
-  // Outer medallion circle
-  ctx.beginPath();
-  ctx.arc(emblemX, emblemY, emblemRadius, 0, Math.PI * 2);
+  // White base plate with rounded corners
   ctx.fillStyle = '#FFFFFF';
+  roundRect(ctx, badgeX - 5, badgeY - 5, badgeSize + 10, badgeSize + 10, 18);
   ctx.fill();
+
   ctx.strokeStyle = frameColor;
-  ctx.lineWidth = 3.5;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Inner colored circle
-  ctx.beginPath();
-  ctx.arc(emblemX, emblemY, emblemRadius - 6, 0, Math.PI * 2);
-  ctx.fillStyle = theme === 'EMERALD_GOLD' ? '#08251B' : (theme === 'ROYAL_NOIR' ? '#0F172A' : '#18181B');
-  ctx.fill();
-
-  // Stylized Chai / Coffee Cup emblem icon (matches favicon icon)
-  ctx.save();
-  ctx.strokeStyle = accentColor;
-  ctx.lineWidth = 3.2;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.translate(emblemX, emblemY);
-  const cupScale = 1.35;
-  ctx.scale(cupScale, cupScale);
-  const coffeePath = new Path2D(
-    'M -8 -3 h 14 v 8 a 4 4 0 0 1 -4 4 h -6 a 4 4 0 0 1 -4 -4 Z M 6 -3 h 1 a 4 4 0 1 1 0 7 h -1 M -5 -9 v 2.5 M -1 -9 v 2.5 M 3 -9 v 2.5'
-  );
-  ctx.stroke(coffeePath);
-  ctx.restore();
+  if (faviconImg) {
+    ctx.drawImage(faviconImg, badgeX, badgeY, badgeSize, badgeSize);
+  }
 
   // 8. Scanning Instructions Box (3 Easy Steps)
   const stepsY = 1070;
@@ -564,37 +571,23 @@ export const generateBoardPosterCanvas = async (
   const qrDrawY = qrBoxY + (qrBox - qrDrawSize) / 2;
   ctx.drawImage(qrImg, qrDrawX, qrDrawY, qrDrawSize, qrDrawSize);
 
-  // Center Emblem on QR
-  const embR = 56;
-  ctx.beginPath();
-  ctx.arc(width / 2, qrDrawY + qrDrawSize / 2, embR, 0, Math.PI * 2);
+  // Center Favicon Badge on QR
+  const posterFaviconImg = await loadFaviconImage();
+  const posterBadgeSize = 124;
+  const posterBadgeX = (width - posterBadgeSize) / 2;
+  const posterBadgeY = qrDrawY + (qrDrawSize - posterBadgeSize) / 2;
+
   ctx.fillStyle = '#FFFFFF';
+  roundRect(ctx, posterBadgeX - 6, posterBadgeY - 6, posterBadgeSize + 12, posterBadgeSize + 12, 26);
   ctx.fill();
+
   ctx.strokeStyle = frameColor;
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.beginPath();
-  ctx.arc(width / 2, qrDrawY + qrDrawSize / 2, embR - 8, 0, Math.PI * 2);
-  ctx.fillStyle = theme === 'MINIMAL_IVORY' ? '#18181B' : '#08251B';
-  ctx.fill();
-
-  // Stylized Chai / Coffee Cup emblem on QR (matches favicon icon)
-  const cx = width / 2;
-  const cy = qrDrawY + qrDrawSize / 2;
-  ctx.save();
-  ctx.strokeStyle = accentColor;
-  ctx.lineWidth = 4;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.translate(cx, cy);
-  const posterCupScale = 1.8;
-  ctx.scale(posterCupScale, posterCupScale);
-  const posterCoffeePath = new Path2D(
-    'M -8 -3 h 14 v 8 a 4 4 0 0 1 -4 4 h -6 a 4 4 0 0 1 -4 -4 Z M 6 -3 h 1 a 4 4 0 1 1 0 7 h -1 M -5 -9 v 2.5 M -1 -9 v 2.5 M 3 -9 v 2.5'
-  );
-  ctx.stroke(posterCoffeePath);
-  ctx.restore();
+  if (posterFaviconImg) {
+    ctx.drawImage(posterFaviconImg, posterBadgeX, posterBadgeY, posterBadgeSize, posterBadgeSize);
+  }
 
   // 3-Step Instruction Cards
   const stepY = 1530;
@@ -751,6 +744,24 @@ export const generateTableStickerCanvas = async (
   const qrDrawX = (size - qrDrawSize) / 2;
   const qrDrawY = qrBoxY + (qrBox - qrDrawSize) / 2;
   ctx.drawImage(qrImg, qrDrawX, qrDrawY, qrDrawSize, qrDrawSize);
+
+  // Center Favicon Badge on Sticker QR
+  const stickerFaviconImg = await loadFaviconImage();
+  const stickerBadgeSize = 80;
+  const stickerBadgeX = (size - stickerBadgeSize) / 2;
+  const stickerBadgeY = qrDrawY + (qrDrawSize - stickerBadgeSize) / 2;
+
+  ctx.fillStyle = '#FFFFFF';
+  roundRect(ctx, stickerBadgeX - 4, stickerBadgeY - 4, stickerBadgeSize + 8, stickerBadgeSize + 8, 16);
+  ctx.fill();
+
+  ctx.strokeStyle = borderCol;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  if (stickerFaviconImg) {
+    ctx.drawImage(stickerFaviconImg, stickerBadgeX, stickerBadgeY, stickerBadgeSize, stickerBadgeSize);
+  }
 
   // Footer Instructions
   ctx.fillStyle = textPrimary;

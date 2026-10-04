@@ -27,7 +27,6 @@ import {
   Copy,
   ExternalLink,
   RotateCcw,
-  Coffee,
   Search,
   Check,
   Settings,
@@ -495,10 +494,14 @@ export const QrGeneratorPage: React.FC = () => {
                               alt={`Table ${table.tableNumber} QR`}
                               className="w-36 h-36 sm:w-40 sm:h-40 object-contain"
                             />
-                            {/* Center Chai Cup Medallion (Favicon Icon) */}
+                            {/* Center Favicon Badge */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="w-8 h-8 rounded-full bg-[#04150F] border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-md">
-                                <Coffee className="w-3.5 h-3.5" />
+                              <div className="w-8 h-8 p-0.5 bg-white rounded-lg shadow-md border border-amber-400/90 flex items-center justify-center">
+                                <img
+                                  src="/favicon.svg"
+                                  alt="Siliguri's Chai Addaa"
+                                  className="w-full h-full object-contain rounded-md select-none"
+                                />
                               </div>
                             </div>
                           </div>
@@ -668,10 +671,14 @@ export const QrGeneratorPage: React.FC = () => {
                             <RefreshCw className="w-8 h-8 animate-spin" />
                           </div>
                         )}
-                        {/* Center Emblem (Favicon Icon) */}
+                        {/* Center Favicon Badge */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-11 h-11 rounded-full bg-[#04150F] border-2 border-amber-400 flex items-center justify-center text-amber-400 shadow-xl">
-                            <Coffee className="w-5 h-5" />
+                          <div className="w-12 h-12 p-1 bg-white rounded-xl shadow-xl border-2 border-amber-400 flex items-center justify-center">
+                            <img
+                              src="/favicon.svg"
+                              alt="Siliguri's Chai Addaa"
+                              className="w-full h-full object-contain rounded-lg select-none"
+                            />
                           </div>
                         </div>
                       </div>

@@ -23,7 +23,6 @@ import {
   Printer,
   RotateCcw,
   ShieldCheck,
-  Coffee,
   Search,
   Check,
   Download,
@@ -654,11 +653,13 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                               alt={`Table ${table.tableNumber} QR`}
                               className="w-full h-full object-contain select-none"
                             />
-                            {/* Center Chai Cup Medallion (Favicon Icon) */}
-                            <div className="absolute inset-0 m-auto w-9 h-9 rounded-full bg-white shadow-md border-2 border-amber-500 flex items-center justify-center">
-                              <div className="w-7 h-7 rounded-full bg-[#08251B] flex items-center justify-center text-amber-400">
-                                <Coffee className="w-3.5 h-3.5" />
-                              </div>
+                            {/* Center Favicon Badge */}
+                            <div className="absolute inset-0 m-auto w-9 h-9 p-0.5 bg-white rounded-lg shadow-md border-2 border-amber-500 flex items-center justify-center pointer-events-none">
+                              <img
+                                src="/favicon.svg"
+                                alt="Siliguri's Chai Addaa"
+                                className="w-full h-full object-contain rounded-md select-none"
+                              />
                             </div>
                           </div>
                         ) : (

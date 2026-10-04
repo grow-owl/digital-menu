@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import jsQR from 'jsqr';
 import {
   Camera, X, CheckCircle2, AlertCircle,
-  Coffee, RefreshCw, Zap, ZapOff,
+  RefreshCw, Zap, ZapOff,
   SwitchCamera, Sparkles
 } from 'lucide-react';
 
@@ -305,9 +305,11 @@ export const TableQrScanModal: React.FC<TableQrScanModalProps> = ({
         {/* Cafe Header */}
         <div className="px-4 sm:px-5 py-3.5 bg-gradient-to-r from-[#f8f5f0] via-white to-[#f5f1eb] border-b border-[#e3ddd4] flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-[#9d785e] text-white flex items-center justify-center shadow-xs shrink-0">
-              <Coffee className="w-4 h-4 text-white" />
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="Siliguri's Chai Addaa"
+              className="w-9 h-9 rounded-xl shadow-xs shrink-0 object-contain"
+            />
             <div className="min-w-0">
               <h3 className="font-serif-display font-bold text-sm sm:text-base text-[#223134] leading-tight truncate">
                 Siliguri's Chai Addaa

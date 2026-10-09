@@ -80,7 +80,7 @@ export const OrderConfirmationModal: React.FC<OrderConfirmationModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in zoom-in-95 duration-200 text-slate-800 max-h-[92vh] overflow-y-auto custom-scrollbar">
+      <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in zoom-in-95 duration-200 text-slate-800 max-h-[92vh] overflow-y-auto custom-scrollbar touch-pan-y overscroll-contain">
         <button
           onClick={onCancel}
           disabled={isSubmitting}

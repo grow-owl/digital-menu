@@ -139,7 +139,7 @@ export const CategoryBar: React.FC<CategoryBarProps> = ({
                   </div>
 
                   {/* List of Categories */}
-                  <div className="overflow-y-auto custom-scrollbar space-y-1.5 py-1 flex-1 pr-1 max-h-[60vh]">
+                  <div className="overflow-y-auto custom-scrollbar space-y-1.5 py-1 flex-1 pr-1 max-h-[60vh] touch-pan-y overscroll-contain">
                     {/* All Dishes */}
                     <button
                       type="button"

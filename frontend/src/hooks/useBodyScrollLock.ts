@@ -18,14 +18,12 @@ export const useBodyScrollLock = (isLocked: boolean) => {
     if (activeLockCount === 0) {
       savedBodyOverflow = document.body.style.overflow;
       savedDocOverflow = document.documentElement.style.overflow;
-      savedBodyTouchAction = document.body.style.touchAction;
       savedBodyOverscroll = document.body.style.overscrollBehavior;
 
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.body.style.overscrollBehavior = 'none';
+      document.body.style.overscrollBehavior = 'contain';
       document.documentElement.style.overflow = 'hidden';
-      document.documentElement.style.overscrollBehavior = 'none';
+      document.documentElement.style.overscrollBehavior = 'contain';
 
       document.body.classList.add('modal-open');
       document.documentElement.classList.add('modal-open');
@@ -37,7 +35,6 @@ export const useBodyScrollLock = (isLocked: boolean) => {
       activeLockCount = Math.max(0, activeLockCount - 1);
       if (activeLockCount === 0) {
         document.body.style.overflow = savedBodyOverflow;
-        document.body.style.touchAction = savedBodyTouchAction;
         document.body.style.overscrollBehavior = savedBodyOverscroll;
         document.documentElement.style.overflow = savedDocOverflow;
         document.documentElement.style.overscrollBehavior = '';

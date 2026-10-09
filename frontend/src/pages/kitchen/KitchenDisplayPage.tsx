@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Flame, Clock, CheckCircle2, AlertCircle, RefreshCw, ChefHat,
-  BellRing, BellOff, Ban, LogOut
+  BellRing, BellOff, Ban, LogOut, Layers, AlertTriangle
 } from 'lucide-react';
 import { useToast } from '../../components/feedback/ToastContainer';
 import { useAuthStore } from '../../store/use-auth-store';
@@ -11,26 +11,14 @@ import { OrderCancelModal } from '../../components/orders/OrderCancelModal';
 import { OrderItemCancelModal } from '../../components/orders/OrderItemCancelModal';
 import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
 import { playRestaurantChime } from '../../utils/audioAlert';
-
-// Dynamic Dish Preparation Time Catalog Lookup (Minutes)
-const DISH_PREP_MAP = new Map<string, number>(
-  SILIGURI_MENU_ITEMS.map((item) => [item.name.toLowerCase().trim(), item.preparationTimeMinutes || 5])
-);
-
-const getDishCookMinutes = (name: string, override?: number): number => {
-  if (override && override > 0) return override;
-  const clean = String(name || '').toLowerCase().trim();
-  if (DISH_PREP_MAP.has(clean)) return DISH_PREP_MAP.get(clean)!;
-  for (const [k, v] of DISH_PREP_MAP.entries()) {
-    if (clean.includes(k) || k.includes(clean)) return v;
-  }
-  return 5; // standard fallback
-};
+import { parseItemAddonsAndNotes } from '../../utils/addonParser';
+import { calculateTicketCookingPipeline, getDishCookMinutes } from '../../utils/kitchenScheduler';
 
 interface KDSItem {
   name: string;
   quantity: number;
   notes?: string;
+  addonNames?: string[];
   status?: string;
   isPrepared?: boolean;
   cancelReason?: string;
@@ -66,6 +54,27 @@ export const KitchenDisplayPage: React.FC = () => {
   const [cancelItemTarget, setCancelItemTarget] = useState<CancelItemTarget | null>(null);
   const prevTicketsRef = useRef<KDSTicket[]>([]);
   const readySentRef = useRef<Set<string>>(new Set());
+
+  // Kitchen Display: Interactive check-off state for individual add-ons/sides
+  const [checkedAddons, setCheckedAddons] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('kds_checked_addons');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleAddonPrepared = (ticketId: string, itemIdx: number, addonIdx: number) => {
+    const key = `${ticketId}_${itemIdx}_${addonIdx}`;
+    setCheckedAddons((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem('kds_checked_addons', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   // Retention: 6 Hours, Max 9 Past Completed Orders (FIFO)
   const COMPLETED_RETENTION_MS = 6 * 60 * 60 * 1000;
@@ -116,6 +125,7 @@ export const KitchenDisplayPage: React.FC = () => {
           name: i.name,
           quantity: i.quantity || i.qty || 1,
           notes: i.notes,
+          addonNames: Array.isArray(i.addonNames) ? i.addonNames : undefined,
           status: i.status === 'received' ? 'preparing' : i.status || 'preparing',
           isPrepared: !!i.isPrepared,
           cancelReason: i.cancelReason,
@@ -167,9 +177,33 @@ export const KitchenDisplayPage: React.FC = () => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const getUrgencyConfig = (totalSeconds: number) => {
-    const mins = Math.floor(totalSeconds / 60);
-    if (mins < 8) {
+  const handleMarkTicketReady = async (ticket: KDSTicket) => {
+    try {
+      await orderService.updateOrderStatus(ticket.id, 'ready');
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticket.id ? { ...t, status: 'ready' } : t))
+      );
+      showToast(`Table ${ticket.tableId} marked Ready!`, 'success');
+      try {
+        localStorage.setItem('aura_last_order_status_update', JSON.stringify({
+          orderId: ticket.id,
+          tableId: ticket.tableId,
+          status: 'ready',
+          timestamp: Date.now()
+        }));
+        window.dispatchEvent(new CustomEvent('order_status_updated', {
+          detail: { orderId: ticket.id, tableId: ticket.tableId, status: 'ready' }
+        }));
+        window.dispatchEvent(new Event('storage'));
+      } catch (e) {}
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'Failed to update order status', 'error');
+    }
+  };
+
+  const getUrgencyConfig = (totalSeconds: number, targetSeconds: number = 420) => {
+    const thresholdSecs = Math.max(300, targetSeconds);
+    if (totalSeconds <= thresholdSecs) {
       return {
         badgeStyle: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
         cardBorder: 'border-slate-800 hover:border-emerald-500/50',
@@ -177,7 +211,7 @@ export const KitchenDisplayPage: React.FC = () => {
         label: 'ON TIME'
       };
     }
-    if (mins < 15) {
+    if (totalSeconds <= thresholdSecs + 240) {
       return {
         badgeStyle: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
         cardBorder: 'border-amber-500/40 hover:border-amber-500',
@@ -193,20 +227,31 @@ export const KitchenDisplayPage: React.FC = () => {
     };
   };
 
-  const getTicketMaxCookSecs = (ticket: KDSTicket) => {
-    const active = ticket.items.filter((it) => it.status !== 'cancelled');
-    if (active.length === 0) return 0;
-    return Math.max(...active.map((it) => getDishCookMinutes(it.name, it.preparationTimeMinutes) * 60));
-  };
-
   const isTicketReady = (ticket: KDSTicket) => {
     const active = ticket.items.filter((it) => it.status !== 'cancelled');
     if (active.length === 0) return true;
-    const elapsed = getElapsedSeconds(ticket.createdAt);
-    return active.every((it) => {
-      const cookSecs = getDishCookMinutes(it.name, it.preparationTimeMinutes) * 60;
-      return it.isPrepared || elapsed >= cookSecs;
+
+    // Check manual override: all main items prepared and all add-ons checked off
+    const allMainPrepared = active.every((it) => it.isPrepared);
+    let allAddonsChecked = true;
+    active.forEach((it, itemIdx) => {
+      const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+      if (parsed.hasAddons) {
+        parsed.addons.forEach((_, addonIdx) => {
+          const key = `${ticket.id}_${itemIdx}_${addonIdx}`;
+          if (!checkedAddons[key]) {
+            allAddonsChecked = false;
+          }
+        });
+      }
     });
+
+    if (allMainPrepared && allAddonsChecked) return true;
+
+    // Multi-Chef Pipeline makespan (default 3 chefs)
+    const elapsed = getElapsedSeconds(ticket.createdAt);
+    const pipeline = calculateTicketCookingPipeline(ticket.items, 3);
+    return elapsed >= pipeline.totalEstimatedSeconds;
   };
 
   const isTicketCompleted = (ticket: KDSTicket) => {
@@ -445,8 +490,11 @@ export const KitchenDisplayPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
             {displayedTickets.map((ticket) => {
               const elapsedSecs = getElapsedSeconds(ticket.createdAt);
-              const urgency = getUrgencyConfig(elapsedSecs);
+              const pipeline = calculateTicketCookingPipeline(ticket.items, 3);
+              const urgency = getUrgencyConfig(elapsedSecs, pipeline.totalEstimatedSeconds);
               const isTicketDone = isTicketCompleted(ticket);
+              const remainingSecs = Math.max(0, pipeline.totalEstimatedSeconds - elapsedSecs);
+              const progressPct = Math.min(100, Math.round((elapsedSecs / Math.max(1, pipeline.totalEstimatedSeconds)) * 100));
 
               // Map each dish with its cooking duration and auto-done calculation
               const itemsWithStatus = ticket.items.map((item, originalIdx) => {
@@ -456,7 +504,7 @@ export const KitchenDisplayPage: React.FC = () => {
                 const isAutoDone = !isCancelled && elapsedSecs >= cookSecs;
                 const isDone = isTicketDone || isCancelled ? false : (item.isPrepared || isAutoDone);
                 const finalDone = isCancelled ? false : (isTicketDone || isDone);
-                const remainingSecs = Math.max(0, cookSecs - elapsedSecs);
+                const itemRemainingSecs = Math.max(0, cookSecs - elapsedSecs);
                 return {
                   item,
                   originalIdx,
@@ -465,7 +513,7 @@ export const KitchenDisplayPage: React.FC = () => {
                   isCancelled,
                   isAutoDone,
                   isDone: finalDone,
-                  remainingSecs
+                  remainingSecs: itemRemainingSecs
                 };
               });
 
@@ -510,6 +558,23 @@ export const KitchenDisplayPage: React.FC = () => {
                             </span>
                           )}
                         </div>
+
+                        {/* Pipeline Duration & Station Target */}
+                        <div className="flex items-center space-x-1.5 mt-1.5 flex-wrap gap-y-1">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300 flex items-center space-x-1">
+                            <Clock className="w-3 h-3 text-amber-400" />
+                            <span>Est: ~{pipeline.totalEstimatedMinutes}m (3 Stations)</span>
+                          </span>
+                          {!isTicketDone && (
+                            <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
+                              remainingSecs === 0
+                                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                                : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                            }`}>
+                              {remainingSecs === 0 ? 'Due Ready' : `~${Math.ceil(remainingSecs / 60)}m left`}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="text-right space-y-1">
@@ -519,8 +584,28 @@ export const KitchenDisplayPage: React.FC = () => {
                             minute: '2-digit',
                           })}
                         </span>
+                        <div className="flex items-center justify-end space-x-1">
+                          <span className={`text-[11px] font-mono font-black ${urgency.accentColor}`}>
+                            {formatTimer(elapsedSecs)}
+                          </span>
+                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border uppercase ${urgency.badgeStyle}`}>
+                            {urgency.label}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Live Pipeline Visual Progress Bar */}
+                    {!isTicketDone && (
+                      <div className="w-full bg-slate-900/90 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                        <div
+                          className={`h-full transition-all duration-700 ${
+                            progressPct >= 100 ? 'bg-emerald-400 shadow-sm' : 'bg-amber-400'
+                          }`}
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    )}
 
                     {/* Item Checklist */}
                     <div className="space-y-2">
@@ -536,13 +621,15 @@ export const KitchenDisplayPage: React.FC = () => {
 
                       <div className="space-y-1.5">
                         {itemsWithStatus.map(({ item, originalIdx, cookMins, isCancelled, isDone, remainingSecs }) => {
+                          const parsedAddons = parseItemAddonsAndNotes(item.notes, item.addonNames);
+
                           if (isCancelled) {
                             return (
                               <div
                                 key={originalIdx}
                                 className="p-3 rounded-xl border border-rose-500/30 bg-rose-950/20 text-rose-300/80 flex items-start justify-between space-x-2 select-none"
                               >
-                                <div className="space-y-1 flex-1 min-w-0">
+                                <div className="space-y-1.5 flex-1 min-w-0">
                                   <div className="flex items-center space-x-2">
                                     <span className="w-5 h-5 bg-rose-500/20 text-rose-400 text-xs font-mono font-bold rounded flex items-center justify-center flex-shrink-0 border border-rose-500/40">
                                       {item.quantity}x
@@ -559,6 +646,26 @@ export const KitchenDisplayPage: React.FC = () => {
                                       Reason: {item.cancelReason}
                                     </p>
                                   )}
+
+                                  {/* Cancelled Add-ons indicator */}
+                                  {parsedAddons.hasAddons && (
+                                    <div className="pt-1 pl-7 space-y-1 opacity-60">
+                                      <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-rose-400/80 block">
+                                        Cancelled Add-ons:
+                                      </span>
+                                      <div className="flex flex-wrap gap-1">
+                                        {parsedAddons.addons.map((addon, aIdx) => (
+                                          <span
+                                            key={aIdx}
+                                            className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-rose-950/40 border border-rose-500/20 text-rose-300/70 text-[10px] line-through"
+                                          >
+                                            <span className="font-mono text-[9px]">+{addon.quantity * (item.quantity || 1)}x</span>
+                                            <span>{addon.name}</span>
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 <Ban className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
                               </div>
@@ -574,16 +681,17 @@ export const KitchenDisplayPage: React.FC = () => {
                                   : 'bg-[#07090E] border-slate-800/90 text-white'
                               }`}
                             >
-                              <div className="space-y-1 flex-1 min-w-0">
-                                <div className="flex items-center space-x-2">
-                                  <span className={`w-5 h-5 text-xs font-mono font-bold rounded flex items-center justify-center flex-shrink-0 border ${
+                              <div className="space-y-2 flex-1 min-w-0">
+                                {/* Dish Title Header */}
+                                <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                                  <span className={`min-w-[24px] h-6 px-1.5 text-xs font-mono font-black rounded-md flex items-center justify-center flex-shrink-0 border shadow-xs ${
                                     isDone
                                       ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                      : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                      : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                   }`}>
                                     {item.quantity}x
                                   </span>
-                                  <span className={`font-bold text-xs leading-tight truncate ${isDone ? 'text-emerald-300/90' : 'text-white'}`}>
+                                  <span className={`font-black text-sm sm:text-[15px] leading-snug break-words ${isDone ? 'text-emerald-300/90' : 'text-white'}`}>
                                     {item.name}
                                   </span>
                                   {isDone ? (
@@ -598,10 +706,131 @@ export const KitchenDisplayPage: React.FC = () => {
                                     </span>
                                   )}
                                 </div>
-                                {item.notes && (
-                                  <div className="flex items-center space-x-1 pt-0.5 text-[10px] text-amber-400 font-medium italic">
-                                    <Flame className="w-3 h-3 text-amber-400 flex-shrink-0" />
-                                    <span>Note: {item.notes}</span>
+
+                                {/* PROMINENT CHEF ADD-ONS SECTION */}
+                                {parsedAddons.hasAddons && (
+                                  <div className={`mt-2 rounded-xl border p-2.5 space-y-2 transition-all ${
+                                    isDone
+                                      ? 'bg-emerald-950/30 border-emerald-500/30'
+                                      : 'bg-[#0B0F1A] border-amber-500/35 ring-1 ring-amber-500/10'
+                                  }`}>
+                                    {/* Section Subheader */}
+                                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+                                      <div className="flex items-center space-x-1.5">
+                                        <Layers className={`w-3.5 h-3.5 ${isDone ? 'text-emerald-400' : 'text-amber-400'}`} />
+                                        <span className={`text-[10px] font-mono font-black uppercase tracking-wider ${
+                                          isDone ? 'text-emerald-300' : 'text-amber-300'
+                                        }`}>
+                                          Add-ons / Sides to Prepare ({parsedAddons.addons.length})
+                                        </span>
+                                      </div>
+                                      <span className="text-[9px] font-mono text-slate-400 font-semibold">
+                                        {isDone ? 'All Prepared' : 'Tap item to check off'}
+                                      </span>
+                                    </div>
+
+                                    {/* List of Distinct Add-ons */}
+                                    <div className="space-y-1.5">
+                                      {parsedAddons.addons.map((addon, addonIdx) => {
+                                        const addonKey = `${ticket.id}_${originalIdx}_${addonIdx}`;
+                                        const isAddonChecked = isDone || !!checkedAddons[addonKey];
+                                        const totalAddonQty = addon.quantity * (item.quantity || 1);
+                                        const addonCookMins = getDishCookMinutes(addon.name);
+                                        const isInstant = addonCookMins === 0;
+
+                                        return (
+                                          <div
+                                            key={addonIdx}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (!isDone) {
+                                                toggleAddonPrepared(ticket.id, originalIdx, addonIdx);
+                                              }
+                                            }}
+                                            title={isDone ? 'Dish completed' : 'Tap to mark this add-on prepared'}
+                                            className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer ${
+                                              isAddonChecked
+                                                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300/80 line-through opacity-75'
+                                                : 'bg-[#101626] hover:bg-[#151D33] border-amber-500/40 hover:border-amber-400 text-white shadow-xs'
+                                            }`}
+                                          >
+                                            <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                                              <span
+                                                className={`min-w-[28px] h-5 px-1.5 rounded text-[11px] font-mono font-black flex items-center justify-center shrink-0 ${
+                                                  isAddonChecked
+                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                                    : 'bg-amber-400 text-slate-950 shadow-xs'
+                                                }`}
+                                              >
+                                                +{totalAddonQty}x
+                                              </span>
+                                              <div className="flex items-center space-x-1.5 min-w-0 flex-wrap gap-y-0.5">
+                                                <span
+                                                  className={`text-xs sm:text-[13px] font-extrabold leading-tight break-words ${
+                                                    isAddonChecked ? 'text-emerald-300/70 line-through' : 'text-amber-50'
+                                                  }`}
+                                                >
+                                                  {addon.name}
+                                                </span>
+                                                <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border ${
+                                                  isInstant
+                                                    ? 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                                                    : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                                                }`}>
+                                                  {isInstant ? 'Instant' : `~${addonCookMins}m`}
+                                                </span>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex items-center space-x-1 shrink-0 ml-2">
+                                              {isAddonChecked ? (
+                                                <span className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-black uppercase">
+                                                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                                  <span className="hidden sm:inline">Ready</span>
+                                                </span>
+                                              ) : (
+                                                <span className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded border text-[9px] font-mono font-black uppercase ${
+                                                  isInstant
+                                                    ? 'bg-blue-500/15 border-blue-500/30 text-blue-300'
+                                                    : elapsedSecs >= addonCookMins * 60
+                                                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                                                    : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                                                }`}>
+                                                  {isInstant ? (
+                                                    <span>Serve</span>
+                                                  ) : elapsedSecs >= addonCookMins * 60 ? (
+                                                    <>
+                                                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                                                      <span>Done</span>
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <Clock className="w-3 h-3 text-amber-400" />
+                                                      <span>~{addonCookMins}m</span>
+                                                    </>
+                                                  )}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* CHEF SPECIAL COOKING INSTRUCTION (SEPARATE FROM ADD-ONS) */}
+                                {parsedAddons.specialInstruction && (
+                                  <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-start space-x-2 text-amber-200">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                                    <div className="space-y-0.5 min-w-0 flex-1">
+                                      <span className="text-[9px] font-mono uppercase tracking-wider font-bold text-amber-400 block">
+                                        Customer Instruction:
+                                      </span>
+                                      <p className="text-xs font-semibold text-amber-100 break-words leading-relaxed">
+                                        {parsedAddons.specialInstruction}
+                                      </p>
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -637,13 +866,21 @@ export const KitchenDisplayPage: React.FC = () => {
 
                   {/* Operational Action Controls: Only for cooking tickets */}
                   {!isTicketDone && (
-                    <div className="pt-3 border-t border-slate-800/80">
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center space-x-2">
+                      <button
+                        onClick={() => handleMarkTicketReady(ticket)}
+                        className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1.5 shadow-md active:scale-98"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Mark Order Ready (Pass)</span>
+                      </button>
                       <button
                         onClick={() => setCancelModalTicket({ id: ticket.id, tableId: ticket.tableId })}
-                        className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer flex items-center justify-center space-x-1.5"
+                        className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-300 font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1 shrink-0"
+                        title="Void / Cancel Ticket"
                       >
-                        <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
-                        <span>Void / Cancel Ticket</span>
+                        <Ban className="w-3.5 h-3.5 text-rose-400" />
+                        <span className="hidden sm:inline">Void</span>
                       </button>
                     </div>
                   )}

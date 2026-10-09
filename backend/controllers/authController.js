@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import User from '../models/User.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import {
@@ -268,29 +269,34 @@ export const getMe = asyncHandler(async (req, res) => {
 // @route   PUT /api/auth/profile
 // @access  Private (JWT Protected)
 export const updateUserProfile = asyncHandler(async (req, res) => {
-  const { userId, name, phone } = req.body;
-  const targetId = req.user ? req.user._id : userId;
+  const { name, phone } = req.body;
+  const targetId = req.user?._id;
 
   if (!targetId) {
-    return res.status(400).json({ message: 'User identifier required' });
+    return res.status(401).json({ success: false, message: 'Authentication required' });
   }
 
   const user = await User.findById(targetId);
   if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+    return res.status(404).json({ success: false, message: 'User not found' });
   }
 
-  if (phone && phone !== user.phone) {
-    const cleanPhone = phone.trim();
-    const phoneExists = await User.findOne({ phone: cleanPhone, _id: { $ne: user._id } });
-    if (phoneExists) {
-      return res.status(400).json({ message: 'Phone number already in use by another account' });
+  if (phone) {
+    const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit phone number.' });
     }
-    user.phone = cleanPhone;
+    if (cleanPhone !== user.phone) {
+      const phoneExists = await User.findOne({ phone: cleanPhone, _id: { $ne: user._id } });
+      if (phoneExists) {
+        return res.status(400).json({ success: false, message: 'Phone number already in use by another account.' });
+      }
+      user.phone = cleanPhone;
+    }
   }
 
   if (name && typeof name === 'string') {
-    user.name = name.trim();
+    user.name = name.trim().slice(0, 100);
   }
 
   await user.save();
@@ -386,8 +392,11 @@ export const terminalLogin = asyncHandler(async (req, res) => {
   }
 
   const inputKey = passcode.trim().toUpperCase();
+  const inputBuf = Buffer.from(inputKey);
+  const validBuf = Buffer.from(validKey);
+  const isMatch = inputBuf.length === validBuf.length && crypto.timingSafeEqual(inputBuf, validBuf);
 
-  if (inputKey !== validKey) {
+  if (!isMatch) {
     return res.status(401).json({
       success: false,
       authorized: false,

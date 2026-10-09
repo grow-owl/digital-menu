@@ -6,6 +6,7 @@ const orderItemSchema = new mongoose.Schema({
   quantity: { type: Number, required: true },
   price: { type: Number, required: true },
   notes: { type: String },
+  addonNames: [{ type: String }],
   status: {
     type: String,
     enum: ['received', 'preparing', 'ready', 'cancelled'],

@@ -201,6 +201,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           quantity: item.quantity,
           price: item.unitPrice ?? item.menuItem.price,
           notes: item.specialNotes,
+          addonNames: item.addonNames,
         })),
         subtotal,
         tax: gstAmount,
@@ -264,7 +265,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
 
           {/* Cart Items Scroll Body */}
-          <div className="p-4 flex-1 overflow-y-auto space-y-3.5 custom-scrollbar">
+          <div className="p-4 flex-1 overflow-y-auto space-y-3.5 custom-scrollbar touch-pan-y overscroll-contain">
             {/* Gamified Tiered Discount & Freebie Unlocker */}
 
             {items.length === 0 ? (
@@ -431,7 +432,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                 <div
                   ref={pairingScrollRef}
-                  className="flex space-x-3.5 overflow-x-auto pb-3 pt-1 -mx-1 px-1 no-scrollbar scroll-smooth select-none touch-pan-x"
+                  className="flex space-x-3.5 overflow-x-auto pb-3 pt-1 -mx-1 px-1 no-scrollbar scroll-smooth touch-pan-x touch-pan-y [touch-action:pan-x_pan-y] overscroll-x-contain"
                 >
                   {dynamicPairings.map((rec) => {
                     const inCart = items.find((it) => it.menuItem.id === rec.id);

@@ -7,6 +7,7 @@ export interface AIPairingAddon {
   price: number;
   reason?: string;
   isPopular?: boolean;
+  imageUrl?: string;
 }
 
 export interface AIPairingItem {
@@ -48,6 +49,7 @@ export const MINERAL_WATER_ADDON: AIPairingAddon = {
   price: 10,
   reason: 'Sealed 500ml Bottle',
   isPopular: true,
+  imageUrl: '/images/mineral_water_bottle.jpg',
 };
 
 /**
@@ -198,11 +200,20 @@ export const getSmartAddonsForDish = (dish: MenuItem): AIPairingAddon[] => {
   }
 
   // Prepend Packaged Mineral Water (+₹10) to every dish (except when ordering mineral water itself)
-  if (!isDishMineralWater) {
-    return [MINERAL_WATER_ADDON, ...specificAddons];
-  }
+  const rawList = !isDishMineralWater ? [MINERAL_WATER_ADDON, ...specificAddons] : specificAddons;
 
-  return specificAddons;
+  // Hydrate each add-on with corresponding menu item thumbnail image
+  return rawList.map((ad) => {
+    if (ad.imageUrl) return ad;
+    const match = SILIGURI_MENU_ITEMS.find((it) =>
+      it.name.toLowerCase().includes(ad.name.toLowerCase()) ||
+      ad.name.toLowerCase().includes(it.name.toLowerCase())
+    );
+    return {
+      ...ad,
+      imageUrl: match?.imageUrl || (ad.name.toLowerCase().includes('water') ? '/images/mineral_water_bottle.jpg' : undefined),
+    };
+  });
 };
 
 /**
@@ -214,7 +225,7 @@ export const getSpendMoreProgress = (subtotal: number): SpendMoreTier => {
       id: 95,
       name: 'Packaged Mineral Water 500ml (Free)',
       price: 0,
-      imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=400&q=80',
+      imageUrl: '/images/mineral_water_bottle.jpg',
       description: 'Chilled sealed packaged mineral water bottle (Save ₹10)',
     },
     {
@@ -261,7 +272,7 @@ export const getSpendMoreProgress = (subtotal: number): SpendMoreTier => {
   ];
 
   const QUICK_BOOSTERS = [
-    { id: 95, name: 'Mineral Water 500ml', price: 10, imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=200&q=80' },
+    { id: 95, name: 'Mineral Water 500ml', price: 10, imageUrl: '/images/mineral_water_bottle.jpg' },
     { id: 70, name: 'Coke / Sprite', price: 50, imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=200&q=80' },
     { id: 72, name: 'Fresh Lime Soda', price: 60, imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=200&q=80' },
     { id: 48, name: 'Classic French Fries', price: 100, imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=200&q=80' },

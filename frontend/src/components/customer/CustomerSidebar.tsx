@@ -181,7 +181,7 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
         </div>
 
         {/* Sidebar Nav Links */}
-        <div className="p-2.5 sm:p-4 flex-1 overflow-y-auto space-y-1 relative z-10 custom-scrollbar">
+        <div className="p-2.5 sm:p-4 flex-1 overflow-y-auto space-y-1 relative z-10 custom-scrollbar touch-pan-y overscroll-contain">
           {links.map((link, idx) => (
             <button
               key={idx}

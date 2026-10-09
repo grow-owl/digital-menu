@@ -51,7 +51,7 @@ export const CustomerAuthModal: React.FC<CustomerAuthModalProps> = ({ isOpen, on
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl relative animate-in zoom-in-95 duration-200 text-slate-800 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div className="bg-white border border-slate-200 rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl relative animate-in zoom-in-95 duration-200 text-slate-800 max-h-[90vh] overflow-y-auto custom-scrollbar touch-pan-y overscroll-contain">
         <button
           onClick={onClose}
           disabled={isSubmitting}

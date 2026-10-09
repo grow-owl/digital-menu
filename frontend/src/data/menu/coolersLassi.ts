@@ -264,7 +264,7 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     name: 'Packaged Mineral Water (500ml)',
     description: 'Chilled sealed packaged mineral water bottle (500ml). Clean, purified and refreshing.',
     price: 10,
-    imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/mineral_water_bottle.jpg',
     isAvailable: true,
     isVegetarian: true,
     isGlutenFree: true,

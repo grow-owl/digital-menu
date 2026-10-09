@@ -32,10 +32,10 @@ router.post('/', orderRateLimiter, createOrder);
 router.get(['/active', '/active/all'], protect, requireRole('owner', 'chef'), getActiveOrders);
 router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
 
-// Customer / Table order retrieval
-router.get('/phone/:phone', getOrdersByPhone);
-router.get('/table/:tableId', getOrdersByTable);
-router.get('/:orderId', getOrderById);
+// Customer / Table order retrieval (with optionalAuth for PII sanitization)
+router.get('/phone/:phone', optionalAuth, getOrdersByPhone);
+router.get('/table/:tableId', optionalAuth, getOrdersByTable);
+router.get('/:orderId', optionalAuth, getOrderById);
 
 // Kitchen / Staff status updates (Chef & Owner only)
 router.put('/:orderId/status', protect, requireRole('owner', 'chef'), updateOrderStatus);

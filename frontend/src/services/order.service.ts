@@ -11,6 +11,7 @@ export interface OrderPayload {
     quantity: number;
     price: number;
     notes?: string;
+    addonNames?: string[];
   }[];
   subtotal: number;
   tax: number;

@@ -260,8 +260,31 @@ button:disabled,
   html.modal-open,
   body.modal-open {
     overflow: hidden !important;
-    touch-action: none !important;
-    overscroll-behavior: none !important;
+    overscroll-behavior: contain !important;
+  }
+
+  /* Universal Mobile Touch-Scrolling: Prevents scroll-freezing inside modals, drawers and carousels */
+  .overflow-y-auto,
+  .overflow-y-scroll,
+  .custom-scrollbar,
+  [data-scrollable="true"] {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+  }
+
+  .overflow-y-auto > *,
+  .overflow-y-scroll > *,
+  .custom-scrollbar > * {
+    touch-action: pan-y;
+  }
+
+  /* Horizontal carousels inside vertical screens must allow vertical swipe gestures */
+  .touch-pan-x,
+  .overflow-x-auto,
+  .no-scrollbar {
+    touch-action: pan-x pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 

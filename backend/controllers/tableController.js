@@ -92,6 +92,8 @@ export const getAllTables = asyncHandler(async (req, res) => {
       guestCount = 0;
     }
 
+    const isStaff = req.user && ['owner', 'chef'].includes((req.user.role || '').toLowerCase());
+
     return {
       _id: table._id,
       tableNumber: Number(table.tableNumber),
@@ -101,7 +103,7 @@ export const getAllTables = asyncHandler(async (req, res) => {
       activeOrderId,
       orderTotal,
       guestCount,
-      qrToken: effectiveQrToken,
+      qrToken: isStaff ? effectiveQrToken : undefined,
       cleaningStartedAt: table.cleaningStartedAt
     };
   }));
@@ -208,15 +210,18 @@ export const scanTableQr = asyncHandler(async (req, res) => {
     table = await Table.findOne({ tableNumber: '1' });
   }
 
-  // 6. Auto-create table if digits extracted but table row missing in database
+  // 6. Auto-create table if digits extracted but table row missing in database (only 1-30)
   if (!table && numMatch) {
-    const parsedNum = String(parseInt(numMatch[0], 10));
-    table = await Table.create({
-      tableNumber: parsedNum,
-      capacity: Number(parsedNum) % 4 === 0 ? 6 : Number(parsedNum) % 2 === 0 ? 4 : 2,
-      status: 'available',
-      qrToken: cleanToken.startsWith('table-') ? cleanToken : `table-${parsedNum}`,
-    });
+    const parsedNumVal = parseInt(numMatch[0], 10);
+    if (!isNaN(parsedNumVal) && parsedNumVal >= 1 && parsedNumVal <= 30) {
+      const parsedNum = String(parsedNumVal);
+      table = await Table.create({
+        tableNumber: parsedNum,
+        capacity: Number(parsedNum) % 4 === 0 ? 6 : Number(parsedNum) % 2 === 0 ? 4 : 2,
+        status: 'available',
+        qrToken: cleanToken.startsWith('table-') ? cleanToken : `table-${parsedNum}`,
+      });
+    }
   }
 
   // 7. Ultimate safety fallback to Table 1
@@ -323,9 +328,9 @@ export const rotateTableQrToken = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get table session details
+// @desc    Get table session details (PII Masked for public/diners)
 // @route   GET /api/tables/session/:sessionId
-// @access  Public
+// @access  Public / Staff
 export const getSessionDetails = asyncHandler(async (req, res) => {
   const session = await TableSession.findOne({ sessionId: req.params.sessionId })
     .populate('orders')
@@ -333,7 +338,34 @@ export const getSessionDetails = asyncHandler(async (req, res) => {
   if (!session) {
     return res.status(404).json({ message: 'Session not found' });
   }
-  res.json({ data: session });
+
+  const isStaff = req.user && ['owner', 'chef'].includes((req.user.role || '').toLowerCase());
+  const sessionObj = session.toObject ? session.toObject() : { ...session };
+
+  if (!isStaff) {
+    if (Array.isArray(sessionObj.users)) {
+      sessionObj.users = sessionObj.users.map(u => {
+        const isSelf = req.user && String(req.user._id) === String(u._id);
+        if (isSelf) return u;
+        const clean = String(u.phone || '').replace(/\D/g, '');
+        return {
+          ...u,
+          phone: clean.length >= 4 ? `******${clean.slice(-4)}` : '******'
+        };
+      });
+    }
+    if (Array.isArray(sessionObj.orders)) {
+      sessionObj.orders = sessionObj.orders.map(o => {
+        if (!o) return o;
+        const ord = o.toObject ? o.toObject() : { ...o };
+        const clean = String(ord.customerPhone || '').replace(/\D/g, '');
+        ord.customerPhone = clean.length >= 4 ? `******${clean.slice(-4)}` : '******';
+        return ord;
+      });
+    }
+  }
+
+  res.json({ data: sessionObj });
 });
 
 // @desc    Request bill / checkout session
@@ -488,12 +520,13 @@ export const callWaiter = asyncHandler(async (req, res) => {
   const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || String(tableId || '1');
   const alertId = Date.now();
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const cleanReason = String(reason || 'Call Waiter to Table').slice(0, 150).trim();
 
   const newAlert = {
     id: alertId,
     tableId: cleanTableNum,
     tableNumber: cleanTableNum,
-    reason: reason || 'Call Waiter to Table',
+    reason: cleanReason,
     timestamp: timeStr,
     status: 'PENDING',
   };
@@ -602,12 +635,18 @@ export const resolveWaiterCall = asyncHandler(async (req, res) => {
 
 // @desc    Get table by table number
 // @route   GET /api/tables/table-number/:tableNumber
-// @access  Public
+// @access  Public / Staff
 export const getTableByNumber = asyncHandler(async (req, res) => {
   const cleanTableNum = String(req.params.tableNumber || '').match(/\d+/)?.[0] || '1';
   const table = await Table.findOne({ tableNumber: cleanTableNum });
   if (!table) return res.status(404).json({ message: 'Table not found' });
-  res.json({ data: table });
+
+  const isStaff = req.user && ['owner', 'chef'].includes((req.user.role || '').toLowerCase());
+  const tableData = table.toObject ? table.toObject() : { ...table };
+  if (!isStaff) {
+    delete tableData.qrToken;
+  }
+  res.json({ data: tableData });
 });
 
 // @desc    Get shared table cart
@@ -629,6 +668,11 @@ export const getTableCart = asyncHandler(async (req, res) => {
 // @access  Public
 export const updateTableCart = asyncHandler(async (req, res) => {
   const cleanTableNum = String(req.params.tableNumber || '').match(/\d+/)?.[0] || '1';
+  const tableNumVal = parseInt(cleanTableNum, 10);
+  if (isNaN(tableNumVal) || tableNumVal < 1 || tableNumVal > 30) {
+    return res.status(400).json({ success: false, message: 'Invalid table number (must be 1-30)' });
+  }
+
   const { items } = req.body;
 
   let table = await Table.findOne({ tableNumber: cleanTableNum });
@@ -636,16 +680,37 @@ export const updateTableCart = asyncHandler(async (req, res) => {
     table = await Table.create({
       tableNumber: cleanTableNum,
       status: 'occupied',
-      qrToken: crypto.randomBytes(16).toString('hex'),
+      qrToken: `table-${cleanTableNum}`,
     });
   }
+
+  // Deep sanitize shared cart items to avoid memory exhaustion, NaN quantity, or malformed payload attacks
+  const rawItems = Array.isArray(items) ? items.slice(0, 50) : [];
+  const sanitizedItems = rawItems.map(item => {
+    const rawQty = parseInt(item?.quantity, 10);
+    const quantity = (!isNaN(rawQty) && rawQty >= 1) ? Math.min(rawQty, 50) : 1;
+    return {
+      menuItemId: String(item?.menuItemId || '').slice(0, 50),
+      name: String(item?.name || '').slice(0, 100),
+      price: Number(item?.price) > 0 ? Number(item?.price) : 0,
+      quantity,
+      image: String(item?.image || '').slice(0, 300),
+      notes: String(item?.notes || '').slice(0, 200),
+      selectedAddons: Array.isArray(item?.selectedAddons)
+        ? item.selectedAddons.slice(0, 10).map(a => ({
+            name: String(a?.name || '').slice(0, 50),
+            price: Number(a?.price) > 0 ? Number(a?.price) : 0,
+          }))
+        : []
+    };
+  });
 
   const newSessionId = `SESS-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   const session = await TableSession.findOneAndUpdate(
     { tableId: table._id, status: 'active' },
     {
       $setOnInsert: { sessionId: newSessionId, tableId: table._id, status: 'active' },
-      $set: { activeCart: Array.isArray(items) ? items : [] }
+      $set: { activeCart: sanitizedItems }
     },
     { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
   );

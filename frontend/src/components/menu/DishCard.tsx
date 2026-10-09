@@ -45,7 +45,11 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
+            if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
+              target.src = '/images/mineral_water_bottle.jpg';
+            } else {
+              target.src = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
+            }
             setImageLoaded(true);
           }}
           className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${

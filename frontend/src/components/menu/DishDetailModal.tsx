@@ -224,7 +224,7 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
         </div>
 
         {/* Scrollable Body Content */}
-        <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+        <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto custom-scrollbar touch-pan-y overscroll-contain">
           {item.isAvailable === false && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center space-x-2.5 text-rose-800 text-xs font-bold shadow-2xs">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shrink-0" />
@@ -300,10 +300,24 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
                           : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-850 hover:border-emerald-500/50 shadow-2xs'
                       }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <span className="font-bold text-slate-900 text-xs sm:text-sm leading-snug">
-                          {formatAddonName(addon.name)}
-                        </span>
+                      <div className="flex items-center space-x-2.5 min-w-0 flex-1">
+                        {addon.imageUrl && (
+                          <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
+                            <img
+                              src={addon.imageUrl}
+                              alt={addon.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <span className="font-bold text-slate-900 text-xs sm:text-sm leading-snug block">
+                            {formatAddonName(addon.name)}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Add Button with +₹Price or Stepper */}

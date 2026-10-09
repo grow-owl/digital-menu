@@ -49,6 +49,9 @@ export const menuService = {
         // Backfill missing imageUrl from local static data so admin-created items
         // without images still display properly on the customer-facing menu
         items = items.map((dbItem) => {
+          if (dbItem.id === 95 || String(dbItem.name || '').toLowerCase().includes('mineral water')) {
+            return { ...dbItem, imageUrl: '/images/mineral_water_bottle.jpg' };
+          }
           if (!dbItem.imageUrl || dbItem.imageUrl.trim() === '') {
             // Try matching by id first, then by normalized name
             const localMatch = SILIGURI_MENU_ITEMS.find(

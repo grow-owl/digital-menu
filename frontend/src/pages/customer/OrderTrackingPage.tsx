@@ -17,12 +17,15 @@ import { orderService } from '../../services/order.service';
 import { menuService } from '../../services/menu.service';
 import { MenuItem } from '../../types/menu.types';
 import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
+import { parseItemAddonsAndNotes } from '../../utils/addonParser';
+import { calculateTicketCookingPipeline, getDishCookMinutes } from '../../utils/kitchenScheduler';
 
 interface OrderItem {
   name: string;
   quantity: number;
   price: number;
   notes?: string;
+  addonNames?: string[];
   status?: string;
   cancelReason?: string;
 }
@@ -354,16 +357,15 @@ export const OrderTrackingPage: React.FC = () => {
     if (['ready', 'completed'].includes(ord.status)) return 'ready';
     if (ord.status === 'cancelled') return 'cancelled';
     
-    // Check if dishes are prepared or if kitchen cooking time has completed
+    // Check if dishes are prepared or if multi-chef kitchen cooking time has completed
     const activeItems = (ord.items || []).filter((it) => it.status !== 'cancelled');
     if (activeItems.length > 0) {
-      const elapsedSecs = ord.createdAt ? Math.floor((tickTime - new Date(ord.createdAt).getTime()) / 1000) : 0;
-      const allDone = activeItems.every((it) => {
-        if (it.status === 'ready' || (it as any).isPrepared) return true;
-        const cookSecs = ((it as any).preparationTimeMinutes || 4) * 60;
-        return elapsedSecs >= cookSecs;
-      });
+      const allDone = activeItems.every((it) => it.status === 'ready' || (it as any).isPrepared);
       if (allDone) return 'ready';
+
+      const elapsedSecs = ord.createdAt ? Math.floor((tickTime - new Date(ord.createdAt).getTime()) / 1000) : 0;
+      const pipeline = calculateTicketCookingPipeline(ord.items as any, 3);
+      if (elapsedSecs >= pipeline.totalEstimatedSeconds) return 'ready';
     }
     return ord.status || 'received';
   };
@@ -374,6 +376,12 @@ export const OrderTrackingPage: React.FC = () => {
     : orders[0] || null;
   const latestOrder = targetedOrder;
   const latestOrderEffectiveStatus = resolveOrderStatus(latestOrder);
+
+  // Live multi-chef kitchen pipeline computation for customer tracking
+  const latestPipeline = latestOrder ? calculateTicketCookingPipeline(latestOrder.items as any, 3) : null;
+  const latestElapsedSecs = latestOrder && latestOrder.createdAt ? Math.floor((tickTime - new Date(latestOrder.createdAt).getTime()) / 1000) : 0;
+  const latestRemainingSecs = latestPipeline ? Math.max(0, latestPipeline.totalEstimatedSeconds - latestElapsedSecs) : 0;
+  const latestRemainingMins = Math.ceil(latestRemainingSecs / 60);
 
   const activeReel = CHAI_ADDAA_REELS[activeReelIdx];
 
@@ -523,11 +531,32 @@ export const OrderTrackingPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Ready Banner */}
-                  {latestOrderEffectiveStatus === 'ready' && (
+                  {/* Ready Banner vs Cooking Pipeline Estimated Wait Banner */}
+                  {latestOrderEffectiveStatus === 'ready' ? (
                     <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center space-x-2.5 text-xs text-[#0C831F] font-bold animate-in fade-in duration-300">
                       <CheckCircle2 className="w-4 h-4 text-[#0C831F] shrink-0" />
                       <span>Order is Ready! Kitchen has freshly prepared all your dishes.</span>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-2xl flex items-center justify-between text-xs text-amber-900 font-medium animate-in fade-in duration-300 gap-2">
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                          <Clock className="w-4 h-4 animate-spin" style={{ animationDuration: '8s' }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-amber-950 text-xs">
+                            {latestRemainingMins > 0
+                              ? `Estimated Wait: ~${latestRemainingMins} mins`
+                              : 'Finishing up your fresh dishes...'}
+                          </p>
+                          <p className="text-[10px] text-amber-700 truncate">
+                            Parallel kitchen stations cooking fresh dishes & sides
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-100/90 border border-amber-300 text-amber-800 shrink-0">
+                        ~{latestPipeline?.totalEstimatedMinutes || 10}m total
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1018,20 +1047,52 @@ export const OrderTrackingPage: React.FC = () => {
                     <div className="space-y-2 divide-y divide-slate-100">
                       {ord.items.map((it, i) => {
                         const isCancelled = it.status === 'cancelled';
+                        const mainMins = getDishCookMinutes(it.name);
                         return (
                           <div key={i} className={`pt-1.5 flex items-start justify-between text-xs ${isCancelled ? 'opacity-70' : ''}`}>
                             <div className="space-y-0.5">
-                              <div className="flex items-center space-x-1.5">
+                              <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
                                 <p className={`font-semibold ${isCancelled ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                                   {it.quantity}x {it.name}
                                 </p>
+                                {!isCancelled && (
+                                  <span className="text-[9px] font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded font-semibold">
+                                    ~{mainMins}m
+                                  </span>
+                                )}
                                 {isCancelled && (
                                   <span className="px-1.5 py-0.2 bg-rose-100 border border-rose-300 text-rose-700 text-[9px] font-bold rounded">
                                     Cancelled by Kitchen
                                   </span>
                                 )}
                               </div>
-                              {it.notes && <p className="text-[10px] text-emerald-700 italic">Note: {it.notes}</p>}
+                              {(() => {
+                                const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+                                return (
+                                  <>
+                                    {parsed.hasAddons && (
+                                      <div className="flex flex-wrap gap-1 pt-1">
+                                        {parsed.addons.map((ad, adIdx) => {
+                                          const adMins = getDishCookMinutes(ad.name);
+                                          const isAdInstant = adMins === 0;
+                                          return (
+                                            <span
+                                              key={adIdx}
+                                              className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-semibold border border-emerald-200"
+                                            >
+                                              <span>+{ad.quantity > 1 ? `${ad.quantity * it.quantity}x ` : `${it.quantity > 1 ? `${it.quantity}x ` : ''}`}{ad.name}</span>
+                                              <span className="text-[9px] font-mono font-bold text-emerald-700/80">({isAdInstant ? 'Instant' : `~${adMins}m`})</span>
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    {parsed.specialInstruction && (
+                                      <p className="text-[10px] text-emerald-700 italic pt-0.5">Note: {parsed.specialInstruction}</p>
+                                    )}
+                                  </>
+                                );
+                              })()}
                               {isCancelled && (
                                 <p className="text-[10px] text-rose-600 font-medium">
                                   {it.cancelReason || "Item 86'd / out of ingredients"}

@@ -6,6 +6,7 @@ import {
   refreshAccessToken,
   updateUserProfile,
   getMe,
+  terminalLogin,
   verifyTerminalKey,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -16,7 +17,7 @@ router.post('/register', registerUser);
 router.post(['/phone-login', '/customer-quick-login'], phoneLogin);
 router.post('/login', loginUser);
 router.post('/refresh-token', refreshAccessToken);
-router.post('/verify-terminal', verifyTerminalKey);
+router.post(['/terminal-login', '/verify-terminal'], terminalLogin);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateUserProfile);
 

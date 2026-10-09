@@ -17,7 +17,8 @@ import {
   nosqlSanitizer,
   authRateLimiter,
   orderRateLimiter,
-  generalRateLimiter
+  generalRateLimiter,
+  csrfProtection
 } from './middleware/securityMiddleware.js';
 
 // Route Handlers
@@ -34,14 +35,38 @@ connectDB().catch((err) => {
 
 const app = express();
 
+// Disable X-Powered-By to prevent technology fingerprinting
+app.disable('x-powered-by');
+
 // Trust reverse proxy (Vercel, Cloudflare, Nginx, Render) for accurate client IP rate limiting
 app.set('trust proxy', 1);
 
-// 1. Helmet HTTP Security Headers (prevents clickjacking, MIME sniffing, XSS)
+// 1. Helmet HTTP Security Headers (strict clickjacking, MIME sniffing, XSS, and CSP)
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disabled for external QR code CDNs and fonts
-    crossOriginEmbedderPolicy: false
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+        connectSrc: ["'self'", 'https:', 'http:', 'ws:', 'wss:'],
+        frameAncestors: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    frameguard: { action: 'deny' },
+    hsts: process.env.NODE_ENV === 'production' ? {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    } : false,
+    noSniff: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   })
 );
 
@@ -64,19 +89,18 @@ app.use(
       }
       // In development, allow everything
       if (process.env.NODE_ENV !== 'production') return callback(null, true);
-      // In production, check the allowlist
-      if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes(origin)) {
+      // In production, enforce allowlist strictly
+      if (ALLOWED_ORIGINS.length > 0 && ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS: Origin '${origin}' not allowed`));
+      return callback(new Error(`CORS: Origin '${origin}' not allowed by security policy.`));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-dev-secret'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-terminal-key', 'x-dev-secret'],
     credentials: true,
     maxAge: 86400 // 24 hours pre-flight caching
   })
 );
-
 
 // 3. Body Parser with Payload Size Limit (prevents large JSON memory exhaustion attacks)
 app.use(express.json({ limit: '1mb' }));
@@ -85,7 +109,10 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // 4. NoSQL Injection Sanitizer across all incoming requests
 app.use(nosqlSanitizer);
 
-// 5. Database Connection Assurance Middleware (crucial for Serverless cold-starts & resilience)
+// 5. Anti-CSRF Protection across API mutations
+app.use('/api', csrfProtection);
+
+// 6. Database Connection Assurance Middleware (crucial for Serverless cold-starts & resilience)
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -112,6 +139,9 @@ app.use(async (req, res, next) => {
 // 5. Rate Limiting Protection on Sensitive Endpoints
 app.use('/api/auth/register', authRateLimiter);
 app.use('/api/auth/login', authRateLimiter);
+app.use('/api/auth/phone-login', authRateLimiter);
+app.use('/api/auth/customer-quick-login', authRateLimiter);
+app.use('/api/auth/terminal-login', authRateLimiter);
 app.use('/api', generalRateLimiter);
 
 // 6. API Routes
@@ -140,6 +170,12 @@ app.use('/api', (req, res, next) => {
 
 // Centralized Secure Error Handler (prevents stack trace leaks in production)
 app.use((err, req, res, next) => {
+  if (err.message && err.message.startsWith('CORS:')) {
+    return res.status(403).json({
+      success: false,
+      message: err.message
+    });
+  }
   console.error('Unhandled Server Error:', err);
   const isDev = process.env.NODE_ENV === 'development';
   res.status(err.status || 500).json({

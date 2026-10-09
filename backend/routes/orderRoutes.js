@@ -28,18 +28,18 @@ router.post('/dev/purge-all', protect, requireRole('owner'), purgeAllOrders);
 // Order creation: Customer (logged-in or table guest) or staff placing order
 router.post('/', orderRateLimiter, createOrder);
 
+// Staff operational views: Kitchen, Owner
+router.get(['/active', '/active/all'], protect, requireRole('owner', 'chef'), getActiveOrders);
+router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
+
 // Customer / Table order retrieval
 router.get('/phone/:phone', getOrdersByPhone);
 router.get('/table/:tableId', getOrdersByTable);
 router.get('/:orderId', getOrderById);
 
-// Staff operational views: Kitchen, Owner
-router.get(['/active', '/active/all'], getActiveOrders);
-router.get('/settled/all', protect, requireRole('owner'), getSettledOrders);
-
-// Kitchen / Staff status updates
-router.put('/:orderId/status', updateOrderStatus);
-router.put('/:orderId/items/check', toggleItemPrepared);
+// Kitchen / Staff status updates (Chef & Owner only)
+router.put('/:orderId/status', protect, requireRole('owner', 'chef'), updateOrderStatus);
+router.put('/:orderId/items/check', protect, requireRole('owner', 'chef'), toggleItemPrepared);
 router.put('/:orderId/items/:itemIndex/cancel', optionalAuth, cancelOrderItem);
 router.put('/:orderId/cancel', optionalAuth, cancelOrder);
 

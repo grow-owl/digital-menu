@@ -54,9 +54,6 @@ export const App: React.FC = () => {
             <Route path="/kitchen/kds" element={<AppLayout><KitchenDisplayPage /></AppLayout>} />
           </Route>
 
-          {/* Legacy Waiter Route Redirects to Admin */}
-          <Route path="/waiter" element={<Navigate to="/admin" replace />} />
-          <Route path="/waiter/dashboard" element={<Navigate to="/admin" replace />} />
 
 
           {/* Owner & Management Routes */}

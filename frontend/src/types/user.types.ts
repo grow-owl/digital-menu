@@ -1,7 +1,6 @@
 export type Role =
   | 'OWNER'
   | 'CHEF'
-  | 'WAITER'
   | 'CUSTOMER';
 
 export interface User {

@@ -49,7 +49,7 @@ function roundRect(
 }
 
 export const GOOGLE_REVIEWS_URL = 'https://share.google/fpQYpNSriMbsBasZS';
-export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png';
+export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.jpeg';
 
 let cachedTemplateImg: HTMLImageElement | null = null;
 let cachedGoogleReviewQrDataUrl: string | null = null;
@@ -118,15 +118,11 @@ const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
 };
 
 /**
- * Generates an ultra high-resolution printable Table QR Stand Card rendered on an HTML5 Canvas (1364 x 2048 px).
+ * Generates an ultra high-resolution printable Table QR Stand Card rendered on an HTML5 Canvas (2048 x 3072 px).
  * Renders the authentic Siliguri's Chai Addaa vintage parchment template:
- * 1. Upper large white space: Table-specific customer dine ordering QR code.
- * 2. Lower small white space: Constant Google Reviews QR code (https://share.google/fpQYpNSriMbsBasZS).
- * 3. Bottom footer: Dynamically updated table number: SILIGURI'S CHAI ADDAA • TABLE {num}.
- */
-/**
- * Retrieves the constant, permanent QR token for physical table stand prints.
- * Guarantees that printed QR codes will never break, expire, or change.
+ * 1. Upper large white space: Table-specific customer dine ordering QR code (Center: 1024, 1344; Size: 1040x1040).
+ * 2. Lower small white space: Constant Google Reviews QR code (Center: 842, 2582; Size: 368x368).
+ * 3. Bottom footer: Seamlessly cloned parchment background with dynamic table number: SILIGURI'S CHAI ADDAA • TABLE {num}.
  */
 export const getTablePermanentToken = (table: TableResponse): string => {
   return (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
@@ -136,9 +132,10 @@ export const generateStandCardCanvas = async (
   table: TableResponse,
   config: VenueQrConfig
 ): Promise<HTMLCanvasElement> => {
-  // Ultra high-definition canvas (2x of 682x1024 base template = 1364x2048)
-  const width = 1364;
-  const height = 2048;
+  // Ultra high-definition canvas (2x of 1024x1536 base template = 2048x3072 px)
+  const scale = 2;
+  const width = 1024 * scale;
+  const height = 1536 * scale;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -157,19 +154,20 @@ export const generateStandCardCanvas = async (
   } else {
     // Graceful fallback if background template image is unavailable
     ctx.fillStyle = '#FAF7F2';
-    roundRect(ctx, 0, 0, width, height, 48);
+    roundRect(ctx, 0, 0, width, height, 48 * scale);
     ctx.fill();
     ctx.strokeStyle = '#3D1D0C';
-    ctx.lineWidth = 6;
-    roundRect(ctx, 16, 16, width - 32, height - 32, 40);
+    ctx.lineWidth = 6 * scale;
+    roundRect(ctx, 16 * scale, 16 * scale, width - 32 * scale, height - 32 * scale, 40 * scale);
     ctx.stroke();
   }
 
   // 2. High-Resolution Table QR Code in Upper Large White Space (Menu QR)
-  // Coordinates mapped to 2x scale: Center (681, 860), Size 640x640
-  const tableQrSize = 640;
-  const tableQrX = 681 - tableQrSize / 2; // 361
-  const tableQrY = 860 - tableQrSize / 2; // 540
+  // Base template center: (512, 672), Size 520x520
+  // Scaled 2x: Center (1024, 1344), Size 1040x1040
+  const tableQrSize = 520 * scale; // 1040
+  const tableQrX = 512 * scale - tableQrSize / 2; // 504
+  const tableQrY = 672 * scale - tableQrSize / 2; // 824
 
   const tableQrDataUrl = await generateQrDataUrl(dineUrl, {
     size: tableQrSize,
@@ -188,10 +186,11 @@ export const generateStandCardCanvas = async (
   ctx.drawImage(tableQrImg, tableQrX, tableQrY, tableQrSize, tableQrSize);
 
   // 3. Constant Google Reviews QR Code in Lower Small White Space
-  // Coordinates mapped to 2x scale: Center (563, 1690), Size 252x252
-  const reviewQrSize = 252;
-  const reviewQrX = 563 - reviewQrSize / 2; // 437
-  const reviewQrY = 1690 - reviewQrSize / 2; // 1564
+  // Base template center: (421, 1291), Size 184x184
+  // Scaled 2x: Center (842, 2582), Size 368x368
+  const reviewQrSize = 184 * scale; // 368
+  const reviewQrX = 421 * scale - reviewQrSize / 2; // 658
+  const reviewQrY = 1291 * scale - reviewQrSize / 2; // 2398
 
   const reviewQrDataUrl = await getGoogleReviewsQrDataUrl(reviewQrSize);
   const reviewQrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -205,42 +204,57 @@ export const generateStandCardCanvas = async (
   ctx.drawImage(reviewQrImg, reviewQrX, reviewQrY, reviewQrSize, reviewQrSize);
 
   // 4. Dynamic Footer Table Line & Number
+  // Seamlessly clone pristine parchment background texture from y=1422 to cover existing text & divider line
+  if (templateImg) {
+    ctx.drawImage(
+      canvas,
+      160 * scale,
+      1422 * scale,
+      704 * scale,
+      26 * scale,
+      160 * scale,
+      1448 * scale,
+      704 * scale,
+      26 * scale
+    );
+  }
+
   const brandName = (config.brandName || "SILIGURI'S CHAI ADDAA").toUpperCase();
   const footerText = `${brandName}  •  TABLE ${tableNum}`;
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#422010';
-  ctx.font = 'bold 26px "Playfair Display", "Times New Roman", Georgia, serif';
+  ctx.fillStyle = '#4B2616';
+  ctx.font = `bold ${18 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
   if ('letterSpacing' in ctx) {
-    (ctx as any).letterSpacing = '1.5px';
+    (ctx as any).letterSpacing = `${1.5 * scale}px`;
   }
 
-  const cx = 681;
-  const cy = 1948; // Scaled footer line position (974 * 2)
+  const cx = 512 * scale; // 1024
+  const cy = 1461 * scale; // 2922
   const textMetrics = ctx.measureText(footerText);
   const textWidth = textMetrics.width;
   const textStartX = cx - textWidth / 2;
   const textEndX = cx + textWidth / 2;
-  const linePadding = 18;
+  const linePadding = 16 * scale;
 
-  ctx.strokeStyle = '#422010';
-  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#4B2616';
+  ctx.lineWidth = 3 * scale;
 
-  // Left decorative divider line (x: 230 to textStartX - linePadding)
-  if (textStartX - linePadding > 230) {
+  // Left decorative divider line (x: 168 * scale to textStartX - linePadding)
+  if (textStartX - linePadding > 168 * scale) {
     ctx.beginPath();
-    ctx.moveTo(230, cy);
+    ctx.moveTo(168 * scale, cy);
     ctx.lineTo(textStartX - linePadding, cy);
     ctx.stroke();
   }
 
-  // Right decorative divider line (x: textEndX + linePadding to 1144)
-  if (1144 > textEndX + linePadding) {
+  // Right decorative divider line (x: textEndX + linePadding to 858 * scale)
+  if (858 * scale > textEndX + linePadding) {
     ctx.beginPath();
     ctx.moveTo(textEndX + linePadding, cy);
-    ctx.lineTo(1144, cy);
+    ctx.lineTo(858 * scale, cy);
     ctx.stroke();
   }
 

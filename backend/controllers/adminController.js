@@ -14,7 +14,7 @@ export const getMetrics = asyncHandler(async (req, res) => {
   const totalDishes = await MenuItem.countDocuments();
 
   const ongoingOrdersCount = await Order.countDocuments({
-    status: { $in: ['received', 'preparing', 'ready', 'served'] },
+    status: { $in: ['received', 'preparing', 'ready'] },
     paymentStatus: { $ne: 'PAID' }
   });
 
@@ -80,15 +80,18 @@ export const getAnalyticsSummary = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/executive-analytics
 // @access  Private / Staff
 export const getExecutiveAnalytics = asyncHandler(async (req, res) => {
-  const allOrders = await Order.find({}).sort({ createdAt: -1 });
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [allOrders, totalOrdersCount] = await Promise.all([
+    Order.find({ createdAt: { $gte: thirtyDaysAgo } }).sort({ createdAt: -1 }).limit(1000),
+    Order.countDocuments()
+  ]);
   const settledOrders = allOrders.filter(o => 
     (o.status === 'completed' || o.paymentStatus === 'PAID' || o.paymentStatus === 'PARTIALLY_REFUNDED') && 
     o.paymentStatus !== 'REFUNDED'
   );
-  const ongoingOrders = allOrders.filter(o => ['received', 'preparing', 'ready', 'served'].includes(o.status) && o.paymentStatus !== 'PAID' && o.paymentStatus !== 'PARTIALLY_REFUNDED');
+  const ongoingOrders = allOrders.filter(o => ['received', 'preparing', 'ready'].includes(o.status) && o.paymentStatus !== 'PAID' && o.paymentStatus !== 'PARTIALLY_REFUNDED');
 
   const todaySales = settledOrders.reduce((sum, o) => sum + Math.max(0, (o.total || 0) - (o.refundAmount || 0)), 0);
-  const totalOrdersCount = allOrders.length;
   const aov = settledOrders.length > 0 ? Math.round(todaySales / settledOrders.length) : (totalOrdersCount > 0 ? Math.round(todaySales / totalOrdersCount) : 0);
 
   const allTables = await Table.find({});

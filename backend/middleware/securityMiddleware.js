@@ -114,9 +114,73 @@ const generalRateLimiter = rateLimit({
   }
 });
 
+/**
+ * Rate Limiter for Call Waiter / Service alerts
+ * Max 5 calls per 2 minutes per IP
+ */
+const waiterCallRateLimiter = rateLimit({
+  windowMs: 2 * 60 * 1000, // 2 minutes
+  max: 5,
+  skip: () => process.env.NODE_ENV !== 'production',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Service call request already received. Please allow 2 minutes before calling service again.'
+  }
+});
+
+/**
+ * Anti-CSRF Middleware: Defense-in-depth against cross-origin forged requests.
+ * Protects state-changing requests (POST, PUT, DELETE, PATCH).
+ * Rejects requests if Origin or Referer header points to an unauthorized third-party origin.
+ */
+const csrfProtection = (req, res, next) => {
+  // Safe idempotent read-only HTTP methods are exempt from CSRF
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  const origin = req.headers.origin;
+  const referer = req.headers.referer;
+  const requestSource = origin || referer;
+
+  // Server-to-server or native clients without browser origin headers proceed
+  if (!requestSource) {
+    return next();
+  }
+
+  // Allow development and local testing
+  const isLocalOrLan =
+    requestSource.includes('localhost') ||
+    requestSource.includes('127.0.0.1') ||
+    /^https?:\/\/192\.168\.|^https?:\/\/10\.|^https?:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\./.test(requestSource);
+
+  if (isLocalOrLan) {
+    return next();
+  }
+
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : [];
+
+  const isAllowed = allowedOrigins.some((allowed) => requestSource.startsWith(allowed));
+  if (!isAllowed) {
+    return res.status(403).json({
+      success: false,
+      message: 'Security Violation: Cross-Site Request Forgery (CSRF) attempt detected and blocked.'
+    });
+  }
+
+  next();
+};
+
 export {
   nosqlSanitizer,
   authRateLimiter,
   orderRateLimiter,
-  generalRateLimiter
+  waiterCallRateLimiter,
+  generalRateLimiter,
+  csrfProtection
 };
+

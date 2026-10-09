@@ -3,14 +3,13 @@ export type OrderStatus =
   | 'CONFIRMED'
   | 'PREPARING'
   | 'READY'
-  | 'SERVED'
   | 'COMPLETED'
   | 'CANCELLED';
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'REFUNDED';
 export type PaymentMethod = 'CASH' | 'CREDIT_CARD' | 'UPI' | 'DEBIT_CARD';
 export type TableStatus = 'VACANT' | 'OCCUPIED' | 'RESERVED' | 'CLEANING';
-export type ItemStatus = 'PENDING' | 'COOKING' | 'READY' | 'SERVED';
+export type ItemStatus = 'PENDING' | 'COOKING' | 'READY';
 
 export interface OrderItemResponse {
   id: number;

@@ -370,7 +370,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                   {/* Quantity Stepper & Special Instructions */}
                   <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center space-x-1.5 bg-[#9d785e] text-white px-2 py-1 rounded-xl shadow-xs">
+                    <div className="flex items-center space-x-1.5 bg-[#0C831F] text-white px-2 py-1 rounded-xl shadow-xs">
                       <button
                         onClick={() => updateQuantity(item.menuItem.id, item.quantity - 1)}
                         className="w-7 h-7 sm:w-6 sm:h-6 hover:bg-black/20 rounded-lg flex items-center justify-center transition-colors cursor-pointer active:scale-90"

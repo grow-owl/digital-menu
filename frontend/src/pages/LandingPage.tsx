@@ -299,7 +299,7 @@ export const LandingPage: React.FC = () => {
                     2. In Kitchen
                   </div>
                   <div className="bg-stone-100 text-stone-500 py-1.5 px-0.5 rounded border border-stone-200 truncate">
-                    3. Served
+                    3. Ready
                   </div>
                 </div>
               </div>

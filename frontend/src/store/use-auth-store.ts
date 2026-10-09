@@ -52,6 +52,33 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'aura-auth-storage',
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (state.token) {
+          try {
+            const parts = state.token.split('.');
+            if (parts.length !== 3) {
+              state.logout();
+              return;
+            }
+            const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(atob(base64));
+            
+            // Auto logout if token expired
+            if (payload.exp && Date.now() >= payload.exp * 1000) {
+              state.logout();
+              return;
+            }
+
+            // Anti-Tamper: Force role from cryptographically signed JWT payload
+            if (payload.role && state.user && state.user.role !== payload.role) {
+              state.user.role = payload.role;
+            }
+          } catch {
+            state.logout();
+          }
+        }
+      },
     }
   )
 );

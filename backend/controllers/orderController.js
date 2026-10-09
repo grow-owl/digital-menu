@@ -261,11 +261,17 @@ export const createOrder = asyncHandler(async (req, res) => {
     dbMenuMap.set(String(item._id), item);
   });
 
-  // Daily availability guard: block 86'd / unavailable dishes
+  // Strict Catalog Validation & Availability Guard: Block non-existent or 86'd items
   for (const it of items) {
     const targetId = String(it.menuItemId || it.id || '');
     const dbItem = dbMenuMap.get(targetId);
-    if (dbItem && dbItem.isAvailable === false) {
+    if (!dbItem) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid menu item: "${it.name || targetId}" is not part of the active restaurant menu catalog.`
+      });
+    }
+    if (dbItem.isAvailable === false) {
       return res.status(400).json({
         success: false,
         message: `"${dbItem.name}" is currently sold out and not available today. Please remove it from your order.`
@@ -278,19 +284,20 @@ export const createOrder = asyncHandler(async (req, res) => {
     const targetId = String(it.menuItemId || it.id || '');
     const dbItem = dbMenuMap.get(targetId);
     const quantity = Math.max(1, parseInt(it.quantity || it.qty || 1, 10));
-    const price = dbItem ? dbItem.price : Math.max(0, parseFloat(it.price || it.unitPrice || 0));
+    // Cryptographically enforce database price — never trust client-provided price
+    const price = Number(dbItem.price);
     verifiedSubtotal += price * quantity;
 
     return {
-      menuItemId: dbItem ? dbItem.id : (parseInt(it.menuItemId || it.id, 10) || 101),
-      name: dbItem ? dbItem.name : String(it.name || 'Artisanal Dish').slice(0, 100),
+      menuItemId: dbItem.id || (parseInt(targetId, 10) || 101),
+      name: dbItem.name,
       quantity,
       price,
       notes: String(it.notes || '').slice(0, 200),
       customizations: Array.isArray(it.customizations) ? it.customizations : [],
       status: 'preparing',
       isPrepared: false,
-      preparationTimeMinutes: dbItem?.preparationTimeMinutes || it.preparationTimeMinutes || 5
+      preparationTimeMinutes: dbItem.preparationTimeMinutes || 5
     };
   });
 
@@ -397,13 +404,18 @@ export const buildOrderIdQuery = (rawId) => {
   const numOnly = cleanId.replace(/^ORD-/i, '').trim();
   const isValidObjId = /^[0-9a-fA-F]{24}$/.test(target);
   
+  // Escape special regex characters to prevent regex injection or ReDoS
+  const escapeRegex = (str) => String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const safeClean = escapeRegex(cleanId);
+  const safeNum = escapeRegex(numOnly);
+
   const queryConditions = [
     { orderId: target },
     { orderId: cleanId },
     { orderId: `ORD-${cleanId}` },
     { orderId: `ORD-${numOnly}` },
-    { orderId: new RegExp(`^${cleanId}$`, 'i') },
-    { orderId: new RegExp(`^ORD-${numOnly}$`, 'i') }
+    { orderId: new RegExp(`^${safeClean}$`, 'i') },
+    { orderId: new RegExp(`^ORD-${safeNum}$`, 'i') }
   ];
 
   if (isValidObjId) {
@@ -424,15 +436,13 @@ const autoUpdateOrdersToReady = async (orders) => {
       if (activeItems.length > 0) {
         const allDone = activeItems.every(it => {
           const cookSecs = (it.preparationTimeMinutes || 4) * 60;
-          return it.status === 'ready' || it.status === 'served' || it.isPrepared || elapsedSecs >= cookSecs;
+          return it.status === 'ready' || it.isPrepared || elapsedSecs >= cookSecs;
         });
         if (allDone) {
           order.status = 'ready';
           activeItems.forEach(it => {
-            if (it.status !== 'served') {
-              it.status = 'ready';
-              it.isPrepared = true;
-            }
+            it.status = 'ready';
+            it.isPrepared = true;
           });
           await order.save().catch(e => console.warn('Auto-ready transition save warn:', e.message));
         }
@@ -450,7 +460,7 @@ export const getOrdersByTable = asyncHandler(async (req, res) => {
   const filter = { tableId: String(req.params.tableId) };
   
   if (includeCompleted !== 'true') {
-    filter.status = { $in: ['received', 'preparing', 'ready', 'served'] };
+    filter.status = { $in: ['received', 'preparing', 'ready'] };
     filter.paymentStatus = { $ne: 'PAID' };
   }
 
@@ -466,7 +476,7 @@ export const getActiveOrders = asyncHandler(async (req, res) => {
   await normalizeOrderIds();
   await normalizeInvoiceNumbers();
   const activeOrders = await Order.find({
-    status: { $in: ['received', 'preparing', 'ready', 'served'] },
+    status: { $in: ['received', 'preparing', 'ready'] },
     paymentStatus: { $ne: 'PAID' }
   }).sort({ createdAt: 1 });
   await autoUpdateOrdersToReady(activeOrders);
@@ -475,7 +485,7 @@ export const getActiveOrders = asyncHandler(async (req, res) => {
     const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
     const completedOrders = await Order.find({
       $or: [
-        { status: { $in: ['ready', 'served', 'completed'] } },
+        { status: { $in: ['ready', 'completed'] } },
         { paymentStatus: 'PAID' }
       ],
       createdAt: { $gte: sixHoursAgo }
@@ -595,7 +605,7 @@ export const refundOrder = asyncHandler(async (req, res) => {
     order.status = 'cancelled';
   } else {
     order.paymentStatus = 'PARTIALLY_REFUNDED';
-    if (!['completed', 'served'].includes(order.status)) {
+    if (order.status !== 'completed') {
       order.status = 'completed';
     }
   }
@@ -665,14 +675,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
   if (status === 'ready') {
     (order.items || []).forEach(it => {
-      if (it.status !== 'served') {
-        it.status = 'ready';
-        it.isPrepared = true;
-      }
-    });
-  } else if (status === 'served') {
-    (order.items || []).forEach(it => {
-      it.status = 'served';
+      it.status = 'ready';
       it.isPrepared = true;
     });
   }
@@ -698,13 +701,15 @@ export const toggleItemPrepared = asyncHandler(async (req, res) => {
       return res.status(400).json({ message: 'Cannot toggle preparation status on a cancelled dish' });
     }
     order.items[itemIndex].isPrepared = !!isPrepared;
-    if (isPrepared && order.items[itemIndex].status !== 'served') {
+    if (isPrepared) {
       order.items[itemIndex].status = 'ready';
+    } else {
+      order.items[itemIndex].status = 'preparing';
     }
 
     // If all active dishes are prepared, automatically mark order as ready
     const active = (order.items || []).filter(it => it.status !== 'cancelled');
-    if (active.length > 0 && active.every(it => it.isPrepared || it.status === 'ready' || it.status === 'served')) {
+    if (active.length > 0 && active.every(it => it.isPrepared || it.status === 'ready')) {
       order.status = 'ready';
     }
 
@@ -725,6 +730,30 @@ export const cancelOrderItem = asyncHandler(async (req, res) => {
   const order = await Order.findOne(buildOrderIdQuery(targetOrderId));
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  // Security & Authorization Guard: Only staff/owner/terminal or order owner while status is 'received'
+  const isStaff = req.user && ['owner', 'chef'].includes((req.user.role || '').toLowerCase());
+  const terminalKey = req.headers['x-terminal-key'] || req.body.terminalKey;
+  const isTerminalAuth = process.env.TERMINAL_ACCESS_KEY && terminalKey && terminalKey.trim().toUpperCase() === process.env.TERMINAL_ACCESS_KEY.trim().toUpperCase();
+
+  if (!isStaff && !isTerminalAuth) {
+    if (order.status !== 'received') {
+      return res.status(403).json({
+        success: false,
+        message: 'Dishes currently being prepared in the kitchen cannot be cancelled online. Please contact your restaurant host or chef.'
+      });
+    }
+    const callerPhone = req.user?.phone || req.body.customerPhone;
+    const cleanCaller = callerPhone ? String(callerPhone).replace(/\D/g, '').slice(-10) : null;
+    const cleanOrderPhone = order.customerPhone ? String(order.customerPhone).replace(/\D/g, '').slice(-10) : null;
+    if (!cleanCaller || cleanCaller !== cleanOrderPhone) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: You may only cancel dishes from orders placed under your mobile number.'
+      });
+    }
+  }
+
   if (order.status === 'cancelled') {
     return res.status(400).json({ message: 'Order is already cancelled' });
   }
@@ -792,6 +821,36 @@ export const cancelOrder = asyncHandler(async (req, res) => {
 
   if (!order) return res.status(404).json({ message: 'Order not found' });
 
+  // Security & Authorization Guard: Only staff/owner/terminal or order owner while status is 'received'
+  const isStaff = req.user && ['owner', 'chef'].includes((req.user.role || '').toLowerCase());
+  const terminalKey = req.headers['x-terminal-key'] || req.body.terminalKey;
+  const isTerminalAuth = process.env.TERMINAL_ACCESS_KEY && terminalKey && terminalKey.trim().toUpperCase() === process.env.TERMINAL_ACCESS_KEY.trim().toUpperCase();
+
+  if (!isStaff && !isTerminalAuth) {
+    if (order.status !== 'received') {
+      return res.status(403).json({
+        success: false,
+        message: 'Orders already being prepared in the kitchen cannot be cancelled online. Please contact your restaurant host or chef.'
+      });
+    }
+    const callerPhone = req.user?.phone || req.body.customerPhone;
+    const cleanCaller = callerPhone ? String(callerPhone).replace(/\D/g, '').slice(-10) : null;
+    const cleanOrderPhone = order.customerPhone ? String(order.customerPhone).replace(/\D/g, '').slice(-10) : null;
+    if (!cleanCaller || cleanCaller !== cleanOrderPhone) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized: You may only cancel orders placed under your mobile number.'
+      });
+    }
+  }
+
+  if (order.status === 'cancelled') {
+    return res.status(400).json({ message: 'Order is already cancelled' });
+  }
+  if (order.paymentStatus === 'PAID') {
+    return res.status(400).json({ message: 'Cannot cancel an already settled order' });
+  }
+
   const defaultReason = reason || 'Cancelled by Kitchen Staff / Chef';
   const actor = cancelledBy || 'Kitchen Staff';
 
@@ -851,6 +910,18 @@ export const getOrderById = asyncHandler(async (req, res) => {
 // @access  Admin / POS
 export const payTableBill = asyncHandler(async (req, res) => {
   const { tableId, paymentMethod } = req.body;
+
+  // Security Authorization Guard: Settle bill requires Chef/Owner authentication OR authorized Terminal Key
+  const isStaff = req.user && ['owner', 'chef'].includes((req.user.role || '').toLowerCase());
+  const terminalKey = req.headers['x-terminal-key'] || req.body.terminalKey;
+  const isTerminalAuth = process.env.TERMINAL_ACCESS_KEY && terminalKey && terminalKey.trim().toUpperCase() === process.env.TERMINAL_ACCESS_KEY.trim().toUpperCase();
+
+  if (!isStaff && !isTerminalAuth) {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: Staff authentication (Chef/Owner) or authorized Terminal Key required to settle table bills.'
+    });
+  }
   const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
   const isObjId = String(tableId).match(/^[0-9a-fA-F]{24}$/);
 

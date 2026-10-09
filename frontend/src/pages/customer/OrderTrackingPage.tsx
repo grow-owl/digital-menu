@@ -38,7 +38,7 @@ interface OrderData {
   tax: number;
   discount: number;
   total: number;
-  status: 'received' | 'preparing' | 'ready' | 'completed' | 'served' | 'cancelled';
+  status: 'received' | 'preparing' | 'ready' | 'completed' | 'cancelled';
   paymentStatus?: string;
   paymentMethod?: string;
   invoiceNumber?: string;
@@ -334,8 +334,7 @@ export const OrderTrackingPage: React.FC = () => {
       case 'received': return 0;
       case 'preparing': return 1;
       case 'ready':
-      case 'completed':
-      case 'served': return 2;
+      case 'completed': return 2;
       default: return 0;
     }
   };
@@ -345,15 +344,14 @@ export const OrderTrackingPage: React.FC = () => {
       case 'received': return { label: 'Received', color: 'bg-amber-100 text-amber-800 border-amber-300' };
       case 'preparing': return { label: 'In Kitchen', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
       case 'ready':
-      case 'completed':
-      case 'served': return { label: 'Ready', color: 'bg-emerald-100 text-[#0C831F] border-emerald-300 font-black' };
+      case 'completed': return { label: 'Ready', color: 'bg-emerald-100 text-[#0C831F] border-emerald-300 font-black' };
       default: return { label: status, color: 'bg-slate-100 text-slate-700 border-slate-300' };
     }
   };
 
   const resolveOrderStatus = (ord: OrderData | null): string => {
     if (!ord) return 'received';
-    if (['ready', 'completed', 'served'].includes(ord.status)) return 'ready';
+    if (['ready', 'completed'].includes(ord.status)) return 'ready';
     if (ord.status === 'cancelled') return 'cancelled';
     
     // Check if dishes are prepared or if kitchen cooking time has completed
@@ -361,7 +359,7 @@ export const OrderTrackingPage: React.FC = () => {
     if (activeItems.length > 0) {
       const elapsedSecs = ord.createdAt ? Math.floor((tickTime - new Date(ord.createdAt).getTime()) / 1000) : 0;
       const allDone = activeItems.every((it) => {
-        if (it.status === 'ready' || it.status === 'served' || (it as any).isPrepared) return true;
+        if (it.status === 'ready' || (it as any).isPrepared) return true;
         const cookSecs = ((it as any).preparationTimeMinutes || 4) * 60;
         return elapsedSecs >= cookSecs;
       });

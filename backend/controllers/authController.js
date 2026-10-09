@@ -32,7 +32,7 @@ export const registerUser = asyncHandler(async (req, res) => {
     password
   });
 
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user._id, 'CUSTOMER');
   const refreshToken = generateRefreshToken(user._id);
 
   res.status(201).json({
@@ -115,11 +115,11 @@ export const phoneLogin = asyncHandler(async (req, res) => {
   let roleUpper = rawRole.toUpperCase();
   if (roleUpper === 'KITCHEN') roleUpper = 'CHEF';
   if (roleUpper === 'RESTAURANT_OWNER' || roleUpper === 'ADMIN' || roleUpper === 'MANAGER') roleUpper = 'OWNER';
-  if (!['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
+  if (!['OWNER', 'CHEF', 'CUSTOMER'].includes(roleUpper)) {
     roleUpper = 'CUSTOMER';
   }
 
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user._id, roleUpper);
   const refreshToken = generateRefreshToken(user._id);
 
   return res.json({
@@ -169,7 +169,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     }
 
     let roleUpper = 'CUSTOMER';
-    const accessToken = generateAccessToken(user._id);
+    const accessToken = generateAccessToken(user._id, 'CUSTOMER');
     const refreshToken = generateRefreshToken(user._id);
 
     return res.json({
@@ -206,11 +206,11 @@ export const loginUser = asyncHandler(async (req, res) => {
     let roleUpper = rawRole.toUpperCase();
     if (roleUpper === 'KITCHEN') roleUpper = 'CHEF';
     if (roleUpper === 'RESTAURANT_OWNER' || roleUpper === 'ADMIN' || roleUpper === 'MANAGER') roleUpper = 'OWNER';
-    if (!['OWNER', 'CHEF', 'WAITER', 'CUSTOMER'].includes(roleUpper)) {
+    if (!['OWNER', 'CHEF', 'CUSTOMER'].includes(roleUpper)) {
       roleUpper = 'CUSTOMER';
     }
 
-    const accessToken = generateAccessToken(user._id);
+    const accessToken = generateAccessToken(user._id, roleUpper);
     const refreshToken = generateRefreshToken(user._id);
 
     res.json({
@@ -350,7 +350,15 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     });
   }
 
-  const newAccessToken = generateAccessToken(user._id);
+  let rawRole = (user.role || 'customer').toLowerCase();
+  let roleUpper = rawRole.toUpperCase();
+  if (roleUpper === 'KITCHEN') roleUpper = 'CHEF';
+  if (roleUpper === 'RESTAURANT_OWNER' || roleUpper === 'ADMIN' || roleUpper === 'MANAGER') roleUpper = 'OWNER';
+  if (!['OWNER', 'CHEF', 'CUSTOMER'].includes(roleUpper)) {
+    roleUpper = 'CUSTOMER';
+  }
+
+  const newAccessToken = generateAccessToken(user._id, roleUpper);
   const newRefreshToken = generateRefreshToken(user._id);
 
   res.json({
@@ -363,11 +371,11 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Verify Terminal Access Passcode (Server-side validation)
-// @route   POST /api/auth/verify-terminal
+// @desc    Fast Login for Restaurant Terminals (Owner & Chef) via TERMINAL_ACCESS_KEY
+// @route   POST /api/auth/terminal-login, POST /api/auth/verify-terminal
 // @access  Public
-export const verifyTerminalKey = asyncHandler(async (req, res) => {
-  const { passcode } = req.body;
+export const terminalLogin = asyncHandler(async (req, res) => {
+  const { passcode, role } = req.body;
   if (!passcode || typeof passcode !== 'string') {
     return res.status(400).json({ success: false, message: 'Access code is required.' });
   }
@@ -379,18 +387,57 @@ export const verifyTerminalKey = asyncHandler(async (req, res) => {
 
   const inputKey = passcode.trim().toUpperCase();
 
-  if (inputKey === validKey) {
-    return res.json({
-      success: true,
-      authorized: true,
-      message: 'Terminal authorized successfully.'
-    });
-  } else {
+  if (inputKey !== validKey) {
     return res.status(401).json({
       success: false,
       authorized: false,
       message: 'Invalid access code. Please contact your restaurant manager.'
     });
   }
+
+  // Determine requested role: OWNER or CHEF (default to OWNER)
+  let targetRole = (role || 'OWNER').toUpperCase();
+  if (!['OWNER', 'CHEF'].includes(targetRole)) {
+    targetRole = 'OWNER';
+  }
+  const dbRole = targetRole.toLowerCase();
+
+  // Find or create the system staff account in MongoDB
+  let user = await User.findOne({ role: dbRole });
+  if (!user) {
+    const isOwner = targetRole === 'OWNER';
+    user = await User.create({
+      name: isOwner ? 'Restaurant Owner' : 'Head Chef',
+      phone: isOwner ? '0000000001' : '0000000002',
+      email: isOwner ? 'owner@aura.com' : 'chef@aura.com',
+      password: 'aura_terminal_auth_' + dbRole,
+      role: dbRole,
+      status: 'VIP'
+    });
+  }
+
+  const accessToken = generateAccessToken(user._id, targetRole);
+  const refreshToken = generateRefreshToken(user._id);
+
+  return res.json({
+    success: true,
+    authorized: true,
+    message: `Terminal authorized as ${targetRole}.`,
+    data: {
+      token: accessToken,
+      accessToken,
+      refreshToken,
+      user: {
+        _id: user._id,
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: targetRole,
+        status: user.status || 'Standard'
+      }
+    }
+  });
 });
+
+export const verifyTerminalKey = terminalLogin;
 

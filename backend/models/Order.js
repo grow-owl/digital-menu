@@ -8,7 +8,7 @@ const orderItemSchema = new mongoose.Schema({
   notes: { type: String },
   status: {
     type: String,
-    enum: ['received', 'preparing', 'ready', 'served', 'cancelled'],
+    enum: ['received', 'preparing', 'ready', 'cancelled'],
     default: 'preparing'
   },
   preparationTimeMinutes: { type: Number, default: 5 },
@@ -33,7 +33,7 @@ const orderSchema = new mongoose.Schema({
   items: [orderItemSchema],
   status: { 
     type: String, 
-    enum: ['received', 'preparing', 'ready', 'served', 'completed', 'cancelled'],
+    enum: ['received', 'preparing', 'ready', 'completed', 'cancelled'],
     default: 'preparing'
   },
   subtotal: { type: Number, required: true },

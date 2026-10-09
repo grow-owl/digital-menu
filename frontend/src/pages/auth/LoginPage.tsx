@@ -2,123 +2,116 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
 import { useAuthStore } from '../../store/use-auth-store';
-import { ShieldCheck, Utensils, Eye, EyeOff, Lock, User as UserIcon, ArrowRight, ArrowLeft, ChefHat, UserCheck, CreditCard, LayoutDashboard, Award, Sparkles, KeyRound, CheckCircle2, Tablet } from 'lucide-react';
+import {
+  ShieldCheck,
+  Utensils,
+  Eye,
+  EyeOff,
+  Lock,
+  User as UserIcon,
+  ArrowRight,
+  ArrowLeft,
+  ChefHat,
+  LayoutDashboard,
+  KeyRound,
+  CheckCircle2,
+  Sparkles,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [identifier, setIdentifier] = useState('chef@aura.com');
-  const [password, setPassword] = useState('chef123');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Terminal Authorization State (Restricts 1-Click Fast Login to authorized restaurant devices)
+  // Terminal Key Login State (Primary Authentication)
   const [searchParams] = useSearchParams();
-  const terminalKeyParam = searchParams.get('terminalKey') || searchParams.get('stationKey');
+  const urlTerminalKey = searchParams.get('terminalKey') || searchParams.get('stationKey') || '';
+  
+  const [terminalPasscode, setTerminalPasscode] = useState<string>(urlTerminalKey);
+  const [isTerminalLoading, setIsTerminalLoading] = useState<string | null>(null); // 'OWNER' | 'CHEF' | null
+  const [terminalError, setTerminalError] = useState<string | null>(null);
 
-  const [isTerminalAuthorized, setIsTerminalAuthorized] = useState<boolean>(() => {
-    return localStorage.getItem('aura_terminal_authorized') === 'true';
-  });
-
-  useEffect(() => {
-    if (terminalKeyParam) {
-      authService.verifyTerminal(terminalKeyParam.trim().toUpperCase())
-        .then((res) => {
-          if (res?.authorized || res?.success) {
-            localStorage.setItem('aura_terminal_authorized', 'true');
-            setIsTerminalAuthorized(true);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [terminalKeyParam]);
-
-  const [showPasscodeForm, setShowPasscodeForm] = useState(false);
-  const [passcodeInput, setPasscodeInput] = useState('');
-  const [passcodeError, setPasscodeError] = useState<string | null>(null);
-  const [isVerifyingTerminal, setIsVerifyingTerminal] = useState(false);
-
-  const handleUnlockTerminal = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanInput = passcodeInput.trim();
-    if (!cleanInput) return;
-
-    setIsVerifyingTerminal(true);
-    setPasscodeError(null);
-
-    try {
-      const res = await authService.verifyTerminal(cleanInput);
-      if (res?.authorized || res?.success) {
-        localStorage.setItem('aura_terminal_authorized', 'true');
-        setIsTerminalAuthorized(true);
-        setShowPasscodeForm(false);
-        setPasscodeInput('');
-        setPasscodeError(null);
-      } else {
-        setPasscodeError('Invalid access code. Please contact your restaurant manager.');
-      }
-    } catch (err: any) {
-      setPasscodeError(err?.response?.data?.message || 'Invalid access code. Please contact your restaurant manager.');
-    } finally {
-      setIsVerifyingTerminal(false);
-    }
-  };
-
-  const handleLockTerminal = () => {
-    localStorage.removeItem('aura_terminal_authorized');
-    setIsTerminalAuthorized(false);
-    setShowPasscodeForm(false);
-  };
+  // Email/Password Login State (Secondary Option)
+  const [showEmailLogin, setShowEmailLogin] = useState(false);
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
 
-  const handleLoginSubmit = async (loginId: string, loginPass: string) => {
-    setIsLoading(true);
-    setError(null);
+  useEffect(() => {
+    // Purge any legacy stored terminal secrets from browser storage for security
+    localStorage.removeItem('aura_saved_terminal_key');
+    localStorage.removeItem('aura_terminal_authorized');
+
+    if (urlTerminalKey) {
+      setTerminalPasscode(urlTerminalKey);
+    }
+  }, [urlTerminalKey]);
+
+  // Primary: Terminal Key Fast Authentication (Owner / Chef)
+  const handleTerminalLogin = async (targetRole: 'OWNER' | 'CHEF') => {
+    const cleanKey = terminalPasscode.trim().toUpperCase();
+    if (!cleanKey) {
+      setTerminalError('Please enter the Restaurant Access Key to launch the terminal.');
+      return;
+    }
+
+    setIsTerminalLoading(targetRole);
+    setTerminalError(null);
 
     try {
-      const data = await authService.login({ identifier: loginId, password: loginPass });
+      const res = await authService.terminalLogin(cleanKey, targetRole);
+      const user = res.user;
+      const token = res.accessToken || res.token;
+
+      setAuth(user, token, '', res.refreshToken);
+
+      if (targetRole === 'CHEF') {
+        navigate('/kitchen');
+      } else {
+        navigate('/admin');
+      }
+    } catch (err: any) {
+      console.error('Terminal Login Error:', err);
+      setTerminalError(err.response?.data?.message || 'Invalid Restaurant Access Key. Please check with the restaurant owner.');
+    } finally {
+      setIsTerminalLoading(null);
+    }
+  };
+
+  // Secondary: Traditional Email & Password Login
+  const handleEmailLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identifier.trim() || !password) {
+      setEmailError('Please enter your staff email and password.');
+      return;
+    }
+
+    setIsEmailLoading(true);
+    setEmailError(null);
+
+    try {
+      const data = await authService.login({ identifier: identifier.trim(), password });
       const user = data.user;
       const token = data.accessToken || data.token;
 
       setAuth(user, token, '', data.refreshToken);
 
-      // Dynamic Role-Based Redirection
       const userRole = (user.role || '').toUpperCase();
-      switch (userRole) {
-        case 'CHEF':
-        case 'KITCHEN':
-          navigate('/kitchen');
-          break;
-        case 'RESTAURANT_OWNER':
-        case 'OWNER':
-        case 'ADMIN':
-        case 'MANAGER':
-        default:
-          navigate('/admin');
-          break;
+      if (userRole === 'CHEF') {
+        navigate('/kitchen');
+      } else {
+        navigate('/admin');
       }
     } catch (err: any) {
-      console.error('Login Error:', err);
-      setError(err.response?.data?.message || 'Invalid credentials. Please verify your staff email and password.');
+      console.error('Email Login Error:', err);
+      setEmailError(err.response?.data?.message || 'Invalid credentials. Please verify your staff email and password.');
     } finally {
-      setIsLoading(false);
+      setIsEmailLoading(false);
     }
   };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!identifier || !password) {
-      setError('Please enter your staff ID / email and password');
-      return;
-    }
-    handleLoginSubmit(identifier, password);
-  };
-
-  const quickRoles = [
-    { role: 'OWNER', title: 'Restaurant Admin / Owner', email: 'owner@aura.com', pass: 'owner123', badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40', icon: <LayoutDashboard className="w-4 h-4 text-indigo-400" /> },
-    { role: 'CHEF', title: 'Head Chef KDS', email: 'chef@aura.com', pass: 'chef123', badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40', icon: <ChefHat className="w-4 h-4 text-amber-400" /> },
-  ];
 
   return (
     <div className="page-theme-login min-h-screen bg-theme-bg text-theme-text flex relative overflow-hidden font-sans">
@@ -131,7 +124,7 @@ export const LoginPage: React.FC = () => {
         <span>Return to Website</span>
       </button>
 
-      {/* Left Panel: High-Impact Luxury Culinary Atmosphere */}
+      {/* Left Panel: Luxury Culinary Atmosphere */}
       <div className="hidden lg:flex flex-1 relative bg-[#0B0F17] border-r border-slate-800/80 p-12 flex-col justify-between overflow-hidden">
         <div
           className="absolute inset-0 w-full h-full bg-cover bg-center opacity-25"
@@ -174,180 +167,163 @@ export const LoginPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Right Panel: Staff Login & Role Fast Access */}
+      {/* Right Panel: Staff Login */}
       <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 lg:p-12 z-10 overflow-y-auto my-auto py-8 sm:py-12 w-full">
-        <div className="w-full max-w-md bg-[#0D121F]/90 backdrop-blur-2xl border border-slate-800/90 p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-6">
+        <div className="w-full max-w-md bg-[#0D121F]/90 backdrop-blur-2xl border border-slate-800/90 p-5 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl space-y-6">
 
           <div className="text-center space-y-1.5">
             <div className="inline-flex items-center justify-center px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 mr-1.5" />
               <span className="font-mono text-[10px] tracking-widest text-slate-300 font-bold uppercase">Staff Workspace Access</span>
             </div>
-            <h2 className="text-2xl font-black text-white">Staff Sign In</h2>
-            <p className="text-xs text-slate-400">Sign in to your operational terminal</p>
+            <h2 className="text-2xl font-black text-white">Station Sign In</h2>
+            <p className="text-xs text-slate-400">Launch your management console or kitchen KDS</p>
           </div>
 
-          {error && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium leading-relaxed">
-              {error}
+          {/* PRIMARY OPTION: Fast Terminal Key Access */}
+          <div className="p-4 sm:p-5 bg-[#070A12]/95 border border-slate-800/90 rounded-2xl space-y-4 shadow-inner">
+            <div className="flex items-center space-x-2 text-white">
+              <KeyRound className="w-4 h-4 text-amber-400 shrink-0" />
+              <h3 className="text-xs font-bold uppercase tracking-wider">Fast Access via Terminal Key</h3>
             </div>
-          )}
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Enter your Restaurant Access Key to sign in instantly without email or password.
+            </p>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Staff Email or ID</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <UserIcon className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="chef@aura.com"
-                  className="w-full pl-10 pr-4 py-3 bg-[#070A12] border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-3 bg-[#070A12] border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-slate-500 hover:text-white transition-colors cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-mono text-slate-300 uppercase tracking-wider">
+                Restaurant Access Key
+              </label>
+              <input
+                type="password"
+                value={terminalPasscode}
+                onChange={(e) => {
+                  setTerminalPasscode(e.target.value.toUpperCase());
+                  setTerminalError(null);
+                }}
+                placeholder="Enter Terminal Key"
+                className="w-full px-3.5 py-3 bg-[#0D121F] border border-slate-700 rounded-xl text-white text-xs font-mono tracking-widest focus:outline-none focus:border-amber-400 transition-colors uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-600"
+              />
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-900/30 flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
-            >
-              <span>{isLoading ? 'Authenticating...' : 'Sign In to Workspace'}</span>
-              {!isLoading && <ArrowRight className="w-4 h-4" />}
-            </button>
-          </form>
-
-          {/* Fast Staff Access Presets (Protected by Terminal Authorization) */}
-          <div className="pt-4 border-t border-slate-800/80 space-y-3">
-            {isTerminalAuthorized ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1.5 text-[11px] font-mono font-bold text-emerald-400">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Authorized Terminal (1-Click Active)</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLockTerminal}
-                    className="text-[10px] text-slate-400 hover:text-rose-400 font-mono underline cursor-pointer"
-                    title="Lock 1-Click Presets on this Device"
-                  >
-                    Lock Station
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {quickRoles.map((item) => (
-                    <button
-                      key={item.role}
-                      type="button"
-                      onClick={() => {
-                        setIdentifier(item.email);
-                        setPassword(item.pass);
-                        handleLoginSubmit(item.email, item.pass);
-                      }}
-                      className="p-2.5 bg-[#070A12]/90 border border-slate-800/90 hover:border-emerald-500/50 text-left rounded-xl transition-all flex items-center space-x-2 group cursor-pointer"
-                    >
-                      <div className="p-1.5 bg-slate-900 rounded-lg border border-slate-800 group-hover:border-emerald-500/40">
-                        {item.icon}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-xs text-white truncate">{item.title}</h4>
-                        <span className="text-[9px] text-slate-500 font-mono block truncate">{item.email}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="p-4 bg-[#070A12]/95 border border-slate-800/90 rounded-2xl text-center space-y-3 shadow-inner">
-                <div className="w-10 h-10 mx-auto rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-                  <Lock className="w-5 h-5 text-amber-400" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">1-Click Fast Login Locked</h4>
-                  <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                    1-Click role switching is secured to protect kitchen and POS stations from unauthorized guest access.
-                  </p>
-                </div>
-
-                {!showPasscodeForm ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowPasscodeForm(true)}
-                    className="w-full py-2.5 px-3 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-sm"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>Authorize Restaurant Terminal</span>
-                  </button>
-                ) : (
-                  <form onSubmit={handleUnlockTerminal} className="space-y-2 pt-1 text-left">
-                    <label className="block text-[10px] font-mono text-slate-300 uppercase tracking-wider">
-                      Restaurant Access Code
-                    </label>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="password"
-                        autoFocus
-                        value={passcodeInput}
-                        onChange={(e) => {
-                          setPasscodeInput(e.target.value);
-                          setPasscodeError(null);
-                        }}
-                        placeholder="Enter access code"
-                        className="flex-1 py-2 px-3 bg-[#0D121F] border border-slate-700 rounded-xl text-white text-xs font-mono focus:outline-none focus:border-amber-400"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isVerifyingTerminal}
-                        className="py-2 px-3.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-black text-xs rounded-xl transition-all cursor-pointer shrink-0"
-                      >
-                        {isVerifyingTerminal ? 'Checking...' : 'Unlock'}
-                      </button>
-                    </div>
-                    {passcodeError && (
-                      <p className="text-[10px] text-rose-400 font-mono">{passcodeError}</p>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShowPasscodeForm(false)}
-                      className="text-[10px] text-slate-500 hover:text-slate-400 underline font-mono cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </form>
-                )}
+            {terminalError && (
+              <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium leading-relaxed">
+                {terminalError}
               </div>
             )}
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                disabled={isTerminalLoading !== null}
+                onClick={() => handleTerminalLogin('OWNER')}
+                className="p-3 bg-gradient-to-b from-indigo-950/60 to-indigo-900/30 hover:from-indigo-900/80 hover:to-indigo-800/50 border border-indigo-500/40 hover:border-indigo-400 text-white rounded-xl transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer disabled:opacity-50 active:scale-95 group shadow-sm"
+              >
+                <div className="p-2 bg-indigo-500/20 text-indigo-300 rounded-lg group-hover:scale-110 transition-transform">
+                  <LayoutDashboard className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-xs text-center leading-tight">
+                  {isTerminalLoading === 'OWNER' ? 'Connecting...' : 'Owner / Admin'}
+                </span>
+                <span className="text-[9px] text-indigo-300/70 font-mono">Full Console</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={isTerminalLoading !== null}
+                onClick={() => handleTerminalLogin('CHEF')}
+                className="p-3 bg-gradient-to-b from-amber-950/60 to-amber-900/30 hover:from-amber-900/80 hover:to-amber-800/50 border border-amber-500/40 hover:border-amber-400 text-white rounded-xl transition-all flex flex-col items-center justify-center space-y-1.5 cursor-pointer disabled:opacity-50 active:scale-95 group shadow-sm"
+              >
+                <div className="p-2 bg-amber-500/20 text-amber-300 rounded-lg group-hover:scale-110 transition-transform">
+                  <ChefHat className="w-5 h-5" />
+                </div>
+                <span className="font-bold text-xs text-center leading-tight">
+                  {isTerminalLoading === 'CHEF' ? 'Connecting...' : 'Head Chef'}
+                </span>
+                <span className="text-[9px] text-amber-300/70 font-mono">Kitchen KDS</span>
+              </button>
+            </div>
           </div>
+
+          {/* SECONDARY OPTION: Email & Password Collapsible */}
+          <div className="border-t border-slate-800/80 pt-4 space-y-3">
+            <button
+              type="button"
+              onClick={() => setShowEmailLogin(!showEmailLogin)}
+              className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-white py-1 px-1 transition-colors cursor-pointer"
+            >
+              <span className="flex items-center space-x-1.5">
+                <Lock className="w-3.5 h-3.5 text-slate-500" />
+                <span>Or sign in with Email &amp; Password</span>
+              </span>
+              {showEmailLogin ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showEmailLogin && (
+              <form onSubmit={handleEmailLoginSubmit} className="space-y-3 pt-2">
+                {emailError && (
+                  <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs text-center font-medium leading-relaxed">
+                    {emailError}
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                    Staff Email or ID
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <UserIcon className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="e.g. staff@chaiaddaa.com"
+                      className="w-full pl-10 pr-4 py-2.5 bg-[#070A12] border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-10 py-2.5 bg-[#070A12] border border-slate-800 rounded-xl text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-2.5 text-slate-500 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isEmailLoading}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
+                >
+                  <span>{isEmailLoading ? 'Authenticating...' : 'Sign In with Password'}</span>
+                  {!isEmailLoading && <ArrowRight className="w-3.5 h-3.5" />}
+                </button>
+              </form>
+            )}
+          </div>
+
         </div>
       </div>
     </div>

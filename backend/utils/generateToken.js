@@ -17,11 +17,12 @@ const getRefreshSecret = () => {
 };
 
 /**
- * Generate short-lived Access Token (8h default)
+ * Generate short-lived Access Token (8h default) with cryptographically signed role
  */
-export const generateAccessToken = (userId) => {
+export const generateAccessToken = (userId, role = 'CUSTOMER') => {
+  const normalizedRole = String(role || 'CUSTOMER').toUpperCase();
   return jwt.sign(
-    { id: userId },
+    { id: userId, role: normalizedRole },
     getJwtSecret(),
     {
       expiresIn: process.env.ACCESS_TOKEN_EXPIRE || '8h',

@@ -26,5 +26,6 @@ frontend/.vite/
 
 # System & Log Files
 *.log
+*.tsbuildinfo
 .DS_Store
 Thumbs.db

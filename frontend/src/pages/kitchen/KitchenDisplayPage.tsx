@@ -42,7 +42,7 @@ interface KDSTicket {
   _id: string; // DB ID
   tableId: string;
   createdAt: string;
-  status: 'received' | 'preparing' | 'ready' | 'served' | 'completed';
+  status: 'received' | 'preparing' | 'ready' | 'completed';
   items: KDSItem[];
 }
 
@@ -127,7 +127,7 @@ export const KitchenDisplayPage: React.FC = () => {
       if (prevTicketsRef.current.length > 0) {
         const prevIds = new Set(prevTicketsRef.current.map((t) => t.id));
         const newlyArrived = newTicketList.filter(
-          (t) => !prevIds.has(t.id) && !isTicketReady(t) && t.status !== 'ready' && t.status !== 'served' && t.status !== 'completed'
+          (t) => !prevIds.has(t.id) && !isTicketReady(t) && t.status !== 'ready' && t.status !== 'completed'
         );
 
         if (newlyArrived.length > 0) {
@@ -205,12 +205,12 @@ export const KitchenDisplayPage: React.FC = () => {
     const elapsed = getElapsedSeconds(ticket.createdAt);
     return active.every((it) => {
       const cookSecs = getDishCookMinutes(it.name, it.preparationTimeMinutes) * 60;
-      return it.status === 'served' || it.isPrepared || elapsed >= cookSecs;
+      return it.isPrepared || elapsed >= cookSecs;
     });
   };
 
   const isTicketCompleted = (ticket: KDSTicket) => {
-    if (ticket.status === 'served' || ticket.status === 'completed' || ticket.status === 'ready') return true;
+    if (ticket.status === 'completed' || ticket.status === 'ready') return true;
     return isTicketReady(ticket);
   };
 
@@ -218,7 +218,7 @@ export const KitchenDisplayPage: React.FC = () => {
   useEffect(() => {
     tickets.forEach((ticket) => {
       if (isTicketReady(ticket)) {
-        if (ticket.status !== 'ready' && ticket.status !== 'served' && ticket.status !== 'completed' && !readySentRef.current.has(ticket.id)) {
+        if (ticket.status !== 'ready' && ticket.status !== 'completed' && !readySentRef.current.has(ticket.id)) {
           readySentRef.current.add(ticket.id);
           orderService.updateOrderStatus(ticket.id, 'ready')
             .then(() => {
@@ -454,7 +454,7 @@ export const KitchenDisplayPage: React.FC = () => {
                 const cookSecs = cookMins * 60;
                 const isCancelled = item.status === 'cancelled';
                 const isAutoDone = !isCancelled && elapsedSecs >= cookSecs;
-                const isDone = isTicketDone || isCancelled ? false : (item.status === 'served' || item.isPrepared || isAutoDone);
+                const isDone = isTicketDone || isCancelled ? false : (item.isPrepared || isAutoDone);
                 const finalDone = isCancelled ? false : (isTicketDone || isDone);
                 const remainingSecs = Math.max(0, cookSecs - elapsedSecs);
                 return {

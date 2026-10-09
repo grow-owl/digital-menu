@@ -33,6 +33,11 @@ export const authService = {
   async verifyTerminal(passcode: string): Promise<{ success: boolean; authorized: boolean }> {
     const response = await apiClient.post<ApiResponse<{ success: boolean; authorized: boolean }>>('/auth/verify-terminal', { passcode });
     return response.data as any;
+  },
+
+  async terminalLogin(passcode: string, role: 'OWNER' | 'CHEF'): Promise<{ user: User; accessToken: string; token: string; refreshToken?: string }> {
+    const response = await apiClient.post<ApiResponse<{ user: User; accessToken: string; token: string; refreshToken?: string }>>('/auth/terminal-login', { passcode, role });
+    return response.data.data;
   }
 };
 

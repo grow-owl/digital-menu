@@ -64,10 +64,12 @@ export const useAuthStore = create<AuthState>()(
             const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(atob(base64));
             
-            // Auto logout if token expired
+            // Auto logout ONLY if both access token is expired AND no refresh token exists
             if (payload.exp && Date.now() >= payload.exp * 1000) {
-              state.logout();
-              return;
+              if (!state.refreshToken) {
+                state.logout();
+                return;
+              }
             }
 
             // Anti-Tamper: Force role from cryptographically signed JWT payload
@@ -75,7 +77,9 @@ export const useAuthStore = create<AuthState>()(
               state.user.role = payload.role;
             }
           } catch {
-            state.logout();
+            if (!state.refreshToken) {
+              state.logout();
+            }
           }
         }
       },

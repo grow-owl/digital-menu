@@ -76,7 +76,7 @@ export const PASTA_DESSERTS_SPECIALS_ITEMS: MenuItem[] = [
     name: 'Alfredo Pasta (Chicken)',
     description: 'Rich & creamy parmesan sauce with herbs and seared herb chicken strips. Pure comfort in every bite.',
     price: 299,
-    imageUrl: 'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80',
     isAvailable: true,
     isVegetarian: false,
     isNonVeg: true,

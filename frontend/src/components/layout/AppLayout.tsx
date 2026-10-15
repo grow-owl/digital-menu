@@ -41,7 +41,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       sections.push({
         section: 'MANAGEMENT',
         items: [
-          { name: 'Admin', shortName: 'Admin', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
+          { name: 'Admin Dashboard', shortName: 'Admin', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
+          { name: 'Menu Items', shortName: 'Menu Items', path: '/admin/menu', icon: ChefHat, accent: 'text-amber-400', activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-300' },
           { name: 'QR Section', shortName: 'QR Section', path: '/admin/qr-generator', icon: QrCode, accent: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' },
         ]
       });
@@ -62,9 +63,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
 
     // Customer View Section
     sections.push({
-      section: 'Menu',
+      section: 'CUSTOMER VIEW',
       items: [
-        { name: 'Menu', shortName: 'Menu', path: '/menu', icon: Utensils, accent: 'text-[#0C831F]', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' }
+        { name: 'Live Digital Menu', shortName: 'Live Menu', path: '/menu', icon: Utensils, accent: 'text-[#0C831F]', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' }
       ]
     });
 
@@ -79,6 +80,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       return { 
         label: 'QR SECTION', 
         badgeColor: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+        themeClass: 'page-theme-admin'
+      };
+    }
+    if (location.pathname.startsWith('/admin/menu')) {
+      return { 
+        label: 'MENU MANAGER', 
+        badgeColor: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
         themeClass: 'page-theme-admin'
       };
     }
@@ -103,11 +111,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     };
   };
 
-  // Accurate active state matching so nested '/admin/qr-generator' doesn't highlight parent '/admin'
+  // Accurate active state matching so nested '/admin/qr-generator' and '/admin/menu' don't highlight parent '/admin'
   const isItemActive = (itemPath: string) => {
     const current = location.pathname;
     if (itemPath === '/admin') {
       return current === '/admin' || current === '/admin/' || current === '/admin/dashboard';
+    }
+    if (itemPath === '/admin/menu') {
+      return current === '/admin/menu' || current.startsWith('/admin/menu');
     }
     if (itemPath === '/admin/qr-generator') {
       return (

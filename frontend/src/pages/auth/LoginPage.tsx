@@ -37,16 +37,29 @@ export const LoginPage: React.FC = () => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
 
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const { user, isAuthenticated, setAuth } = useAuthStore();
   const navigate = useNavigate();
+  const [rememberStation, setRememberStation] = useState(true);
 
+  // Auto-redirect if staff is already logged in
   useEffect(() => {
-    // Purge any legacy stored terminal secrets from browser storage for security
-    localStorage.removeItem('aura_saved_terminal_key');
-    localStorage.removeItem('aura_terminal_authorized');
+    if (isAuthenticated && user) {
+      const role = (user.role || '').toUpperCase();
+      if (role === 'CHEF' || role === 'KITCHEN') {
+        navigate('/kitchen', { replace: true });
+      } else if (role === 'OWNER' || role === 'ADMIN' || role === 'MANAGER') {
+        navigate('/admin', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
+  // Load remembered station key on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem('aura_station_terminal_key');
     if (urlTerminalKey) {
       setTerminalPasscode(urlTerminalKey);
+    } else if (savedKey) {
+      setTerminalPasscode(savedKey);
     }
   }, [urlTerminalKey]);
 
@@ -67,6 +80,13 @@ export const LoginPage: React.FC = () => {
       const token = res.accessToken || res.token;
 
       setAuth(user, token, '', res.refreshToken);
+
+      // Persist terminal key if rememberStation is enabled
+      if (rememberStation) {
+        localStorage.setItem('aura_station_terminal_key', cleanKey);
+      } else {
+        localStorage.removeItem('aura_station_terminal_key');
+      }
 
       if (targetRole === 'CHEF') {
         navigate('/kitchen');
@@ -180,6 +200,28 @@ export const LoginPage: React.FC = () => {
             <p className="text-xs text-slate-400">Launch your management console or kitchen KDS</p>
           </div>
 
+          {isAuthenticated && user && (
+            <div className="p-3.5 bg-emerald-950/50 border border-emerald-500/50 rounded-2xl flex items-center justify-between text-xs animate-in fade-in">
+              <div>
+                <p className="text-emerald-400 font-bold flex items-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Already Signed In
+                </p>
+                <p className="text-[11px] text-slate-300">{user.name} ({user.role})</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const role = (user.role || '').toUpperCase();
+                  if (role === 'CHEF') navigate('/kitchen');
+                  else navigate('/admin');
+                }}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition-colors shadow cursor-pointer"
+              >
+                Launch Now
+              </button>
+            </div>
+          )}
+
           {/* PRIMARY OPTION: Fast Terminal Key Access */}
           <div className="p-4 sm:p-5 bg-[#070A12]/95 border border-slate-800/90 rounded-2xl space-y-4 shadow-inner">
             <div className="flex items-center space-x-2 text-white">
@@ -204,6 +246,24 @@ export const LoginPage: React.FC = () => {
                 placeholder="Enter Terminal Key"
                 className="w-full px-3.5 py-3 bg-[#0D121F] border border-slate-700 rounded-xl text-white text-xs font-mono tracking-widest focus:outline-none focus:border-amber-400 transition-colors uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-slate-600"
               />
+            </div>
+
+            {/* Remember Station Checkbox */}
+            <div className="flex items-center justify-between pt-0.5">
+              <label className="flex items-center space-x-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberStation}
+                  onChange={(e) => setRememberStation(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-700 bg-[#0D121F] text-amber-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-amber-500"
+                />
+                <span className="text-[11px] text-slate-300 font-medium">Remember this station / device</span>
+              </label>
+              {terminalPasscode && (
+                <span className="text-[10px] text-emerald-400 font-mono flex items-center">
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Key Saved
+                </span>
+              )}
             </div>
 
             {terminalError && (

@@ -65,8 +65,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
     return <Navigate to="/" replace />;
   }
 
-  // 3. Expiration verification
-  if (payload.exp && Date.now() >= payload.exp * 1000) {
+  // 3. Expiration verification: only log out if no refreshToken is available
+  const refreshToken = useAuthStore.getState().refreshToken;
+  if (payload.exp && Date.now() >= payload.exp * 1000 && !refreshToken) {
     setTimeout(() => {
       logout();
       localStorage.removeItem('aura-auth-storage');

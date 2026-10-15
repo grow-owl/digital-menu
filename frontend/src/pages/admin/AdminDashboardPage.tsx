@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { StatusBadge } from '../../components/ui/data-display/StatusBadge';
 import { adminService, AdminMetrics, ExecutiveAnalyticsData } from '../../services/admin.service';
 import { menuService } from '../../services/menu.service';
@@ -22,6 +22,8 @@ import { playWaiterCallChime } from '../../utils/audioAlert';
 export const AdminDashboardPage: React.FC = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // ─────────────────────────────────────────────────────────────
   // 4 PRIMARY ADMIN PARTS (As Requested by User)
@@ -30,7 +32,23 @@ export const AdminDashboardPage: React.FC = () => {
   // 3. MENU_MANAGEMENT: Adding, editing, and deleting items in the menu
   // 4. DAILY_AVAILABILITY: Instant one-tick today's availability / 86'd manager
   // ─────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'TABLE_BILLING' | 'BILLING_HISTORY' | 'MENU_MANAGEMENT' | 'DAILY_AVAILABILITY'>('TABLE_BILLING');
+  const getInitialTab = (): 'TABLE_BILLING' | 'BILLING_HISTORY' | 'MENU_MANAGEMENT' | 'DAILY_AVAILABILITY' => {
+    if (location.pathname.startsWith('/admin/menu')) return 'MENU_MANAGEMENT';
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'menu' || tabParam === 'items') return 'MENU_MANAGEMENT';
+    if (tabParam === 'availability' || tabParam === 'daily') return 'DAILY_AVAILABILITY';
+    if (tabParam === 'history' || tabParam === 'billing-history') return 'BILLING_HISTORY';
+    return 'TABLE_BILLING';
+  };
+
+  const [activeTab, setActiveTab] = useState<'TABLE_BILLING' | 'BILLING_HISTORY' | 'MENU_MANAGEMENT' | 'DAILY_AVAILABILITY'>(getInitialTab);
+
+  // Sync tab if user navigates to /admin/menu or changes URL
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/menu')) {
+      setActiveTab('MENU_MANAGEMENT');
+    }
+  }, [location.pathname]);
 
   // Shared Data States
   const [allTables, setAllTables] = useState<any[]>([]);
@@ -620,6 +638,15 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-between sm:justify-end overflow-x-auto pb-0.5 sm:pb-0">
             <button
+              onClick={() => navigate('/menu')}
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-[11px] sm:text-xs text-emerald-400 hover:text-emerald-300 rounded-xl font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm shrink-0"
+              title="Preview live customer digital menu"
+            >
+              <Utensils className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Live Digital Menu</span>
+            </button>
+
+            <button
               onClick={() => fetchData(true)}
               disabled={isLoading}
               className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-theme-bg hover:bg-theme-surface border border-theme-border text-[11px] sm:text-xs text-slate-200 rounded-xl font-bold transition-all flex items-center space-x-1 cursor-pointer shadow-sm shrink-0"
@@ -636,7 +663,10 @@ export const AdminDashboardPage: React.FC = () => {
         ───────────────────────────────────────────────────────────── */}
         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar touch-pan-x overscroll-x-contain pb-1.5 border-b border-theme-border pr-2">
           <button
-            onClick={() => setActiveTab('TABLE_BILLING')}
+            onClick={() => {
+              setActiveTab('TABLE_BILLING');
+              if (location.pathname.startsWith('/admin/menu')) navigate('/admin');
+            }}
             className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'TABLE_BILLING'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
@@ -648,7 +678,10 @@ export const AdminDashboardPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('BILLING_HISTORY')}
+            onClick={() => {
+              setActiveTab('BILLING_HISTORY');
+              if (location.pathname.startsWith('/admin/menu')) navigate('/admin');
+            }}
             className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'BILLING_HISTORY'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
@@ -672,7 +705,10 @@ export const AdminDashboardPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('DAILY_AVAILABILITY')}
+            onClick={() => {
+              setActiveTab('DAILY_AVAILABILITY');
+              if (location.pathname.startsWith('/admin/menu')) navigate('/admin');
+            }}
             className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-[11px] sm:text-xs whitespace-nowrap transition-all border flex items-center space-x-1.5 cursor-pointer shrink-0 ${
               activeTab === 'DAILY_AVAILABILITY'
                 ? 'bg-theme-primary text-black border-theme-primary shadow-lg font-black'
@@ -1207,6 +1243,29 @@ export const AdminDashboardPage: React.FC = () => {
                   </div>
                 );
               })}
+
+              {filteredMenuItems.length === 0 && (
+                <div className="col-span-full py-14 text-center bg-theme-surface border border-theme-border rounded-2xl p-6 space-y-3">
+                  <ChefHat className="w-12 h-12 text-slate-500 mx-auto" />
+                  <h3 className="font-serif text-lg font-bold text-white">No Menu Items Found</h3>
+                  <p className="text-xs text-theme-muted max-w-sm mx-auto">
+                    {menuSearchQuery || menuSelectedCategory
+                      ? 'No items matched your current search query or category filter.'
+                      : 'The menu recipe catalog is currently loading or has 0 items.'}
+                  </p>
+                  {(menuSearchQuery || menuSelectedCategory) && (
+                    <button
+                      onClick={() => {
+                        setMenuSearchQuery('');
+                        setMenuSelectedCategory('');
+                      }}
+                      className="px-4 py-2 bg-theme-bg hover:bg-theme-surface border border-theme-border text-xs text-theme-primary rounded-xl font-bold cursor-pointer transition-all"
+                    >
+                      Clear Search &amp; Category Filters
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1382,6 +1441,29 @@ export const AdminDashboardPage: React.FC = () => {
                   </div>
                 );
               })}
+
+              {filteredAvailabilityItems.length === 0 && (
+                <div className="col-span-full py-14 text-center bg-theme-surface border border-theme-border rounded-2xl p-6 space-y-3">
+                  <CheckCircle2 className="w-12 h-12 text-slate-500 mx-auto" />
+                  <h3 className="font-serif text-lg font-bold text-white">No Items Found</h3>
+                  <p className="text-xs text-theme-muted max-w-sm mx-auto">
+                    {availSearchQuery || availFilter !== 'ALL'
+                      ? 'No items matched your current availability filter or search.'
+                      : 'The daily availability manager is currently loading.'}
+                  </p>
+                  {(availSearchQuery || availFilter !== 'ALL') && (
+                    <button
+                      onClick={() => {
+                        setAvailSearchQuery('');
+                        setAvailFilter('ALL');
+                      }}
+                      className="px-4 py-2 bg-theme-bg hover:bg-theme-surface border border-theme-border text-xs text-theme-primary rounded-xl font-bold cursor-pointer transition-all"
+                    >
+                      Reset Availability Filters
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

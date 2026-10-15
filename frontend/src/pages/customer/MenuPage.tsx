@@ -23,13 +23,34 @@ import { useHeaderScrollCollapse } from '../../hooks/useHeaderScrollCollapse';
 export const MenuPage: React.FC = () => {
   const { tableId: paramTableId } = useParams<{ tableId?: string }>();
   const activeStoreTableId = useTableStore((state) => state.activeTableId);
-  const { user, isAuthenticated, token: authToken } = useAuthStore();
+  const { user, isAuthenticated, token: authToken, refreshToken } = useAuthStore();
 
   const isAdmin = React.useMemo(() => {
-    if (!isAuthenticated || !authToken || !user) return false;
-    const normalizedRole = String(user.role || '').toUpperCase();
-    return ['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER'].includes(normalizedRole);
-  }, [user, isAuthenticated, authToken]);
+    if (user && user.role) {
+      const normalizedRole = String(user.role).toUpperCase();
+      if (['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER', 'CHEF'].includes(normalizedRole)) {
+        return true;
+      }
+    }
+    if (authToken) {
+      try {
+        const parts = authToken.split('.');
+        if (parts.length === 3) {
+          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64));
+          const tokenRole = String(payload.role || '').toUpperCase();
+          if (['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER', 'CHEF'].includes(tokenRole)) {
+            return true;
+          }
+        }
+      } catch (e) {}
+    }
+    const savedTerminalKey = typeof window !== 'undefined' ? localStorage.getItem('aura_station_terminal_key') : null;
+    if (savedTerminalKey && (isAuthenticated || !!refreshToken || !!authToken)) {
+      return true;
+    }
+    return false;
+  }, [user, isAuthenticated, authToken, refreshToken]);
 
   const tableId = activeStoreTableId || paramTableId || (isAdmin ? 'Admin' : '10');
   const navigate = useNavigate();

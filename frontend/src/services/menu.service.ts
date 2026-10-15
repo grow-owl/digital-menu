@@ -48,36 +48,37 @@ export const menuService = {
       } else {
         // Backfill missing imageUrl from local static data so admin-created items
         // without images still display properly on the customer-facing menu
+        const SPECIAL_IMAGE_OVERRIDES: Record<string, string> = {
+          'paneer pops': '/images/menu/paneer_pops.jpg',
+          'cheesy pizza fingers': '/images/menu/cheesy_pizza_fingers.jpg',
+          'nutty taro boba': '/images/menu/nutty_taro_boba.jpg',
+          'extra cheese': 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=800&q=80',
+          'extra grilled chicken': 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80',
+          'ice cream add on': 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=800&q=80',
+          'garlic bread': 'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?auto=format&fit=crop&w=800&q=80',
+        };
+
+        // Ensure accurate, curated images from SILIGURI_MENU_ITEMS and overrides are prioritized
         items = items.map((dbItem) => {
           if (dbItem.id === 95 || String(dbItem.name || '').toLowerCase().includes('mineral water')) {
             return { ...dbItem, imageUrl: '/images/mineral_water_bottle.jpg' };
           }
-          if (!dbItem.imageUrl || dbItem.imageUrl.trim() === '') {
-            // Try matching by id first, then by normalized name
-            const localMatch = SILIGURI_MENU_ITEMS.find(
-              (local) =>
-                local.id === dbItem.id ||
-                local.name.toLowerCase().trim() === String(dbItem.name || '').toLowerCase().trim()
-            );
-            if (localMatch?.imageUrl) {
-              return { ...dbItem, imageUrl: localMatch.imageUrl };
+          const normName = String(dbItem.name || '').toLowerCase().trim();
+          for (const [key, url] of Object.entries(SPECIAL_IMAGE_OVERRIDES)) {
+            if (normName.includes(key)) {
+              return { ...dbItem, imageUrl: url };
             }
-            // Category-aware fallback images for common restaurant categories
-            const CATEGORY_FALLBACKS: Record<number, string> = {
-              1: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80', // Tea/Coffee
-              2: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=800&q=80', // Snacks
-              3: 'https://images.unsplash.com/photo-1525385133512-2f3bdd039054?auto=format&fit=crop&w=800&q=80', // Boba/Shakes
-              4: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80', // Pasta/Desserts
-              5: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80', // Salads
-              6: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?auto=format&fit=crop&w=800&q=80', // Coolers/Lassi
-              7: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80', // Burgers
-              8: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=800&q=80', // Noodles
-            };
-            return {
-              ...dbItem,
-              imageUrl: CATEGORY_FALLBACKS[dbItem.categoryId] ||
-                'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80'
-            };
+          }
+          // Match by id or normalized name
+          const localMatch = SILIGURI_MENU_ITEMS.find(
+            (local) =>
+              local.id === dbItem.id ||
+              local.name.toLowerCase().trim() === normName ||
+              normName.includes(local.name.toLowerCase().trim()) ||
+              local.name.toLowerCase().trim().includes(normName)
+          );
+          if (localMatch?.imageUrl) {
+            return { ...dbItem, imageUrl: localMatch.imageUrl };
           }
           return dbItem;
         });

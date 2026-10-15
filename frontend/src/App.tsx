@@ -42,11 +42,11 @@ export const App: React.FC = () => {
             <Route path="/table/:tableId/order/:orderId" element={<OrderTrackingPage />} />
           </Route>
 
-          {/* Staff Authentication — Hidden from public customers */}
+          {/* Staff Authentication — Dedicated Terminal & Station Login */}
           <Route path="/staff-access" element={<LoginPage />} />
           <Route path="/staff-portal" element={<Navigate to="/staff-access" replace />} />
-          <Route path="/login" element={<Navigate to="/" replace />} />
-          <Route path="/staff" element={<Navigate to="/" replace />} />
+          <Route path="/login" element={<Navigate to="/staff-access" replace />} />
+          <Route path="/staff" element={<Navigate to="/staff-access" replace />} />
 
           {/* Kitchen KDS Routes */}
           <Route element={<ProtectedRoute allowedRoles={['CHEF', 'OWNER']} />}>
@@ -60,6 +60,7 @@ export const App: React.FC = () => {
           <Route element={<ProtectedRoute allowedRoles={['OWNER']} />}>
             <Route path="/admin" element={<AppLayout><AdminDashboardPage /></AppLayout>} />
             <Route path="/admin/dashboard" element={<AppLayout><AdminDashboardPage /></AppLayout>} />
+            <Route path="/admin/menu" element={<AppLayout><AdminDashboardPage /></AppLayout>} />
             <Route path="/admin/qr-generator" element={<AppLayout><QrGeneratorPage /></AppLayout>} />
             <Route path="/admin/qr-stands" element={<AppLayout><QrGeneratorPage /></AppLayout>} />
             <Route path="/qr-generator" element={<AppLayout><QrGeneratorPage /></AppLayout>} />

@@ -29,17 +29,44 @@ export const TableSessionRoute: React.FC = () => {
   const navigate = useNavigate();
 
   const { activeTableId, activeSessionId, qrToken, isVerified, verifiedAt, setActiveSession, clearSession } = useTableStore();
-  const { user, isAuthenticated, token: authToken } = useAuthStore();
+  const { user, isAuthenticated, token: authToken, refreshToken } = useAuthStore();
 
   const [isValidating, setIsValidating] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  // Strict Admin verification — ONLY genuinely authenticated Admins/Owners with a valid, non-expired JWT
+  // Robust Admin & Staff verification — allows authorized managers/owners to inspect menu freely
   const isAdmin = React.useMemo(() => {
-    if (!isAuthenticated || !authToken || isTokenExpired(authToken) || !user) return false;
-    const normalizedRole = String(user.role || '').toUpperCase();
-    return ['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER'].includes(normalizedRole);
-  }, [user, isAuthenticated, authToken]);
+    // 1. Direct role check on active user session
+    if (user && user.role) {
+      const normalizedRole = String(user.role).toUpperCase();
+      if (['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER', 'CHEF'].includes(normalizedRole)) {
+        return true;
+      }
+    }
+
+    // 2. Decode role from JWT token payload
+    if (authToken) {
+      try {
+        const parts = authToken.split('.');
+        if (parts.length === 3) {
+          const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(atob(base64));
+          const tokenRole = String(payload.role || '').toUpperCase();
+          if (['OWNER', 'ADMIN', 'MANAGER', 'RESTAURANT_OWNER', 'CHEF'].includes(tokenRole)) {
+            return true;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Saved station terminal key authentication
+    const savedTerminalKey = typeof window !== 'undefined' ? localStorage.getItem('aura_station_terminal_key') : null;
+    if (savedTerminalKey && (isAuthenticated || !!refreshToken || !!authToken)) {
+      return true;
+    }
+
+    return false;
+  }, [user, isAuthenticated, authToken, refreshToken]);
 
   // Check if the current session is still valid (not expired) OR authorized Admin preview
   const isSessionValid = React.useMemo(() => {

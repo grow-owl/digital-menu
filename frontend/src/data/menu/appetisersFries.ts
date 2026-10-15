@@ -132,7 +132,7 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     name: 'Paneer Chilly (8pcs)',
     description: 'Spicy, tangy & full of Indo-Chinese flavours. Crisp-fried cottage cheese tossed with bell peppers, onions and chilli garlic sauce.',
     price: 250,
-    imageUrl: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/menu/paneer_chilly.jpg',
     isAvailable: true,
     isVegetarian: true,
     isGlutenFree: false,

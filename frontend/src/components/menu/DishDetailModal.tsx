@@ -191,12 +191,12 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
         {/* Hero Image Box */}
         <div className="relative h-44 sm:h-56 w-full shrink-0 bg-slate-100 overflow-hidden">
           <img
-            src={item.imageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80'}
+            src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}
             alt={item.name}
             loading="lazy"
             decoding="async"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
+              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
             }}
             className="w-full h-full object-cover"
           />

@@ -500,7 +500,7 @@ export const AdminDashboardPage: React.FC = () => {
       setDishDescription('');
       setDishPrice(450);
       setDishCategoryId(categories[0]?.id || 1);
-      setDishImageUrl('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80');
+      setDishImageUrl('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80');
       setDishSpiceLevel(0);
       setDishIsVeg(true);
       setDishIsNonVeg(false);
@@ -526,7 +526,7 @@ export const AdminDashboardPage: React.FC = () => {
       description: dishDescription.trim() || 'Artisanal dish crafted by Siliguri Chai Addaa.',
       price: Number(dishPrice),
       categoryId: Number(dishCategoryId),
-      imageUrl: dishImageUrl.trim() || 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
+      imageUrl: dishImageUrl.trim() || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
       spiceLevel: Number(dishSpiceLevel),
       isVegetarian: dishIsVeg,
       isNonVeg: dishIsNonVeg,
@@ -1179,7 +1179,7 @@ export const AdminDashboardPage: React.FC = () => {
                           alt={dish.name}
                           className="w-16 h-16 rounded-xl object-cover border border-theme-border shadow-sm shrink-0"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=300&q=80';
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80';
                           }}
                         />
                         <div className="flex-1 min-w-0">
@@ -1388,7 +1388,7 @@ export const AdminDashboardPage: React.FC = () => {
                         alt={dish.name}
                         className="w-12 h-12 rounded-xl object-cover border border-theme-border shrink-0"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=300&q=80';
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80';
                         }}
                       />
                       <div className="min-w-0 flex-1">

@@ -49,13 +49,45 @@ export const menuService = {
         // Backfill missing imageUrl from local static data so admin-created items
         // without images still display properly on the customer-facing menu
         const SPECIAL_IMAGE_OVERRIDES: Record<string, string> = {
+          // Add-ons & Extras
           'paneer pops': '/images/menu/paneer_pops.jpg',
           'cheesy pizza fingers': '/images/menu/cheesy_pizza_fingers.jpg',
           'nutty taro boba': '/images/menu/nutty_taro_boba.jpg',
           'extra cheese': 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=800&q=80',
           'extra grilled chicken': 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80',
-          'ice cream add on': 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=800&q=80',
+          'ice cream add on': '/images/menu/ice_cream_1scoop.jpg',
           'garlic bread': 'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?auto=format&fit=crop&w=800&q=80',
+
+          // Artisanal Pastas
+          'arrabbiata pasta (veg)': '/images/menu/arrabbiata_pasta_veg.jpg',
+          'arrabbiata pasta (chicken)': '/images/menu/arrabbiata_pasta_chicken.jpg',
+          'arrabbiata pasta': '/images/menu/arrabbiata_pasta_veg.jpg',
+
+          // Frappes
+          'strawberry frappe': '/images/menu/strawberry_frappe.jpg',
+          'blueberry frappe': '/images/menu/blueberry_frappe.jpg',
+          'mango frappe': '/images/menu/mango_frappe.jpg',
+          'biscoff frappe': '/images/menu/biscoff_frappe.jpg',
+          'caramel frappe': '/images/menu/caramel_frappe.jpg',
+          'coffee mocha frappe': '/images/menu/coffee_mocha_frappe.jpg',
+          'oreo frappe': 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
+          'matcha frappe': 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?auto=format&fit=crop&w=800&q=80',
+
+          // Traditional Lassi & Coolers
+          'sweet lassi': '/images/menu/sweet_lassi.jpg',
+          'strawberry lassi': '/images/menu/strawberry_lassi.jpg',
+          'banana lassi': '/images/menu/banana_lassi.jpg',
+          'mango lassi': 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=800&q=80',
+          'pineapple lassi': 'https://images.unsplash.com/photo-1546173159-315724a31696?auto=format&fit=crop&w=800&q=80',
+          'kala khatta': '/images/menu/kala_khatta.jpg',
+          'kala khatta mocktail': '/images/menu/kala_khatta.jpg',
+
+          // Milkshakes & Appetisers
+          'banana honey cream shake': '/images/menu/banana_honey_shake.jpg',
+          'strawberry delight shake': '/images/menu/strawberry_delight_shake.jpg',
+          'kitkat crunch shake': 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
+          'paneer chilly': '/images/menu/paneer_chilly.jpg',
+          'blueberry boba tea': '/images/menu/blueberry_frappe.jpg',
         };
 
         // Ensure accurate, curated images from SILIGURI_MENU_ITEMS and overrides are prioritized

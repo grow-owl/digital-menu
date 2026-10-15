@@ -39,7 +39,7 @@ const UPDATES = [
   // Items from latest screenshots:
   // 1. Screenshot 1 Items:
   { id: 804, name: 'Potato Cheese Bites', imageUrl: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80' },
-  { id: 805, name: 'Paneer Chilly (8 pcs)', imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80' },
+  { id: 805, name: 'Paneer Chilly (8 pcs)', imageUrl: '/images/menu/paneer_chilly.jpg' },
   { id: 806, name: 'Chicken Pakora (8 pcs)', imageUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80' },
   { id: 807, name: 'Chicken Chilly (8 pcs)', imageUrl: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80' },
   { id: 808, name: 'Chicken Wings (5 pcs)', imageUrl: 'https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=800&q=80' },
@@ -58,31 +58,37 @@ const UPDATES = [
   { id: 1102, name: 'Masala Coke / Sprite', imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=800&q=80' },
   { id: 1104, name: 'Red Bull Energy Drink', imageUrl: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=800&q=80' },
 
-  // 3. Screenshot 3 Items:
+  // 3. Screenshot 3 & 5 Items (Coolers & Traditional Lassi):
   { id: 1105, name: 'Green Mint Cooler', imageUrl: 'https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=800&q=80' },
   { id: 1107, name: 'Blue Lagoon', imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80' },
   { id: 1108, name: 'Green Apple Mojito', imageUrl: 'https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=800&q=80' },
-  { id: 1110, name: 'Kala Khatta Mocktail', imageUrl: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=80' },
-  { id: 1201, name: 'Sweet Lassi', imageUrl: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80' },
+  { id: 1110, name: 'Kala Khatta Mocktail', imageUrl: '/images/menu/kala_khatta.jpg' },
+  { id: 1201, name: 'Sweet Lassi', imageUrl: '/images/menu/sweet_lassi.jpg' },
   { id: 1202, name: 'Mango Lassi', imageUrl: 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=800&q=80' },
   { id: 1203, name: 'Pineapple Lassi', imageUrl: 'https://images.unsplash.com/photo-1546173159-315724a31696?auto=format&fit=crop&w=800&q=80' },
-  { id: 1204, name: 'Strawberry Lassi', imageUrl: 'https://images.unsplash.com/photo-1553909489-cd47e0907980?auto=format&fit=crop&w=800&q=80' },
+  { id: 1204, name: 'Strawberry Lassi', imageUrl: '/images/menu/strawberry_lassi.jpg' },
+  { id: 1205, name: 'Banana Lassi', imageUrl: '/images/menu/banana_lassi.jpg' },
 
-  // 4. Screenshot 4 Items:
-  { id: 1205, name: 'Banana Lassi', imageUrl: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=80' },
-  { id: 1302, name: 'Biscoff Frappe', imageUrl: 'https://images.unsplash.com/photo-1581636625402-29b2a704ef13?auto=format&fit=crop&w=800&q=80' },
-  { id: 1303, name: 'Caramel Frappe', imageUrl: 'https://images.unsplash.com/photo-1577968897966-3d4325b36b61?auto=format&fit=crop&w=800&q=80' },
-  { id: 1304, name: 'Coffee Mocha Frappe', imageUrl: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80' },
+  // 4. Shakes & Frappes:
+  { id: 302, name: 'Banana Honey Cream Shake', imageUrl: '/images/menu/banana_honey_shake.jpg' },
+  { id: 308, name: 'Strawberry Delight Shake', imageUrl: '/images/menu/strawberry_delight_shake.jpg' },
+  { id: 403, name: 'Blueberry Boba Tea', imageUrl: '/images/menu/blueberry_frappe.jpg' },
+  { id: 1301, name: 'Oreo Frappe', imageUrl: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80' },
+  { id: 1302, name: 'Biscoff Frappe', imageUrl: '/images/menu/biscoff_frappe.jpg' },
+  { id: 1303, name: 'Caramel Frappe', imageUrl: '/images/menu/caramel_frappe.jpg' },
+  { id: 1304, name: 'Coffee Mocha Frappe', imageUrl: '/images/menu/coffee_mocha_frappe.jpg' },
   { id: 1305, name: 'Matcha Frappe', imageUrl: 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?auto=format&fit=crop&w=800&q=80' },
-  { id: 1306, name: 'Strawberry Frappe', imageUrl: 'https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=800&q=80' },
-  { id: 1307, name: 'Blueberry Frappe', imageUrl: 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?auto=format&fit=crop&w=800&q=80' },
+  { id: 1306, name: 'Strawberry Frappe', imageUrl: '/images/menu/strawberry_frappe.jpg' },
+  { id: 1307, name: 'Blueberry Frappe', imageUrl: '/images/menu/blueberry_frappe.jpg' },
+  { id: 1308, name: 'Mango Frappe', imageUrl: '/images/menu/mango_frappe.jpg' },
 
-  // 5. Screenshot 5 Items:
-  { id: 1401, name: 'Arrabbiata Pasta (Veg)', imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281744?auto=format&fit=crop&w=800&q=80' },
+  // 5. Pastas & Add-ons:
+  { id: 1401, name: 'Arrabbiata Pasta (Veg)', imageUrl: '/images/menu/arrabbiata_pasta_veg.jpg' },
+  { id: 1402, name: 'Arrabbiata Pasta (Chicken)', imageUrl: '/images/menu/arrabbiata_pasta_chicken.jpg' },
   { id: 1404, name: 'Alfredo Pasta (Chicken)', imageUrl: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=800&q=80' },
   { id: 9902, name: 'Extra Cheese Topping', imageUrl: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=800&q=80' },
   { id: 9903, name: 'Extra Grilled Chicken', imageUrl: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80' },
-  { id: 9904, name: 'Ice Cream Add On (1 scoop)', imageUrl: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=800&q=80' },
+  { id: 9904, name: 'Ice Cream Add On (1 scoop)', imageUrl: '/images/menu/ice_cream_1scoop.jpg' },
 ];
 
 async function updateDb() {

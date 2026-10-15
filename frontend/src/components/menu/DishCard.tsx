@@ -38,7 +38,7 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
           <div className="absolute inset-0 bg-slate-200/70 animate-pulse" />
         )}
         <img
-          src={item.imageUrl || 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80'}
+          src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}
           alt={item.name}
           loading="lazy"
           decoding="async"
@@ -48,7 +48,7 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
             if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
               target.src = '/images/mineral_water_bottle.jpg';
             } else {
-              target.src = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
+              target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
             }
             setImageLoaded(true);
           }}

@@ -38,7 +38,14 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
           <div className="absolute inset-0 bg-slate-200/70 animate-pulse" />
         )}
         <img
-          src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}
+          src={
+            item.imageUrl ||
+            ((item.categoryName || '').toLowerCase().includes('tea') || (item.categoryName || '').toLowerCase().includes('coffee')
+              ? 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80'
+              : (item.categoryName || '').toLowerCase().includes('lassi') || (item.categoryName || '').toLowerCase().includes('cooler')
+              ? '/images/dishes/mango_lassi.jpg'
+              : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80')
+          }
           alt={item.name}
           loading="lazy"
           decoding="async"
@@ -48,7 +55,18 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
             if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
               target.src = '/images/mineral_water_bottle.jpg';
             } else {
-              target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+              const cat = (item.categoryName || '').toLowerCase();
+              if (cat.includes('tea') || cat.includes('chai') || cat.includes('coffee')) {
+                target.src = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80';
+              } else if (cat.includes('lassi') || cat.includes('cooler') || cat.includes('shake') || cat.includes('boba')) {
+                target.src = '/images/dishes/mango_lassi.jpg';
+              } else if (cat.includes('pasta')) {
+                target.src = '/images/dishes/arrabbiata_pasta.jpg';
+              } else if (cat.includes('sandwich') || cat.includes('burger')) {
+                target.src = '/images/dishes/veg_corn_cheese_sandwich.jpg';
+              } else {
+                target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+              }
             }
             setImageLoaded(true);
           }}

@@ -26,7 +26,7 @@ export const BURGERS_SANDWICHES_ITEMS: MenuItem[] = [
     name: 'Veg Cheese Corn Sandwich',
     description: 'Cheesy corn, a comforting classic. Stuffed with sweet golden corn and melted mozzarella, served with fries.',
     price: 120,
-    imageUrl: 'https://images.unsplash.com/photo-1554433607-66b5efe9d304?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/dishes/veg_corn_cheese_sandwich.jpg',
     isAvailable: true,
     isVegetarian: true,
     isGlutenFree: false,

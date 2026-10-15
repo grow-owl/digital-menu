@@ -191,12 +191,35 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
         {/* Hero Image Box */}
         <div className="relative h-44 sm:h-56 w-full shrink-0 bg-slate-100 overflow-hidden">
           <img
-            src={item.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80'}
+            src={
+              item.imageUrl ||
+              ((item.categoryName || '').toLowerCase().includes('tea') || (item.categoryName || '').toLowerCase().includes('coffee')
+                ? 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80'
+                : (item.categoryName || '').toLowerCase().includes('lassi') || (item.categoryName || '').toLowerCase().includes('cooler')
+                ? '/images/dishes/mango_lassi.jpg'
+                : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80')
+            }
             alt={item.name}
             loading="lazy"
             decoding="async"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+              const target = e.target as HTMLImageElement;
+              if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
+                target.src = '/images/mineral_water_bottle.jpg';
+              } else {
+                const cat = (item.categoryName || '').toLowerCase();
+                if (cat.includes('tea') || cat.includes('chai') || cat.includes('coffee')) {
+                  target.src = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80';
+                } else if (cat.includes('lassi') || cat.includes('cooler') || cat.includes('shake') || cat.includes('boba')) {
+                  target.src = '/images/dishes/mango_lassi.jpg';
+                } else if (cat.includes('pasta')) {
+                  target.src = '/images/dishes/arrabbiata_pasta.jpg';
+                } else if (cat.includes('sandwich') || cat.includes('burger')) {
+                  target.src = '/images/dishes/veg_corn_cheese_sandwich.jpg';
+                } else {
+                  target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+                }
+              }
             }}
             className="w-full h-full object-cover"
           />

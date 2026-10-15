@@ -169,7 +169,7 @@ export const APPETISERS_FRIES_ITEMS: MenuItem[] = [
     name: 'Chicken Chilly (8pcs)',
     description: 'Spicy, saucy & absolutely addictive. Golden chicken chunks tossed in a fiery dark soya, garlic, and fresh green chilli glaze.',
     price: 250,
-    imageUrl: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/dishes/chicken_chilly.jpg',
     isAvailable: true,
     isVegetarian: false,
     isNonVeg: true,

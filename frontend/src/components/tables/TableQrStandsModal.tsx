@@ -621,9 +621,6 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                           Active
                         </span>
                       </div>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        Cap: {table.capacity || 4} Guests
-                      </span>
                     </div>
 
                     {/* Authentic Stand Card Preview matching the physical template */}

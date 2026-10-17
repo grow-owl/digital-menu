@@ -1081,3 +1081,37 @@ export const payTableBill = asyncHandler(async (req, res) => {
     data: { invoiceNumber, paymentMethod, paidAt: new Date() }
   });
 });
+
+// @desc    Permanently delete order record
+// @route   DELETE /api/orders/:orderId
+// @access  Protected (Owner / Admin)
+export const deleteOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+
+  const queryConditions = [
+    { orderId: String(orderId) },
+    { invoiceNumber: String(orderId) }
+  ];
+  if (mongoose.Types.ObjectId.isValid(orderId)) {
+    queryConditions.push({ _id: new mongoose.Types.ObjectId(orderId) });
+  }
+
+  const order = await Order.findOne({ $or: queryConditions });
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: `Order record '${orderId}' not found.`
+    });
+  }
+
+  const invoiceOrId = order.invoiceNumber || order.orderId;
+  await Order.deleteOne({ _id: order._id });
+
+  res.json({
+    success: true,
+    message: `Bill / Order #${invoiceOrId} permanently deleted from database.`,
+    data: { id: order._id, orderId: order.orderId, invoiceNumber: order.invoiceNumber }
+  });
+});
+

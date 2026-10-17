@@ -15,6 +15,7 @@ import {
   cancelOrder,
   getOrderById,
   payTableBill,
+  deleteOrder,
 } from '../controllers/orderController.js';
 
 import { protect, requireRole, optionalAuth } from '../middleware/authMiddleware.js';
@@ -43,7 +44,8 @@ router.put('/:orderId/items/check', protect, requireRole('owner', 'chef'), toggl
 router.put('/:orderId/items/:itemIndex/cancel', optionalAuth, cancelOrderItem);
 router.put('/:orderId/cancel', optionalAuth, cancelOrder);
 
-// Owner financial operations
+// Owner operations: permanent delete and refunds
+router.delete('/:orderId', protect, requireRole('owner'), deleteOrder);
 router.post('/:orderId/refund', protect, requireRole('owner'), refundOrder);
 router.get('/refunds/all', protect, requireRole('owner'), getRefunds);
 router.post('/pay-table', optionalAuth, payTableBill);

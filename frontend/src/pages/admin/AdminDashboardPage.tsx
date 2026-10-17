@@ -9,13 +9,13 @@ import { TableQrStandsModal } from '../../components/tables/TableQrStandsModal';
 import { MenuItem, Category } from '../../types/menu.types';
 import { useToast } from '../../components/feedback/ToastContainer';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
-import { OrderRefundModal } from '../../components/orders/OrderRefundModal';
+import { apiClient } from '../../services/api-client';
 import {
   DollarSign, ShoppingBag, LayoutGrid, ChefHat, TrendingUp, RefreshCw, Layers, ShieldCheck,
   Calendar, Users, AlertTriangle, Sparkles, Clock, Award, Utensils, Receipt, CheckCircle2,
   Plus, Edit, Trash2, Flame, Search, Filter, X, Check, Eye, CreditCard, Printer, RotateCcw, QrCode,
   Download, ArrowUpRight, BarChart3, Bell, CheckSquare, Square, ToggleLeft, ToggleRight, Smartphone,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, UploadCloud, ImageIcon, Loader2
 } from 'lucide-react';
 import { playWaiterCallChime } from '../../utils/audioAlert';
 
@@ -87,8 +87,6 @@ export const AdminDashboardPage: React.FC = () => {
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [historyPaymentFilter, setHistoryPaymentFilter] = useState<'ALL' | 'UPI' | 'CARD' | 'CASH'>('ALL');
   const [viewBillOrder, setViewBillOrder] = useState<any | null>(null);
-  const [refundTargetOrder, setRefundTargetOrder] = useState<any | null>(null);
-  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
 
   // ─────────────────────────────────────────────────────────────
   // PART 3: MENU MANAGEMENT STATE (Add / Edit / Delete)
@@ -102,6 +100,10 @@ export const AdminDashboardPage: React.FC = () => {
   const [dishPrice, setDishPrice] = useState<number | string>(450);
   const [dishCategoryId, setDishCategoryId] = useState<number>(1);
   const [dishImageUrl, setDishImageUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+  const [showManualUrl, setShowManualUrl] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [dishSpiceLevel, setDishSpiceLevel] = useState<number>(0);
   const [dishIsVeg, setDishIsVeg] = useState(true);
   const [dishIsNonVeg, setDishIsNonVeg] = useState(false);
@@ -135,7 +137,6 @@ export const AdminDashboardPage: React.FC = () => {
     isCategoryModalOpen ||
     viewBillOrder !== null ||
     selectedTableForBilling !== null ||
-    isRefundModalOpen ||
     activeServiceCall !== null
   );
 
@@ -449,10 +450,20 @@ export const AdminDashboardPage: React.FC = () => {
 
   const totalHistoryPages = Math.max(1, Math.ceil(filteredBillingHistory.length / historyPageSize));
 
+  // Auto-switch to previous page when items on the current page are deleted (e.g. from page 3 to 2)
+  useEffect(() => {
+    if (historyPage > totalHistoryPages) {
+      setHistoryPage(totalHistoryPages);
+    }
+  }, [historyPage, totalHistoryPages]);
+
+  // Derived safe page strictly clamped between 1 and totalHistoryPages
+  const currentHistoryPage = Math.min(Math.max(1, historyPage), totalHistoryPages);
+
   const paginatedBillingHistory = useMemo(() => {
-    const start = (historyPage - 1) * historyPageSize;
+    const start = (currentHistoryPage - 1) * historyPageSize;
     return filteredBillingHistory.slice(start, start + historyPageSize);
-  }, [filteredBillingHistory, historyPage, historyPageSize]);
+  }, [filteredBillingHistory, currentHistoryPage, historyPageSize]);
 
   // Export Billing CSV
   const handleExportBillingCSV = () => {
@@ -472,9 +483,100 @@ export const AdminDashboardPage: React.FC = () => {
     showToast('Billing History CSV downloaded', 'success');
   };
 
+  // Permanently delete a bill / order record from database
+  const handleDeleteBillingOrder = async (ord: any) => {
+    const invoiceId = ord.invoiceNumber || ord.orderId || ord._id;
+    const isConfirmed = window.confirm(
+      `Are you sure you want to permanently delete bill #${invoiceId}?\n\nThis will completely remove this order record from the database.`
+    );
+    if (!isConfirmed) return;
+
+    try {
+      await orderService.deleteOrder(ord._id || ord.orderId);
+      showToast(`Bill #${invoiceId} permanently deleted!`, 'success');
+
+      // Remove from settled and refunded orders in local state
+      setRealSettledOrders((prev) => {
+        const updated = prev.filter((o) => (o._id || o.orderId) !== (ord._id || ord.orderId));
+        const newTotalPages = Math.max(1, Math.ceil(updated.length / historyPageSize));
+        setHistoryPage((curr) => (curr > newTotalPages ? newTotalPages : curr));
+        return updated;
+      });
+      setRealRefundedOrders((prev) => prev.filter((o) => (o._id || o.orderId) !== (ord._id || ord.orderId)));
+
+      if (viewBillOrder && (viewBillOrder._id || viewBillOrder.orderId) === (ord._id || ord.orderId)) {
+        setViewBillOrder(null);
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete bill record', 'error');
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────
   // PART 3: DISH ADD / EDIT / DELETE ACTIONS
   // ─────────────────────────────────────────────────────────────
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file (PNG, JPG, WEBP, GIF)', 'error');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('Image file size exceeds 15MB limit', 'error');
+      return;
+    }
+
+    const localUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(localUrl);
+    setIsUploadingImage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await apiClient.post('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data?.success && response.data?.url) {
+        setDishImageUrl(response.data.url);
+        showToast('Dish image uploaded & link generated successfully!', 'success');
+      } else {
+        throw new Error(response.data?.message || 'Upload failed');
+      }
+    } catch (err: any) {
+      console.warn('Multipart upload failed, attempting base64 fallback...', err);
+      try {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64Data = reader.result as string;
+          try {
+            const fallbackRes = await apiClient.post('/upload', { image: base64Data, filename: file.name });
+            if (fallbackRes.data?.success && fallbackRes.data?.url) {
+              setDishImageUrl(fallbackRes.data.url);
+              showToast('Dish image uploaded successfully!', 'success');
+            } else {
+              setDishImageUrl(base64Data);
+              showToast('Dish image attached!', 'success');
+            }
+          } catch {
+            setDishImageUrl(base64Data);
+            showToast('Dish image attached!', 'info');
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch {
+        showToast('Failed to upload image. Please try again.', 'error');
+      }
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleOpenDishModal = (dish?: MenuItem) => {
     if (dish) {
       setEditingDish(dish);
@@ -483,6 +585,8 @@ export const AdminDashboardPage: React.FC = () => {
       setDishPrice(dish.price);
       setDishCategoryId(dish.categoryId || 1);
       setDishImageUrl(dish.imageUrl || '');
+      setImagePreviewUrl(dish.imageUrl || '');
+      setShowManualUrl(false);
       setDishSpiceLevel(dish.spiceLevel || 0);
       setDishIsVeg(dish.isVegetarian || false);
       setDishIsNonVeg(dish.isNonVeg || false);
@@ -496,13 +600,18 @@ export const AdminDashboardPage: React.FC = () => {
       setDishDescription('');
       setDishPrice(450);
       setDishCategoryId(categories[0]?.id || 1);
-      setDishImageUrl('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80');
+      setDishImageUrl('');
+      setImagePreviewUrl('');
+      setShowManualUrl(false);
       setDishIsVeg(true);
       setDishIsNonVeg(false);
       setDishIsGlutenFree(false);
       setDishIsJain(false);
       setDishIsAvailable(true);
       setDishPrepTime(15);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
     setIsDishModalOpen(true);
   };
@@ -514,12 +623,14 @@ export const AdminDashboardPage: React.FC = () => {
       return;
     }
 
+    const finalImageUrl = dishImageUrl.trim() || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+
     const payload: Partial<MenuItem> = {
       name: dishName.trim(),
       description: dishDescription.trim() || 'Artisanal dish crafted by Siliguri Chai Addaa.',
       price: Number(dishPrice),
       categoryId: Number(dishCategoryId),
-      imageUrl: dishImageUrl.trim() || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80',
+      imageUrl: finalImageUrl,
       spiceLevel: Number(dishSpiceLevel),
       isVegetarian: dishIsVeg,
       isNonVeg: dishIsNonVeg,
@@ -761,9 +872,8 @@ export const AdminDashboardPage: React.FC = () => {
                             Table {tbl.tableNumber}
                           </span>
                         </div>
-                        <span className="text-xs font-mono font-bold text-slate-400 flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{tbl.guestCount} Guests</span>
+                        <span className="text-[11px] font-mono font-bold text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                          Active Dine-in
                         </span>
                       </div>
 
@@ -980,14 +1090,12 @@ export const AdminDashboardPage: React.FC = () => {
                                   <span>View Bill</span>
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    setRefundTargetOrder(ord);
-                                    setIsRefundModalOpen(true);
-                                  }}
-                                  className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer"
+                                  onClick={() => handleDeleteBillingOrder(ord)}
+                                  title="Delete bill record permanently"
+                                  className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500/60 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer group"
                                 >
-                                  <RotateCcw className="w-3 h-3" />
-                                  <span>Refund</span>
+                                  <X className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
+                                  <span>Delete</span>
                                 </button>
                               </div>
                             </td>
@@ -1034,14 +1142,12 @@ export const AdminDashboardPage: React.FC = () => {
                             <span>View Bill</span>
                           </button>
                           <button
-                            onClick={() => {
-                              setRefundTargetOrder(ord);
-                              setIsRefundModalOpen(true);
-                            }}
-                            className="py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-[11px] font-bold uppercase flex items-center space-x-1 cursor-pointer"
+                            onClick={() => handleDeleteBillingOrder(ord)}
+                            title="Delete bill record permanently"
+                            className="py-1.5 px-3 bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-200 border border-rose-500/30 hover:border-rose-500/60 rounded-lg text-[11px] font-bold uppercase flex items-center space-x-1 cursor-pointer"
                           >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Refund</span>
+                            <X className="w-3.5 h-3.5 text-rose-400" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>
@@ -1054,14 +1160,14 @@ export const AdminDashboardPage: React.FC = () => {
               {filteredBillingHistory.length > 0 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-theme-border font-mono text-xs text-slate-400">
                   <div>
-                    Showing <span className="text-white font-bold">{Math.min(filteredBillingHistory.length, (historyPage - 1) * historyPageSize + 1)}</span> to{' '}
-                    <span className="text-white font-bold">{Math.min(filteredBillingHistory.length, historyPage * historyPageSize)}</span> of{' '}
+                    Showing <span className="text-white font-bold">{(currentHistoryPage - 1) * historyPageSize + 1}</span> to{' '}
+                    <span className="text-white font-bold">{Math.min(filteredBillingHistory.length, currentHistoryPage * historyPageSize)}</span> of{' '}
                     <span className="text-white font-bold">{filteredBillingHistory.length}</span> invoices
                   </div>
 
                   <div className="flex items-center space-x-1.5">
                     <button
-                      disabled={historyPage === 1}
+                      disabled={currentHistoryPage === 1}
                       onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                       className="px-3 py-1.5 rounded-xl border border-theme-border bg-theme-bg text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center space-x-1"
                     >
@@ -1076,7 +1182,7 @@ export const AdminDashboardPage: React.FC = () => {
                           key={pg}
                           onClick={() => setHistoryPage(pg)}
                           className={`w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            historyPage === pg
+                            currentHistoryPage === pg
                               ? 'bg-theme-primary text-black font-black shadow-sm'
                               : 'bg-theme-bg border border-theme-border text-slate-400 hover:text-white'
                           }`}
@@ -1087,7 +1193,7 @@ export const AdminDashboardPage: React.FC = () => {
                     </div>
 
                     <button
-                      disabled={historyPage === totalHistoryPages}
+                      disabled={currentHistoryPage === totalHistoryPages}
                       onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
                       className="px-3 py-1.5 rounded-xl border border-theme-border bg-theme-bg text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all flex items-center space-x-1"
                     >
@@ -1471,7 +1577,6 @@ export const AdminDashboardPage: React.FC = () => {
                   <Receipt className="w-5 h-5 text-theme-primary" />
                   <span>Settle Bill: Table {selectedTableForBilling.tableNumber}</span>
                 </h3>
-                <p className="text-xs text-theme-muted">{selectedTableForBilling.guestCount} Guests</p>
               </div>
               <button
                 onClick={handleCloseSettleModal}
@@ -1842,15 +1947,125 @@ export const AdminDashboardPage: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold text-slate-400 uppercase tracking-wider block">Image URL</label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px] flex items-center space-x-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-theme-primary" />
+                    <span>Dish Photo (Image Upload)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualUrl(!showManualUrl)}
+                    className="text-[10px] text-theme-primary hover:underline cursor-pointer font-mono"
+                  >
+                    {showManualUrl ? 'Hide URL link' : 'Or enter link'}
+                  </button>
+                </div>
+
+                {/* Hidden File Input */}
                 <input
-                  type="text"
-                  value={dishImageUrl}
-                  onChange={(e) => setDishImageUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2 bg-theme-bg border border-theme-border rounded-xl text-white focus:outline-none focus:border-theme-primary font-mono text-[11px]"
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/png, image/jpeg, image/jpg, image/webp"
+                  onChange={handleImageFileChange}
+                  className="hidden"
                 />
+
+                {/* Upload Card / Preview */}
+                {imagePreviewUrl || dishImageUrl ? (
+                  <div className="relative p-3 bg-theme-bg border border-theme-border rounded-xl flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-black/40 border border-theme-border shrink-0 flex items-center justify-center relative">
+                      <img
+                        src={imagePreviewUrl || dishImageUrl}
+                        alt="Dish Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+                        }}
+                      />
+                      {isUploadingImage && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 text-theme-primary animate-spin" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-1.5">
+                        {isUploadingImage ? (
+                          <span className="text-amber-400 font-bold text-xs flex items-center space-x-1">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>Uploading &amp; generating link...</span>
+                          </span>
+                        ) : (
+                          <span className="text-emerald-400 font-bold text-xs flex items-center space-x-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Image Ready (Auto-linked)</span>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5" title={dishImageUrl}>
+                        {dishImageUrl ? `Link: ${dishImageUrl}` : 'Image selected from device'}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1.5">
+                        <button
+                          type="button"
+                          disabled={isUploadingImage}
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2.5 py-1 bg-theme-surface hover:bg-theme-surface-hover text-theme-primary border border-theme-border rounded-lg text-[10px] font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer disabled:opacity-50"
+                        >
+                          <UploadCloud className="w-3 h-3" />
+                          <span>Change Photo</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isUploadingImage}
+                          onClick={() => {
+                            setDishImageUrl('');
+                            setImagePreviewUrl('');
+                            if (fileInputRef.current) fileInputRef.current.value = '';
+                          }}
+                          className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center space-x-1 cursor-pointer disabled:opacity-50"
+                        >
+                          <X className="w-3 h-3" />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-4 bg-theme-bg/60 border-2 border-dashed border-theme-border hover:border-theme-primary/60 rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:bg-theme-primary/5 group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-theme-primary/10 border border-theme-primary/20 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                      <UploadCloud className="w-5 h-5 text-theme-primary" />
+                    </div>
+                    <p className="text-xs font-bold text-white group-hover:text-theme-primary transition-colors">
+                      Click to choose &amp; upload dish image
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                      PNG, JPG, WEBP (Link will be generated automatically and stored in DB)
+                    </p>
+                  </div>
+                )}
+
+                {/* Optional Manual URL Input */}
+                {showManualUrl && (
+                  <div className="pt-1 space-y-1">
+                    <label className="text-[10px] text-slate-400 font-mono">Manual Image URL</label>
+                    <input
+                      type="text"
+                      value={dishImageUrl}
+                      onChange={(e) => {
+                        setDishImageUrl(e.target.value);
+                        setImagePreviewUrl(e.target.value);
+                      }}
+                      placeholder="https://... or /uploads/..."
+                      className="w-full px-3 py-1.5 bg-theme-bg border border-theme-border rounded-xl text-white focus:outline-none focus:border-theme-primary font-mono text-[11px]"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Dietary Toggles */}
@@ -1891,20 +2106,6 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Rich Order Refund Modal */}
-      <OrderRefundModal
-        isOpen={isRefundModalOpen}
-        order={refundTargetOrder}
-        refundedBy="Admin Supervisor"
-        onClose={() => {
-          setIsRefundModalOpen(false);
-          setRefundTargetOrder(null);
-        }}
-        onSuccess={() => {
-          fetchData(false);
-        }}
-      />
 
       {/* Table QR Stand Cards Modal */}
       <TableQrStandsModal
@@ -1999,7 +2200,6 @@ export const AdminDashboardPage: React.FC = () => {
               <span className="text-gray-600">Table / Dine-In:</span>
               <span className="font-bold text-black">
                 Table {activePrintReceipt.tableNumber}
-                {activePrintReceipt.guestCount ? ` (${activePrintReceipt.guestCount} Guests)` : ''}
               </span>
             </div>
             <div className="flex justify-between">

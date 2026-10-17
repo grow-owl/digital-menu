@@ -137,12 +137,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     if (!items.length) return;
 
     const paidSubtotal = items.reduce(
-      (acc, it) => (it.menuItem.price > 0 ? acc + (it.unitPrice ?? it.menuItem.price) * it.quantity : acc),
+      (acc, it) => (it?.menuItem && it.menuItem.price > 0 ? acc + (it.unitPrice ?? it.menuItem.price) * (it.quantity || 1) : acc),
       0
     );
 
-    const freeItem = items.find((it) => it.menuItem.price === 0);
-    if (!freeItem) return;
+    const freeItem = items.find((it) => it?.menuItem?.price === 0);
+    if (!freeItem || !freeItem.menuItem) return;
 
     const itemId = freeItem.menuItem.id;
 
@@ -195,14 +195,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         tableId,
         customerPhone: targetPhone,
         customerName: targetName,
-        items: items.map((item) => ({
-          menuItemId: item.menuItem.id,
-          name: item.menuItem.name,
-          quantity: item.quantity,
-          price: item.unitPrice ?? item.menuItem.price,
-          notes: item.specialNotes,
-          addonNames: item.addonNames,
-        })),
+        items: items
+          .filter((item) => item && item.menuItem)
+          .map((item) => ({
+            menuItemId: item.menuItem.id,
+            name: item.menuItem.name,
+            quantity: item.quantity,
+            price: item.unitPrice ?? item.menuItem.price,
+            notes: item.specialNotes,
+            addonNames: item.addonNames,
+          })),
         subtotal,
         tax: gstAmount,
         discount: 0,
@@ -275,7 +277,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <p className="text-xs text-slate-400">Browse dishes from the menu and add them to your table order</p>
               </div>
             ) : (
-              items.map((item) => (
+              items.filter((item) => item && item.menuItem).map((item) => (
                 <div
                   key={item.menuItem.id}
                   className="p-3.5 bg-white border border-slate-300 rounded-2xl space-y-2 shadow-sm"
@@ -435,7 +437,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   className="flex space-x-3.5 overflow-x-auto pb-3 pt-1 -mx-1 px-1 no-scrollbar scroll-smooth touch-pan-x touch-pan-y [touch-action:pan-x_pan-y] overscroll-x-contain"
                 >
                   {dynamicPairings.map((rec) => {
-                    const inCart = items.find((it) => it.menuItem.id === rec.id);
+                    const inCart = items.find((it) => it?.menuItem?.id === rec.id);
                     return (
                       <div
                         key={rec.id}

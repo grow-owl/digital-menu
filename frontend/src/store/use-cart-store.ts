@@ -52,10 +52,30 @@ export const useCartStore = create<CartState>()(
           const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
           const res = await apiClient.get(`/tables/table-number/${cleanTableNum}/cart`);
           if (res.data && Array.isArray(res.data.data)) {
-            const serverItems = res.data.data;
-            const currentItems = get().items;
-            if (serverItems.length > 0) {
-              set({ items: serverItems, tableId });
+            const rawServerItems = res.data.data;
+            const validServerItems: CartItem[] = rawServerItems
+              .filter((it: any) => it && (it.menuItem || it.menuItemId || it.name))
+              .map((it: any) => {
+                if (it.menuItem && it.menuItem.price !== undefined) return it;
+                return {
+                  menuItem: it.menuItem || {
+                    id: it.menuItemId || it.id || 1,
+                    name: it.name || 'Dish',
+                    price: it.price || it.unitPrice || 0,
+                    imageUrl: it.imageUrl || '',
+                    isAvailable: true,
+                    categoryId: it.categoryId || 1,
+                  },
+                  quantity: it.quantity || 1,
+                  unitPrice: it.unitPrice ?? it.price ?? 0,
+                  specialNotes: it.specialNotes || it.notes || '',
+                  addonNames: it.addonNames || [],
+                };
+              });
+
+            const currentItems = (get().items || []).filter((it) => it && it.menuItem);
+            if (validServerItems.length > 0) {
+              set({ items: validServerItems, tableId });
             } else if (currentItems.length > 0 && !force) {
               // Local cart has items, server is empty: preserve local items & sync to server
               get().syncWithServer(tableId, currentItems);
@@ -72,26 +92,28 @@ export const useCartStore = create<CartState>()(
       syncWithServer: async (tableId: string, items: CartItem[]) => {
         try {
           const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
-          await apiClient.put(`/tables/table-number/${cleanTableNum}/cart`, { items });
+          const sanitized = (items || []).filter((it) => it && it.menuItem);
+          await apiClient.put(`/tables/table-number/${cleanTableNum}/cart`, { items: sanitized });
         } catch (e) {
           console.error('Failed to sync cart to server:', e);
         }
       },
 
       addItem: (menuItem, quantity = 1, specialNotes = '', unitPrice, addonNames) => {
-        if (menuItem.isAvailable === false) {
+        if (!menuItem || menuItem.isAvailable === false) {
           return;
         }
 
         set((state) => {
-          const existingIndex = state.items.findIndex(
+          const validItems = (state.items || []).filter((item) => item && item.menuItem);
+          const existingIndex = validItems.findIndex(
             (item) => item.menuItem.id === menuItem.id
           );
 
           let updatedItems: CartItem[] = [];
 
           if (existingIndex > -1) {
-            updatedItems = [...state.items];
+            updatedItems = [...validItems];
             const existingItem = updatedItems[existingIndex];
             updatedItems[existingIndex] = {
               ...existingItem,
@@ -102,7 +124,7 @@ export const useCartStore = create<CartState>()(
             };
           } else {
             updatedItems = [
-              ...state.items,
+              ...validItems,
               { menuItem, quantity, specialNotes, unitPrice, addonNames },
             ];
           }
@@ -116,8 +138,8 @@ export const useCartStore = create<CartState>()(
 
       removeItem: (menuItemId) => {
         set((state) => {
-          const updatedItems = state.items.filter(
-            (item) => item.menuItem.id !== menuItemId
+          const updatedItems = (state.items || []).filter(
+            (item) => item?.menuItem && item.menuItem.id !== menuItemId
           );
 
           const targetTableId = state.tableId || '10';
@@ -133,17 +155,19 @@ export const useCartStore = create<CartState>()(
           return;
         }
 
-        const existing = get().items.find((it) => it.menuItem.id === menuItemId);
-        if (existing && existing.menuItem.isAvailable === false) {
+        const existing = (get().items || []).find((it) => it?.menuItem?.id === menuItemId);
+        if (existing && existing.menuItem?.isAvailable === false) {
           return;
         }
 
         set((state) => {
-          const updatedItems = state.items.map((item) =>
-            item.menuItem.id === menuItemId
-              ? { ...item, quantity }
-              : item
-          );
+          const updatedItems = (state.items || [])
+            .filter((item) => item && item.menuItem)
+            .map((item) =>
+              item.menuItem.id === menuItemId
+                ? { ...item, quantity }
+                : item
+            );
 
           const targetTableId = state.tableId || '10';
           get().syncWithServer(targetTableId, updatedItems);
@@ -154,11 +178,13 @@ export const useCartStore = create<CartState>()(
 
       updateSpecialNotes: (menuItemId, notes) => {
         set((state) => {
-          const updatedItems = state.items.map((item) =>
-            item.menuItem.id === menuItemId
-              ? { ...item, specialNotes: notes }
-              : item
-          );
+          const updatedItems = (state.items || [])
+            .filter((item) => item && item.menuItem)
+            .map((item) =>
+              item.menuItem.id === menuItemId
+                ? { ...item, specialNotes: notes }
+                : item
+            );
 
           const targetTableId = state.tableId || '10';
           get().syncWithServer(targetTableId, updatedItems);
@@ -173,17 +199,19 @@ export const useCartStore = create<CartState>()(
           return;
         }
         set((state) => {
-          const updatedItems = state.items.map((item) =>
-            item.menuItem.id === menuItemId
-              ? {
-                  ...item,
-                  quantity,
-                  unitPrice: unitPrice ?? item.unitPrice,
-                  specialNotes: specialNotes ?? item.specialNotes,
-                  addonNames: addonNames ?? item.addonNames,
-                }
-              : item
-          );
+          const updatedItems = (state.items || [])
+            .filter((item) => item && item.menuItem)
+            .map((item) =>
+              item.menuItem.id === menuItemId
+                ? {
+                    ...item,
+                    quantity,
+                    unitPrice: unitPrice ?? item.unitPrice,
+                    specialNotes: specialNotes ?? item.specialNotes,
+                    addonNames: addonNames ?? item.addonNames,
+                  }
+                : item
+            );
 
           const targetTableId = state.tableId || '10';
           get().syncWithServer(targetTableId, updatedItems);
@@ -201,10 +229,13 @@ export const useCartStore = create<CartState>()(
       },
 
       getSubtotal: () => {
-        return get().items.reduce(
-          (acc, item) => acc + (item.unitPrice ?? item.menuItem.price) * item.quantity,
-          0
-        );
+        const items = get().items || [];
+        return items.reduce((acc, item) => {
+          if (!item) return acc;
+          const price = item.unitPrice ?? item.menuItem?.price ?? (item as any).price ?? 0;
+          const qty = Number(item.quantity) || 1;
+          return acc + (Number(price) * qty);
+        }, 0);
       },
 
       getTaxAmount: () => {
@@ -224,15 +255,24 @@ export const useCartStore = create<CartState>()(
       },
 
       getItemCount: () => {
-        return get().items.reduce((acc, item) => acc + item.quantity, 0);
+        const items = get().items || [];
+        return items.reduce((acc, item) => {
+          if (!item) return acc;
+          return acc + (Number(item.quantity) || 0);
+        }, 0);
       },
     }),
     {
       name: 'aura_cart_storage',
       partialize: (state) => ({
-        items: state.items,
+        items: (state.items || []).filter((item) => item && item.menuItem && item.menuItem.id !== undefined),
         tableId: state.tableId,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state && Array.isArray(state.items)) {
+          state.items = state.items.filter((item: any) => item && item.menuItem && typeof item.menuItem.id !== 'undefined');
+        }
+      },
     }
   )
 );

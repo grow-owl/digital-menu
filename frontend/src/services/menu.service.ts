@@ -115,6 +115,11 @@ export const menuService = {
 
         // Ensure accurate, curated images from SILIGURI_MENU_ITEMS and overrides are prioritized
         items = items.map((dbItem) => {
+          // If custom uploaded image is present, keep it strictly
+          if (dbItem.imageUrl && (dbItem.imageUrl.startsWith('/uploads/') || dbItem.imageUrl.startsWith('data:image/'))) {
+            return dbItem;
+          }
+
           if (dbItem.id === 95 || String(dbItem.name || '').toLowerCase().includes('mineral water')) {
             return { ...dbItem, imageUrl: '/images/mineral_water_bottle.jpg' };
           }

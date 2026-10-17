@@ -565,7 +565,7 @@ export const QrGeneratorPage: React.FC = () => {
                           TABLE {activeFocusTable.tableNumber}
                         </div>
                         <div className="text-[10px] font-mono text-slate-300 uppercase tracking-widest mt-0.5">
-                          {`SEATS ${activeFocusTable.capacity || 4} GUESTS`}
+                          DINE-IN ORDERING
                         </div>
                       </div>
 
@@ -777,7 +777,7 @@ export const QrGeneratorPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Capacity (Guests)</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Table Capacity</label>
                     <input
                       type="number"
                       min={1}
@@ -1232,7 +1232,7 @@ export const QrGeneratorPage: React.FC = () => {
                   <div className="border-2 border-black rounded-2xl py-3 px-8 my-4 bg-gray-100 w-full">
                     <div className="font-serif font-black text-4xl">TABLE {t.tableNumber}</div>
                     <div className="text-xs font-mono font-bold tracking-wider mt-1 text-gray-700">
-                      {`SEATS ${t.capacity || 4} GUESTS`}
+                      DINE-IN ORDERING
                     </div>
                   </div>
 

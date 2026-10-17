@@ -102,5 +102,10 @@ export const orderService = {
   async getRefundedOrders() {
     const response = await apiClient.get('/orders/refunds/all');
     return response.data.data;
+  },
+
+  async deleteOrder(orderId: string) {
+    const response = await apiClient.delete(`/orders/${orderId}`);
+    return response.data;
   }
 };

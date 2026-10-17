@@ -42,7 +42,6 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         section: 'MANAGEMENT',
         items: [
           { name: 'Admin Dashboard', shortName: 'Admin', path: '/admin', icon: ShieldCheck, accent: 'text-indigo-400', activeBg: 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300' },
-          { name: 'Menu Items', shortName: 'Menu Items', path: '/admin/menu', icon: ChefHat, accent: 'text-amber-400', activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-300' },
           { name: 'QR Section', shortName: 'QR Section', path: '/admin/qr-generator', icon: QrCode, accent: 'text-emerald-400', activeBg: 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300' },
         ]
       });

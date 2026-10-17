@@ -393,7 +393,7 @@ export const generateBoardPosterCanvas = async (
   ctx.font = 'bold 70px "Cinzel", Georgia, serif';
   ctx.fillText(`TABLE ${tableNum}`, width / 2, plaqueY + 80);
 
-  const zoneText = table.capacity ? `SEATS ${table.capacity} GUESTS` : 'DINE & DISPATCH';
+  const zoneText = 'DINE-IN ORDERING';
   ctx.fillText(zoneText, width / 2, plaqueY + 120);
 
   // Center Big QR Container

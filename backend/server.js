@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -27,6 +28,7 @@ import authRoutes from './routes/authRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import tableRoutes from './routes/tableRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 // Connect to MongoDB (non-blocking initialization)
 connectDB().catch((err) => {
@@ -102,9 +104,16 @@ app.use(
   })
 );
 
-// 3. Body Parser with Payload Size Limit (prevents large JSON memory exhaustion attacks)
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Static file serving for uploaded dish images
+const uploadsDir = path.resolve(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+// 3. Body Parser with Payload Size Limit (allows high-res dish photos)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 4. NoSQL Injection Sanitizer across all incoming requests
 app.use(nosqlSanitizer);
@@ -150,6 +159,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/tables', tableRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check endpoint
 app.get(['/', '/api/health'], (req, res) => {

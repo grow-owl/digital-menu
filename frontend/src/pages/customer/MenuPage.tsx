@@ -121,27 +121,12 @@ export const MenuPage: React.FC = () => {
   };
 
   const handleToggleFilter = (filter: ActiveFilter) => {
-    if (filter === 'ALL') {
+    if (filter === 'ALL' || selectedFilters.includes(filter)) {
       setSelectedFilters(['ALL']);
       return;
     }
 
-    let next: ActiveFilter[] = selectedFilters.filter((f) => f !== 'ALL');
-    if (next.includes(filter)) {
-      next = next.filter((f) => f !== filter);
-    } else {
-      if (filter === 'VEG') {
-        next = next.filter((f) => f !== 'NON_VEG');
-      } else if (filter === 'NON_VEG') {
-        next = next.filter((f) => f !== 'VEG' && f !== 'JAIN');
-      } else if (filter === 'JAIN') {
-        next = next.filter((f) => f !== 'NON_VEG');
-      }
-      next.push(filter);
-    }
-
-    if (next.length === 0) next = ['ALL'];
-    setSelectedFilters(next);
+    setSelectedFilters([filter]);
   };
 
   const handleAddToCart = (
@@ -157,24 +142,21 @@ export const MenuPage: React.FC = () => {
   const handleResetFilters = () => {
     setSelectedFilters(['ALL']);
     setSearchQuery('');
-    setSelectedCategoryId(null);
   };
 
   // Helper for applying dietary filters
   const applyDietaryFilter = (items: MenuItem[]) => {
-    if (selectedFilters.includes('ALL')) return items;
+    if (!selectedFilters || selectedFilters.includes('ALL') || selectedFilters.length === 0) {
+      return items;
+    }
     return items.filter((item) => {
-      return selectedFilters.every((f) => {
-        if (f === 'VEG') return item.isVegetarian;
-        if (f === 'NON_VEG') return item.isNonVeg || !item.isVegetarian;
-        if (f === 'JAIN') return item.isJain;
-        if (f === 'GF') return item.isGlutenFree;
-        if (f === 'SPECIAL') return item.isChefSpecial || item.categoryId === 1;
-        if (f === 'BESTSELLER') return item.isBestSeller;
-        if (f === 'UNDER300') return item.price <= 300;
-        if (f === 'SPICY') return (item.spiceLevel || 0) >= 2;
-        return true;
-      });
+      if (selectedFilters.includes('VEG')) {
+        return item.isVegetarian === true;
+      }
+      if (selectedFilters.includes('NON_VEG')) {
+        return item.isNonVeg === true || item.isVegetarian === false;
+      }
+      return true;
     });
   };
 
@@ -241,7 +223,10 @@ export const MenuPage: React.FC = () => {
         <CategoryBar
           categories={categories}
           selectedCategoryId={selectedCategoryId}
-          onSelectCategory={setSelectedCategoryId}
+          onSelectCategory={(id) => {
+            setSelectedCategoryId(id);
+            setSelectedFilters(['ALL']);
+          }}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />

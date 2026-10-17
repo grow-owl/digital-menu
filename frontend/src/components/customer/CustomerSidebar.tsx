@@ -48,7 +48,7 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
     }
   };
 
-  const handleCallService = async (reason: string = 'Call Service to Table') => {
+  const handleCallWaiter = async (reason: string = 'Call Waiter to Table') => {
     try {
       const now = Date.now();
       localStorage.setItem(`aura_call_service_timestamp_${tableId}`, now.toString());
@@ -63,14 +63,15 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
       };
       localStorage.setItem('aura_waiter_alerts', JSON.stringify([newAlert, ...existingAlerts]));
       window.dispatchEvent(new CustomEvent('service_called', { detail: newAlert }));
+      window.dispatchEvent(new CustomEvent('waiter_called', { detail: newAlert }));
       window.dispatchEvent(new Event('storage'));
-      showToast(`Service assistance requested for Table ${tableId}!`, 'success');
+      showToast(`Waiter assistance requested for Table ${tableId}!`, 'success');
       onClose();
     } catch (e) {
       const now = Date.now();
       localStorage.setItem(`aura_call_service_timestamp_${tableId}`, now.toString());
       window.dispatchEvent(new Event('storage'));
-      showToast(`Service call sent for Table ${tableId}.`, 'info');
+      showToast(`Waiter call sent for Table ${tableId}.`, 'info');
       onClose();
     }
   };
@@ -168,14 +169,14 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
             </div>
           </div>
 
-          {/* Quick Call Service Shortcut */}
+          {/* Quick Call Waiter Shortcut */}
           <div className="pt-2 border-t border-slate-200">
             <button
-              onClick={() => handleCallService('Call Service to Table')}
+              onClick={() => handleCallWaiter('Call Waiter to Table')}
               className="w-full p-2.5 bg-[#F7D046] hover:bg-yellow-400 text-slate-900 font-bold rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-sm text-xs active:scale-95"
             >
               <Bell className="w-4 h-4 text-slate-900" />
-              <span>Call Service</span>
+              <span>Call Waiter</span>
             </button>
           </div>
         </div>

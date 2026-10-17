@@ -1181,7 +1181,7 @@ export const OrderTrackingPage: React.FC = () => {
         onClose={() => setSelectedDish(null)}
       />
 
-      {/* Floating Call Service Button */}
+      {/* Floating Call Waiter Button */}
       <CallWaiterButton tableId={tableId} />
     </div>
   );

@@ -129,13 +129,10 @@ export const createMenuItem = asyncHandler(async (req, res) => {
     isNonVeg,
     isJain,
     isGlutenFree,
-    isChefSpecial,
-    isBestSeller,
     isAvailable,
     spiceLevel,
     preparationTimeMinutes,
     calories,
-    ingredients,
     allergens,
     customizationGroups
   } = req.body;
@@ -158,14 +155,11 @@ export const createMenuItem = asyncHandler(async (req, res) => {
     isNonVeg: isNonVeg || false,
     isJain: isJain || false,
     isGlutenFree: isGlutenFree || false,
-    isChefSpecial: isChefSpecial || false,
-    isBestSeller: isBestSeller || false,
     isAvailable: isAvailable !== undefined ? isAvailable : true,
     spiceLevel: Number(spiceLevel) || 0,
     preparationTimeMinutes: Number(preparationTimeMinutes) || 15,
     calories: Number(calories) || 250,
     rating: 4.8,
-    ingredients: ingredients || [],
     allergens: allergens || [],
     customizationGroups: customizationGroups || []
   });

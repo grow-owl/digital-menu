@@ -13,8 +13,6 @@ const menuItemSchema = new mongoose.Schema({
   isNonVeg: { type: Boolean, default: false },
   isJain: { type: Boolean, default: false },
   isGlutenFree: { type: Boolean, default: false },
-  isChefSpecial: { type: Boolean, default: false },
-  isBestSeller: { type: Boolean, default: false },
   isPopular: { type: Boolean, default: false },
   isAvailable: { type: Boolean, default: true },
   spiceLevel: { type: Number, default: 0 },
@@ -23,7 +21,6 @@ const menuItemSchema = new mongoose.Schema({
   calories: { type: Number },
   rating: { type: Number },
   
-  ingredients: [{ type: String }],
   allergens: [{ type: String }],
   
   customizationGroups: [{

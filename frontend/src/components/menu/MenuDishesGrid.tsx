@@ -112,10 +112,11 @@ export const MenuDishesGrid: React.FC<MenuDishesGridProps> = ({
           </p>
           {menuItemsCount > 0 && (
             <button
+              type="button"
               onClick={onResetFilters}
-              className="px-5 py-2.5 bg-[#0C831F] text-white font-bold text-xs rounded-xl shadow-md transition-transform hover:scale-105 cursor-pointer"
+              className="px-5 py-2.5 bg-[#0C831F] hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-md transition-transform hover:scale-105 cursor-pointer"
             >
-              Reset All Filters
+              Reset Filter (Show All {selectedCategoryId ? (categories.find((c) => c.id === selectedCategoryId)?.name || 'Dishes') : 'Dishes'})
             </button>
           )}
         </div>

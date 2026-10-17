@@ -8,7 +8,7 @@ interface MenuFloatingActionsProps {
 export const MenuFloatingActions: React.FC<MenuFloatingActionsProps> = ({ tableId }) => {
   return (
     <>
-      {/* Floating Call Service Button */}
+      {/* Floating Call Waiter Button */}
       <CallWaiterButton tableId={tableId} />
     </>
   );

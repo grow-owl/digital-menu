@@ -107,8 +107,6 @@ export const AdminDashboardPage: React.FC = () => {
   const [dishIsNonVeg, setDishIsNonVeg] = useState(false);
   const [dishIsGlutenFree, setDishIsGlutenFree] = useState(false);
   const [dishIsJain, setDishIsJain] = useState(false);
-  const [dishIsChefSpecial, setDishIsChefSpecial] = useState(false);
-  const [dishIsBestSeller, setDishIsBestSeller] = useState(false);
   const [dishIsAvailable, setDishIsAvailable] = useState(true);
   const [dishPrepTime, setDishPrepTime] = useState<number>(15);
 
@@ -490,8 +488,6 @@ export const AdminDashboardPage: React.FC = () => {
       setDishIsNonVeg(dish.isNonVeg || false);
       setDishIsGlutenFree(dish.isGlutenFree || false);
       setDishIsJain(dish.isJain || false);
-      setDishIsChefSpecial(dish.isChefSpecial || false);
-      setDishIsBestSeller(dish.isBestSeller || false);
       setDishIsAvailable(dish.isAvailable !== false);
       setDishPrepTime(dish.preparationTimeMinutes || 15);
     } else {
@@ -501,13 +497,10 @@ export const AdminDashboardPage: React.FC = () => {
       setDishPrice(450);
       setDishCategoryId(categories[0]?.id || 1);
       setDishImageUrl('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80');
-      setDishSpiceLevel(0);
       setDishIsVeg(true);
       setDishIsNonVeg(false);
       setDishIsGlutenFree(false);
       setDishIsJain(false);
-      setDishIsChefSpecial(false);
-      setDishIsBestSeller(false);
       setDishIsAvailable(true);
       setDishPrepTime(15);
     }
@@ -532,8 +525,6 @@ export const AdminDashboardPage: React.FC = () => {
       isNonVeg: dishIsNonVeg,
       isGlutenFree: dishIsGlutenFree,
       isJain: dishIsJain,
-      isChefSpecial: dishIsChefSpecial,
-      isBestSeller: dishIsBestSeller,
       isAvailable: dishIsAvailable,
       preparationTimeMinutes: Number(dishPrepTime)
     };
@@ -1197,11 +1188,6 @@ export const AdminDashboardPage: React.FC = () => {
                             {dish.isVegetarian && (
                               <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
                                 VEG
-                              </span>
-                            )}
-                            {dish.isChefSpecial && (
-                              <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold">
-                                SPECIAL
                               </span>
                             )}
                           </div>
@@ -1883,26 +1869,6 @@ export const AdminDashboardPage: React.FC = () => {
                     />
                     <span className="font-bold text-emerald-400 text-xs">Vegetarian</span>
                   </label>
-
-                  <label className="p-2.5 bg-theme-bg border border-theme-border rounded-xl flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={dishIsChefSpecial}
-                      onChange={(e) => setDishIsChefSpecial(e.target.checked)}
-                      className="accent-amber-400 rounded"
-                    />
-                    <span className="font-bold text-amber-300 text-xs">Chef Special</span>
-                  </label>
-
-                  <label className="p-2.5 bg-theme-bg border border-theme-border rounded-xl flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={dishIsBestSeller}
-                      onChange={(e) => setDishIsBestSeller(e.target.checked)}
-                      className="accent-amber-500 rounded"
-                    />
-                    <span className="font-bold text-amber-400 text-xs">Best Seller</span>
-                  </label>
                 </div>
               </div>
 
@@ -1969,7 +1935,7 @@ export const AdminDashboardPage: React.FC = () => {
 
             <div className="space-y-2">
               <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-black uppercase tracking-widest rounded-full">
-                🚨 Service Request Alert
+                🚨 Waiter Call Alert
               </span>
               <h2 className="font-serif text-3xl sm:text-4xl font-black text-white tracking-tight">
                 Table {activeServiceCall.tableId || activeServiceCall.tableNumber}

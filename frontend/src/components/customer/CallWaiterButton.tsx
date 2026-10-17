@@ -74,7 +74,7 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
     setIsLoading(true);
     try {
       // 1. Dispatch direct waiter call to backend Express API
-      await tableService.callWaiter(tableId, 'Call Service to Table');
+      await tableService.callWaiter(tableId, 'Call Waiter to Table');
 
       // 2. Persist 2-minute cooldown timestamp in localStorage (survives refresh)
       const now = Date.now();
@@ -86,15 +86,16 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
       const newAlert = {
         id: now,
         tableId,
-        reason: 'Call Service to Table',
+        reason: 'Call Waiter to Table',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'PENDING',
       };
       localStorage.setItem('aura_waiter_alerts', JSON.stringify([newAlert, ...existingAlerts]));
       window.dispatchEvent(new CustomEvent('service_called', { detail: newAlert }));
+      window.dispatchEvent(new CustomEvent('waiter_called', { detail: newAlert }));
       window.dispatchEvent(new Event('storage'));
 
-      showToast(`Service assistance alerted for Table ${tableId}! Staff will attend shortly.`, 'success');
+      showToast(`Waiter alerted for Table ${tableId}! Staff will attend shortly.`, 'success');
     } catch (err) {
       console.error('Failed to dispatch waiter call:', err);
       // Even if network fails, lock for 2 minutes to prevent repeated spam
@@ -102,7 +103,7 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
       localStorage.setItem(storageKey, now.toString());
       setSecondsRemaining(120);
       window.dispatchEvent(new Event('storage'));
-      showToast(`Service assistance alerted for Table ${tableId}!`, 'success');
+      showToast(`Waiter alerted for Table ${tableId}!`, 'success');
     } finally {
       setIsLoading(false);
     }
@@ -127,13 +128,13 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
           ? 'bottom-[76px] right-3.5 sm:bottom-6 sm:right-6'
           : 'bottom-4 right-3.5 sm:bottom-6 sm:right-6'
       }`}
-      title={isRequested ? `Service called. Cooldown: ${formatCountdown(secondsRemaining)}` : 'Call Service to Table'}
+      title={isRequested ? `Waiter called. Cooldown: ${formatCountdown(secondsRemaining)}` : 'Call Waiter to Table'}
     >
       {isRequested ? (
         <>
           <CheckCircle2 className="w-4 h-4 text-emerald-100 shrink-0" />
           <span className="text-xs uppercase font-bold tracking-wider text-white flex items-center space-x-1">
-            <span>Service Called</span>
+            <span>Waiter Called</span>
             <span className="font-mono text-[11px] opacity-90">({formatCountdown(secondsRemaining)})</span>
           </span>
         </>
@@ -141,7 +142,7 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
         <>
           <Bell className={`w-4 h-4 text-slate-900 shrink-0 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="text-xs uppercase font-bold tracking-wider text-slate-900">
-            Call Service
+            Call Waiter
           </span>
         </>
       )}

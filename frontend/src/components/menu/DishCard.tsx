@@ -85,7 +85,7 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
           </div>
         )}
 
-        {/* Veg / Non-Veg Indicator & Special Badges (Top Left) */}
+        {/* Veg / Non-Veg Indicator (Top Left) */}
         <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex items-center space-x-1 z-10">
           <span
             className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center bg-white/95 backdrop-blur-md shadow-xs ${
@@ -98,19 +98,6 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
               }`}
             />
           </span>
-
-          {item.isChefSpecial && (
-            <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 flex items-center space-x-0.5 shadow-xs">
-              <Sparkles className="w-2.5 h-2.5 text-slate-950" />
-              <span>SPECIAL</span>
-            </span>
-          )}
-
-          {item.isBestSeller && !item.isChefSpecial && (
-            <span className="text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white shadow-xs">
-              POPULAR
-            </span>
-          )}
         </div>
       </div>
 

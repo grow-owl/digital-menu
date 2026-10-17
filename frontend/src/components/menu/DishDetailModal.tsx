@@ -236,13 +236,6 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
                 }`}
               />
             </span>
-
-            {item.isChefSpecial && (
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-[#F7D046] text-slate-900 flex items-center space-x-1 shadow-sm">
-                <Sparkles className="w-3 h-3 text-slate-900" />
-                <span>Special</span>
-              </span>
-            )}
           </div>
         </div>
 
@@ -286,19 +279,6 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Key Ingredients */}
-          {item.ingredients && item.ingredients.length > 0 && (
-            <div className="space-y-1.5">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Key Ingredients</h3>
-              <div className="flex flex-wrap gap-1.5">
-                {item.ingredients.map((ing, i) => (
-                  <span key={i} className="px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-700 font-medium">
-                    {ing}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Smart Add-ons & High-Margin Pairings */}
           {smartAddons.length > 0 && (

@@ -43,15 +43,12 @@ export interface MenuItem {
   isNonVeg?: boolean;
   isGlutenFree: boolean;
   isJain?: boolean;
-  isChefSpecial?: boolean;
-  isBestSeller?: boolean;
   isPopular?: boolean;
   isUnder300?: boolean;
   spiceLevel?: number; // 0 (None), 1 (Mild), 2 (Medium), 3 (Spicy)
   calories?: number;
   rating?: number;
   preparationTimeMinutes: number;
-  ingredients?: string[];
   allergens?: string[];
   customizationGroups?: CustomizationGroup[];
 }

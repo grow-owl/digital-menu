@@ -59,7 +59,7 @@ export const COOLERS_LASSI_ITEMS: MenuItem[] = [
     name: 'Redbull',
     description: 'Boost your energy. Chilled 250ml can of Red Bull energy drink served over ice.',
     price: 130,
-    imageUrl: '/images/dishes/redbull_drink.jpg',
+    imageUrl: '/images/menu/red_bull_energy_drink.png',
     isAvailable: true,
     isVegetarian: true,
     isGlutenFree: true,

@@ -61,7 +61,7 @@ export const TEA_AND_COFFEE_ITEMS: MenuItem[] = [
     name: 'Honey Ginger Black Tea',
     description: 'Soothing & healthy. Fresh ginger juice and organic wild honey infused in warm black tea.',
     price: 70,
-    imageUrl: 'https://images.unsplash.com/photo-1514733670139-4d87a1941d55?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/menu/honey_ginger_black_tea.png',
     isAvailable: true,
     isVegetarian: true,
     isGlutenFree: true,

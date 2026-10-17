@@ -85,9 +85,32 @@ export const menuService = {
           // Milkshakes & Appetisers
           'banana honey cream shake': '/images/menu/banana_honey_shake.jpg',
           'strawberry delight shake': '/images/menu/strawberry_delight_shake.jpg',
-          'kitkat crunch shake': 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
+          'kitkat crunch shake': '/images/menu/kitkat_crunch_shake.png',
+          'blueberry cream shake': '/images/menu/blueberry_cream_shake.png',
           'paneer chilly': '/images/menu/paneer_chilly.jpg',
+          'chicken chilly': '/images/menu/chicken_chilli.png',
+          'chicken chilli': '/images/menu/chicken_chilli.png',
+          'chicken cutlet': '/images/menu/chicken_cutlet.png',
+          'chicken pakora': '/images/menu/chicken_pakora.png',
+          'chicken wings': '/images/menu/chicken_wings.png',
+          'peri peri fries': '/images/menu/peri_peri_fries.png',
+          'loaded fries': '/images/menu/loaded_fries.png',
+          'potato cheese bites': '/images/menu/potato_cheese_bites.png',
+
+          // Matcha & Boba Series
+          'iced matcha latte': '/images/menu/iced_matcha_latte.png',
+          'vanilla matcha latte': '/images/menu/vanilla_matcha_latte.png',
+          'strawberry matcha latte': '/images/menu/strawberry_matcha_latte.png',
+          'mango matcha latte': '/images/menu/mango_matcha_latte.png',
+          'matcha boba tea': '/images/menu/matcha_boba_tea.png',
+          'coffee mocha boba': '/images/menu/coffee_mocha_boba.png',
+          'hazelnut boba': '/images/menu/hazelnut_boba.png',
           'blueberry boba tea': '/images/menu/blueberry_frappe.jpg',
+
+          // Hot Tea & Energy Drinks
+          'honey ginger black tea': '/images/menu/honey_ginger_black_tea.png',
+          'red bull': '/images/menu/red_bull_energy_drink.png',
+          'redbull': '/images/menu/red_bull_energy_drink.png',
         };
 
         // Ensure accurate, curated images from SILIGURI_MENU_ITEMS and overrides are prioritized

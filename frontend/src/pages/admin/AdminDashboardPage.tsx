@@ -2283,7 +2283,6 @@ export const AdminDashboardPage: React.FC = () => {
               <Utensils className="w-5 h-5 text-gray-900" />
               <h2 className="font-serif font-black text-xl text-black tracking-wider">SILIGURI'S CHAI ADDAA</h2>
             </div>
-            <p className="text-[11px] text-gray-700 font-sans font-medium">Artisan Tea House &amp; Comfort Dining</p>
             <p className="text-[10px] text-gray-600 font-mono">Champasari, Siliguri • Ph: +917585877937</p>
             <div className="pt-1 font-bold text-xs uppercase tracking-widest text-black">
               *** TAX INVOICE ***

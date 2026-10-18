@@ -20,6 +20,41 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
   // Original price calculation for strikethrough retail discount feel
   const originalPrice = Math.round(item.price * 1.22);
 
+  // Image fallback resolution
+  const fallbackSrc = React.useMemo(() => {
+    if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
+      return '/images/mineral_water_bottle.jpg';
+    }
+    const cat = (item.categoryName || '').toLowerCase();
+    if (cat.includes('tea') || cat.includes('chai') || cat.includes('coffee')) {
+      return 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80';
+    }
+    if (cat.includes('lassi') || cat.includes('cooler') || cat.includes('shake') || cat.includes('boba')) {
+      return '/images/dishes/mango_lassi.jpg';
+    }
+    if (cat.includes('pasta')) {
+      return '/images/dishes/arrabbiata_pasta.jpg';
+    }
+    if (cat.includes('sandwich') || cat.includes('burger')) {
+      return '/images/dishes/veg_corn_cheese_sandwich.jpg';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+  }, [item.name, item.id, item.categoryName]);
+
+  const [currentSrc, setCurrentSrc] = React.useState(item.imageUrl || fallbackSrc);
+
+  React.useEffect(() => {
+    setCurrentSrc(item.imageUrl || fallbackSrc);
+    setImageLoaded(false);
+  }, [item.imageUrl, fallbackSrc]);
+
+  const handleImageError = () => {
+    if (currentSrc !== fallbackSrc) {
+      setCurrentSrc(fallbackSrc);
+    }
+    setImageLoaded(true);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -33,44 +68,31 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
       }`}
     >
       {/* Top Image Box */}
-      <div className="relative h-28 sm:h-44 w-full bg-slate-100 border-b border-slate-200 overflow-hidden">
+      <div className="relative h-36 sm:h-48 w-full bg-slate-900/5 border-b border-slate-100 overflow-hidden flex items-center justify-center">
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-slate-200/70 animate-pulse" />
+          <div className="absolute inset-0 bg-slate-200/70 animate-pulse z-0" />
         )}
+
+        {/* Ambient Blur Backdrop: Generates a soft matching halo/glow from the dish colors */}
         <img
-          src={
-            item.imageUrl ||
-            ((item.categoryName || '').toLowerCase().includes('tea') || (item.categoryName || '').toLowerCase().includes('coffee')
-              ? 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80'
-              : (item.categoryName || '').toLowerCase().includes('lassi') || (item.categoryName || '').toLowerCase().includes('cooler')
-              ? '/images/dishes/mango_lassi.jpg'
-              : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80')
-          }
+          src={currentSrc}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-35 pointer-events-none select-none transition-opacity duration-300"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+
+        {/* Crisp Foreground Image: Shows full dish & glass without cropping */}
+        <img
+          src={currentSrc}
           alt={item.name}
           loading="lazy"
           decoding="async"
           onLoad={() => setImageLoaded(true)}
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
-              target.src = '/images/mineral_water_bottle.jpg';
-            } else {
-              const cat = (item.categoryName || '').toLowerCase();
-              if (cat.includes('tea') || cat.includes('chai') || cat.includes('coffee')) {
-                target.src = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80';
-              } else if (cat.includes('lassi') || cat.includes('cooler') || cat.includes('shake') || cat.includes('boba')) {
-                target.src = '/images/dishes/mango_lassi.jpg';
-              } else if (cat.includes('pasta')) {
-                target.src = '/images/dishes/arrabbiata_pasta.jpg';
-              } else if (cat.includes('sandwich') || cat.includes('burger')) {
-                target.src = '/images/dishes/veg_corn_cheese_sandwich.jpg';
-              } else {
-                target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
-              }
-            }
-            setImageLoaded(true);
-          }}
-          className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+          onError={handleImageError}
+          className={`relative z-1 w-full h-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
         />

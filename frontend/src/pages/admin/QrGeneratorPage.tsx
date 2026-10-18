@@ -247,14 +247,39 @@ export const QrGeneratorPage: React.FC = () => {
   };
 
   // Print Handlers
-  const triggerPrint = (
+  const triggerPrint = async (
     mode: 'STAND_SINGLE' | 'POSTER_SINGLE' | 'STICKER_SINGLE' | 'ALL_STANDS' | 'ALL_POSTERS' | 'STICKER_SHEET',
     tableNumber?: number | string
   ) => {
+    const targetTables = (mode === 'STAND_SINGLE' || mode === 'POSTER_SINGLE' || mode === 'STICKER_SINGLE')
+      ? tables.filter((t) => String(t.tableNumber) === String(tableNumber))
+      : tables;
+
+    // Ensure all target QR images are in qrCache before opening print dialog
+    const newCache = { ...qrCache };
+    let hasNew = false;
+    for (const t of targetTables) {
+      const key = String(t.tableNumber);
+      if (!newCache[key]) {
+        const token = (t as any).qrToken || t.qrCodeToken || `table-${t.tableNumber}`;
+        const url = computeTableDineUrl(token, config);
+        try {
+          newCache[key] = await generateQrDataUrl(url, { size: 400 });
+          hasNew = true;
+        } catch (e) {
+          console.error(`QR gen error for table ${t.tableNumber}`, e);
+        }
+      }
+    }
+    if (hasNew) {
+      setQrCache(newCache);
+    }
+
     setPrintTarget({ mode, tableNumber });
+    // Allow state update to render DOM and images to decode
     setTimeout(() => {
       window.print();
-    }, 180);
+    }, 250);
   };
 
 
@@ -1182,20 +1207,30 @@ export const QrGeneratorPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           PRINT CONTAINER (Visible ONLY during window.print())
       ───────────────────────────────────────────────────────────── */}
-      <div className="hidden print:block text-black bg-white w-full">
+      <div className="hidden print:block printable-qr-sheet print-visible text-black bg-white w-full">
         <style>
           {`
             @media print {
               @page {
                 size: auto;
-                margin: 8mm;
+                margin: 6mm;
               }
-              body {
+              html, body {
                 background: white !important;
                 color: black !important;
+                overflow: visible !important;
+                height: auto !important;
               }
               .no-print {
                 display: none !important;
+              }
+              .printable-qr-sheet,
+              .printable-qr-sheet *,
+              .printable-qr-card,
+              .printable-qr-card *,
+              .print-visible,
+              .print-visible * {
+                visibility: visible !important;
               }
               .page-break {
                 page-break-after: always;
@@ -1217,7 +1252,7 @@ export const QrGeneratorPage: React.FC = () => {
               return (
                 <div
                   key={t.tableNumber}
-                  className="page-break w-full max-w-lg mx-auto border-4 border-black rounded-3xl p-8 text-center flex flex-col items-center justify-between min-h-[90vh] my-4"
+                  className="printable-qr-card page-break w-full max-w-lg mx-auto border-4 border-black rounded-3xl p-8 text-center flex flex-col items-center justify-between min-h-[90vh] my-4"
                 >
                   <div>
                     <h2 className="font-serif text-lg font-bold tracking-widest uppercase">
@@ -1285,7 +1320,7 @@ export const QrGeneratorPage: React.FC = () => {
                 return (
                   <div
                     key={t.tableNumber}
-                    className="border-2 border-black rounded-2xl p-3 text-center flex flex-col items-center justify-between aspect-square"
+                    className="printable-qr-card border-2 border-black rounded-2xl p-3 text-center flex flex-col items-center justify-between aspect-square"
                   >
                     <div>
                       <div className="text-[10px] font-bold font-serif">✦ AURA ✦</div>
@@ -1312,7 +1347,7 @@ export const QrGeneratorPage: React.FC = () => {
               return (
                 <div
                   key={t.tableNumber}
-                  className="page-break w-full max-w-2xl mx-auto border-8 border-black rounded-3xl p-10 text-center flex flex-col items-center justify-between min-h-[92vh] my-4"
+                  className="printable-qr-card page-break w-full max-w-2xl mx-auto border-8 border-black rounded-3xl p-10 text-center flex flex-col items-center justify-between min-h-[92vh] my-4"
                 >
                   <div>
                     <h1 className="font-serif text-3xl font-black uppercase tracking-wider">

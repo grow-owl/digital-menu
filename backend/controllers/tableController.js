@@ -103,7 +103,7 @@ export const getAllTables = asyncHandler(async (req, res) => {
       activeOrderId,
       orderTotal,
       guestCount,
-      qrToken: isStaff ? effectiveQrToken : undefined,
+      qrToken: effectiveQrToken,
       cleaningStartedAt: table.cleaningStartedAt
     };
   }));

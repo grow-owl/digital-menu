@@ -591,7 +591,9 @@ button:disabled,
   .printable-qr-sheet,
   .printable-qr-sheet *,
   .printable-qr-card,
-  .printable-qr-card * {
+  .printable-qr-card *,
+  .print-visible,
+  .print-visible * {
     visibility: visible !important;
   }
 
@@ -616,9 +618,9 @@ button:disabled,
 
   .printable-qr-sheet {
     display: block !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;

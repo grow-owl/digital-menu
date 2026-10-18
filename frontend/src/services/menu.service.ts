@@ -53,10 +53,28 @@ export const menuService = {
           'paneer pops': '/images/menu/paneer_pops.jpg',
           'cheesy pizza fingers': '/images/menu/cheesy_pizza_fingers.jpg',
           'nutty taro boba': '/images/menu/nutty_taro_boba.jpg',
-          'extra cheese': 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&w=800&q=80',
-          'extra grilled chicken': 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=800&q=80',
+          'extra cheese': '/images/menu/extra_cheese_topping.png',
+          'extra cheese topping': '/images/menu/extra_cheese_topping.png',
+          'extra grilled chicken': '/images/menu/extra_grilled_chicken.png',
           'ice cream add on': '/images/menu/ice_cream_1scoop.jpg',
           'garlic bread': 'https://images.unsplash.com/photo-1619535860434-ba1d8fa12536?auto=format&fit=crop&w=800&q=80',
+
+          // Coffee & Brews
+          'affogato': '/images/menu/affogato.png',
+          'espresso tonic': '/images/menu/espresso_tonic.png',
+          'iced americano': '/images/menu/iced_americano.png',
+          'iced spanish latte': '/images/menu/iced_spanish_latte.png',
+          'iced caramel macchiato': '/images/menu/iced_caramel_macchiato.png',
+
+          // Chowmein / Noodles
+          'egg chowmein': '/images/menu/egg_chowmein.png',
+          'chicken chowmein': '/images/menu/chicken_chowmein.png',
+          'chicken egg chowmein': '/images/menu/chicken_egg_chowmein.png',
+          'chicken double egg chowmein': '/images/menu/chicken_double_egg_chowmein.png',
+
+          // Burgers & Sandwiches
+          'veg cheese corn sandwich': '/images/menu/veg_cheese_corn_sandwich.png',
+          'tandoori chicken cheese sandwich': '/images/menu/tandoori_chicken_cheese_sandwich.png',
 
           // Artisanal Pastas
           'arrabbiata pasta (veg)': '/images/menu/arrabbiata_pasta_veg.jpg',
@@ -64,23 +82,25 @@ export const menuService = {
           'arrabbiata pasta': '/images/menu/arrabbiata_pasta_veg.jpg',
 
           // Frappes
-          'strawberry frappe': '/images/menu/strawberry_frappe.jpg',
+          'strawberry frappe': '/images/menu/strawberry_frappe.png',
           'blueberry frappe': '/images/menu/blueberry_frappe.jpg',
           'mango frappe': '/images/menu/mango_frappe.jpg',
           'biscoff frappe': '/images/menu/biscoff_frappe.jpg',
           'caramel frappe': '/images/menu/caramel_frappe.jpg',
           'coffee mocha frappe': '/images/menu/coffee_mocha_frappe.jpg',
           'oreo frappe': 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
-          'matcha frappe': 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?auto=format&fit=crop&w=800&q=80',
+          'matcha frappe': '/images/menu/matcha_frappe.png',
 
           // Traditional Lassi & Coolers
           'sweet lassi': '/images/menu/sweet_lassi.jpg',
           'strawberry lassi': '/images/menu/strawberry_lassi.jpg',
           'banana lassi': '/images/menu/banana_lassi.jpg',
           'mango lassi': 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=800&q=80',
-          'pineapple lassi': 'https://images.unsplash.com/photo-1546173159-315724a31696?auto=format&fit=crop&w=800&q=80',
-          'kala khatta': '/images/menu/kala_khatta.jpg',
-          'kala khatta mocktail': '/images/menu/kala_khatta.jpg',
+          'pineapple lassi': '/images/menu/pineapple_lassi.png',
+          'kala khatta': '/images/menu/kala_khatta_mocktail.png',
+          'kala khatta mocktail': '/images/menu/kala_khatta_mocktail.png',
+          'masala coke': '/images/menu/masala_coke.png',
+          'green apple mojito': '/images/menu/green_apple_mojito.png',
 
           // Milkshakes & Appetisers
           'banana honey cream shake': '/images/menu/banana_honey_shake.jpg',

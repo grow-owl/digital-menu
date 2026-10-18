@@ -330,7 +330,27 @@ export const createOrder = asyncHandler(async (req, res) => {
       }
     }
 
-    const itemTotalUnit = basePrice + customizationExtra;
+    // Also parse add-ons from addonNames or notes if present, or client price difference
+    let addonExtra = 0;
+    if (Array.isArray(it.addonNames) && it.addonNames.length > 0) {
+      for (const rawAddon of it.addonNames) {
+        const match = String(rawAddon).match(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/i);
+        if (match) {
+          addonExtra += parseFloat(match[1]) || 0;
+        }
+      }
+    } else if (it.notes && /Add-?ons?:/i.test(it.notes)) {
+      const matches = it.notes.matchAll(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/gi);
+      for (const m of matches) {
+        addonExtra += parseFloat(m[1]) || 0;
+      }
+    }
+
+    if (addonExtra === 0 && Number(it.price) > (basePrice + customizationExtra)) {
+      addonExtra = Number(it.price) - (basePrice + customizationExtra);
+    }
+
+    const itemTotalUnit = basePrice + customizationExtra + addonExtra;
     verifiedSubtotal += itemTotalUnit * quantity;
 
     return {

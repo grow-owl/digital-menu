@@ -926,11 +926,20 @@ export const OrderTrackingPage: React.FC = () => {
                         onClick={() => setSelectedDish(item)}
                         className="flex-none w-44 bg-white border border-slate-200 hover:border-emerald-400 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
                       >
-                        <div className="h-28 w-full overflow-hidden bg-slate-100 relative">
+                        <div className="h-32 w-full overflow-hidden bg-slate-900/5 relative flex items-center justify-center">
+                          <img
+                            src={item.imageUrl}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 w-full h-full object-cover blur-xl scale-125 opacity-35 select-none pointer-events-none"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                           <img
                             src={item.imageUrl}
                             alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="relative z-1 w-full h-full object-contain p-1.5 group-hover:scale-105 transition-transform duration-300 drop-shadow-xs"
                           />
                           <span
                             className={`absolute top-1.5 left-1.5 w-3.5 h-3.5 rounded-sm border flex items-center justify-center bg-white/90 shadow-2xs ${

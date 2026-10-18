@@ -190,21 +190,6 @@ We treat every client connection—whether from a diner's smartphone or an unkno
 
 ---
 
-## 🚀 Live Station Reference & Default Credentials
-
-| Station | Route | Default Access | Key Capabilities |
-|:---|:---|:---|:---|
-| 📱 **Guest Dining Menu** | `/menu` | *Open to all guests* | Dynamic menu, dietary filters, chef notes, cart & checkout |
-| ⏱️ **Live Order Tracker** | `/order/:orderId` | *Automatic on checkout* | Real-time prep stage tracker & live bill adjustment notices |
-| 🍳 **Kitchen Pass (KDS)** | `/kitchen` | `chef@aura.com` / `chef123` | High-contrast tickets, dish 86 controls, ticket timer badges |
-| 🤵 **Floor Command** | `/waiter` | `waiter@aura.com` / `waiter123` | 30-table layout, audio chimes, service calls, table turnover |
-| 👑 **Admin Portal** | `/admin` | `admin@aura.com` / `admin123` | 4-in-1 Workspace: Table Billing, Billing History, Menu Items & Today's Availability |
-| 🖨️ **QR Stand Studio** | `/admin/qr-generator` | `admin@aura.com` / `admin123` | High-res dual QR acrylic table stand generation |
-| ⚙️ **Platform Settings** | `/admin/settings` | `admin@aura.com` / `admin123` | Venue branding, dining host URL, guest Wi-Fi credentials |
-| 🔐 **Fast Staff Gate** | `/login` | Passcode: `AURA2026` | Quick 1-click station switcher for dedicated floor tablets |
-
----
-
 ## ☁️ Cloud Deployment Guide
 
 AURA is decoupled for zero-friction cloud deployment:

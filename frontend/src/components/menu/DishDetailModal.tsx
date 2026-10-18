@@ -66,6 +66,35 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
     }
   }, [isOpen, item?.id]);
 
+  const fallbackModalSrc = React.useMemo(() => {
+    if (!item) return '';
+    if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
+      return '/images/mineral_water_bottle.jpg';
+    }
+    const cat = (item.categoryName || '').toLowerCase();
+    if (cat.includes('tea') || cat.includes('chai') || cat.includes('coffee')) {
+      return 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80';
+    }
+    if (cat.includes('lassi') || cat.includes('cooler') || cat.includes('shake') || cat.includes('boba')) {
+      return '/images/dishes/mango_lassi.jpg';
+    }
+    if (cat.includes('pasta')) {
+      return '/images/dishes/arrabbiata_pasta.jpg';
+    }
+    if (cat.includes('sandwich') || cat.includes('burger')) {
+      return '/images/dishes/veg_corn_cheese_sandwich.jpg';
+    }
+    return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+  }, [item?.name, item?.id, item?.categoryName]);
+
+  const [modalImageSrc, setModalImageSrc] = useState(item?.imageUrl || fallbackModalSrc);
+
+  useEffect(() => {
+    if (item) {
+      setModalImageSrc(item.imageUrl || fallbackModalSrc);
+    }
+  }, [item?.imageUrl, fallbackModalSrc]);
+
   if (!isOpen || !item) return null;
 
   const displayQuantity = customQuantity;
@@ -189,42 +218,33 @@ export const DishDetailModal: React.FC<DishDetailModalProps> = ({
         </button>
 
         {/* Hero Image Box */}
-        <div className="relative h-44 sm:h-56 w-full shrink-0 bg-slate-100 overflow-hidden">
+        <div className="relative h-56 sm:h-72 w-full shrink-0 bg-slate-900/5 overflow-hidden flex items-center justify-center">
+          {/* Ambient Blur Backdrop */}
           <img
-            src={
-              item.imageUrl ||
-              ((item.categoryName || '').toLowerCase().includes('tea') || (item.categoryName || '').toLowerCase().includes('coffee')
-                ? 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80'
-                : (item.categoryName || '').toLowerCase().includes('lassi') || (item.categoryName || '').toLowerCase().includes('cooler')
-                ? '/images/dishes/mango_lassi.jpg'
-                : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80')
-            }
+            src={modalImageSrc}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-35 select-none pointer-events-none"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+
+          {/* Crisp Foreground Contained Image */}
+          <img
+            src={modalImageSrc}
             alt={item.name}
             loading="lazy"
             decoding="async"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              if (item.name.toLowerCase().includes('mineral water') || item.id === 95) {
-                target.src = '/images/mineral_water_bottle.jpg';
-              } else {
-                const cat = (item.categoryName || '').toLowerCase();
-                if (cat.includes('tea') || cat.includes('chai') || cat.includes('coffee')) {
-                  target.src = 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80';
-                } else if (cat.includes('lassi') || cat.includes('cooler') || cat.includes('shake') || cat.includes('boba')) {
-                  target.src = '/images/dishes/mango_lassi.jpg';
-                } else if (cat.includes('pasta')) {
-                  target.src = '/images/dishes/arrabbiata_pasta.jpg';
-                } else if (cat.includes('sandwich') || cat.includes('burger')) {
-                  target.src = '/images/dishes/veg_corn_cheese_sandwich.jpg';
-                } else {
-                  target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
-                }
+            onError={() => {
+              if (modalImageSrc !== fallbackModalSrc) {
+                setModalImageSrc(fallbackModalSrc);
               }
             }}
-            className="w-full h-full object-cover"
+            className="relative z-1 w-full h-full object-contain p-2 drop-shadow-md"
           />
 
-          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center space-x-2">
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center space-x-2 z-10">
             <span
               className={`w-5 h-5 rounded-md border-2 flex items-center justify-center bg-white shadow-sm ${
                 item.isVegetarian ? 'border-emerald-600' : 'border-rose-600'

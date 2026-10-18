@@ -18,6 +18,7 @@ import {
   ChevronLeft, ChevronRight, UploadCloud, ImageIcon, Loader2
 } from 'lucide-react';
 import { playWaiterCallChime } from '../../utils/audioAlert';
+import { parseItemAddonsAndNotes } from '../../utils/addonParser';
 
 export const AdminDashboardPage: React.FC = () => {
   const { showToast } = useToast();
@@ -882,15 +883,32 @@ export const AdminDashboardPage: React.FC = () => {
                         <span className="text-[10px] font-mono uppercase text-theme-muted block font-bold">
                           Orders Summary ({tbl.items.length} items):
                         </span>
-                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-                          {tbl.items.map((it: any, idx: number) => (
-                            <div key={idx} className="flex justify-between items-center text-[11px] text-slate-300">
-                              <span className="truncate max-w-[170px]">{it.quantity || it.qty || 1}x {it.name}</span>
-                              <span className="font-mono text-white font-semibold">
-                                ₹{((it.quantity || it.qty || 1) * (it.price || it.unitPrice || 0)).toLocaleString('en-IN')}
-                              </span>
-                            </div>
-                          ))}
+                        <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                          {tbl.items.map((it: any, idx: number) => {
+                            const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+                            return (
+                              <div key={idx} className="space-y-0.5 border-b border-theme-border/30 pb-1 last:border-b-0 last:pb-0">
+                                <div className="flex justify-between items-center text-[11px] text-slate-300">
+                                  <span className="truncate max-w-[170px] font-medium">{it.quantity || it.qty || 1}x {it.name}</span>
+                                  <span className="font-mono text-white font-semibold">
+                                    ₹{((it.quantity || it.qty || 1) * (it.price || it.unitPrice || 0)).toLocaleString('en-IN')}
+                                  </span>
+                                </div>
+                                {parsed.hasAddons && (
+                                  <div className="pl-3 space-y-0.5 text-[10px] text-emerald-400 font-mono">
+                                    {parsed.addons.map((ad, aIdx) => (
+                                      <div key={aIdx} className="flex justify-between items-center">
+                                        <span className="truncate max-w-[190px]">• {ad.raw || ad.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {parsed.specialInstruction && (
+                                  <p className="pl-3 text-[9px] text-amber-300/80 italic truncate">Note: {parsed.specialInstruction}</p>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -1597,13 +1615,30 @@ export const AdminDashboardPage: React.FC = () => {
                     <span className="text-[10px] font-mono uppercase text-theme-muted font-bold block">
                       Ordered Dishes ({selectedTableForBilling.items.length}):
                     </span>
-                    <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
-                      {selectedTableForBilling.items.map((it: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center text-slate-200 font-mono text-[11px]">
-                          <span>{it.quantity || it.qty || 1}x {it.name}</span>
-                          <span className="font-bold">₹{((it.quantity || it.qty || 1) * (it.price || it.unitPrice || 0)).toLocaleString('en-IN')}</span>
-                        </div>
-                      ))}
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                      {selectedTableForBilling.items.map((it: any, idx: number) => {
+                        const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+                        return (
+                          <div key={idx} className="space-y-0.5 border-b border-theme-border/30 pb-1.5 last:border-b-0 last:pb-0">
+                            <div className="flex justify-between items-center text-slate-200 font-mono text-[11px]">
+                              <span className="font-medium">{it.quantity || it.qty || 1}x {it.name}</span>
+                              <span className="font-bold">₹{((it.quantity || it.qty || 1) * (it.price || it.unitPrice || 0)).toLocaleString('en-IN')}</span>
+                            </div>
+                            {parsed.hasAddons && (
+                              <div className="pl-3 space-y-0.5 text-[10px] text-emerald-400 font-mono">
+                                {parsed.addons.map((ad, aIdx) => (
+                                  <div key={aIdx}>
+                                    • {ad.raw || ad.name}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {parsed.specialInstruction && (
+                              <p className="pl-3 text-[9px] text-amber-300/80 italic">Note: {parsed.specialInstruction}</p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1788,7 +1823,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <h2 className="font-serif font-black text-xl text-gray-900 tracking-wider">SILIGURI'S CHAI ADDAA</h2>
               </div>
               <p className="text-[10px] text-gray-500 font-sans">Artisan Tea House &amp; Comfort Dining</p>
-              <p className="text-[9px] text-gray-400">Sevoke Road, Siliguri • FSSAI: 11521001000456</p>
+              <p className="text-[10px] text-gray-600 font-mono">Champasari, Siliguri • Ph: +917585877937</p>
             </div>
 
             <div className="space-y-1 bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-[11px]">
@@ -1816,13 +1851,25 @@ export const AdminDashboardPage: React.FC = () => {
                 const qty = it.quantity || it.qty || 1;
                 const price = it.price || it.unitPrice || 0;
                 const total = it.totalPrice || (qty * price);
+                const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
                 return (
-                  <div key={i} className="grid grid-cols-12 text-xs py-0.5 text-gray-800">
-                    <span className="col-span-6 truncate font-medium">{it.name || it.itemName || 'Dish Item'}</span>
-                    <span className="col-span-2 text-center text-gray-500">{qty}</span>
-                    <span className="col-span-4 text-right font-bold">
-                      ₹{total.toLocaleString('en-IN')}
-                    </span>
+                  <div key={i} className="border-b border-gray-100 py-1 last:border-b-0">
+                    <div className="grid grid-cols-12 text-xs py-0.5 text-gray-800">
+                      <span className="col-span-6 truncate font-medium">{it.name || it.itemName || 'Dish Item'}</span>
+                      <span className="col-span-2 text-center text-gray-500">{qty}</span>
+                      <span className="col-span-4 text-right font-bold">
+                        ₹{total.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    {parsed.hasAddons && (
+                      <div className="pl-2 space-y-0.5 text-[10px] text-gray-500 font-sans">
+                        {parsed.addons.map((ad, aIdx) => (
+                          <div key={aIdx}>
+                            + {ad.raw || ad.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -2185,8 +2232,7 @@ export const AdminDashboardPage: React.FC = () => {
               <h2 className="font-serif font-black text-xl text-black tracking-wider">SILIGURI'S CHAI ADDAA</h2>
             </div>
             <p className="text-[11px] text-gray-700 font-sans font-medium">Artisan Tea House &amp; Comfort Dining</p>
-            <p className="text-[10px] text-gray-600">Sevoke Road, Siliguri, WB • Ph: +91 98765 43210</p>
-            <p className="text-[9px] text-gray-500 font-mono">FSSAI: 11521001000456 • GSTIN: 19AAEC8849J1Z9</p>
+            <p className="text-[10px] text-gray-600 font-mono">Champasari, Siliguri • Ph: +917585877937</p>
             <div className="pt-1 font-bold text-xs uppercase tracking-widest text-black">
               *** TAX INVOICE ***
             </div>
@@ -2236,13 +2282,25 @@ export const AdminDashboardPage: React.FC = () => {
               const qty = it.quantity || it.qty || 1;
               const price = it.price || it.unitPrice || 0;
               const total = it.totalPrice || (qty * price);
+              const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
               return (
-                <div key={i} className="grid grid-cols-12 text-[11px] py-0.5 text-gray-900">
-                  <span className="col-span-6 truncate font-medium">{name}</span>
-                  <span className="col-span-2 text-center text-gray-700">{qty}</span>
-                  <span className="col-span-4 text-right font-bold">
-                    ₹{total.toLocaleString('en-IN')}
-                  </span>
+                <div key={i} className="border-b border-dashed border-gray-200 py-1 last:border-b-0">
+                  <div className="grid grid-cols-12 text-[11px] py-0.5 text-gray-900">
+                    <span className="col-span-6 truncate font-medium">{name}</span>
+                    <span className="col-span-2 text-center text-gray-700">{qty}</span>
+                    <span className="col-span-4 text-right font-bold">
+                      ₹{total.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  {parsed.hasAddons && (
+                    <div className="pl-2 text-[9px] text-gray-600 font-mono">
+                      {parsed.addons.map((ad, aIdx) => (
+                        <div key={aIdx}>
+                          + {ad.raw || ad.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}

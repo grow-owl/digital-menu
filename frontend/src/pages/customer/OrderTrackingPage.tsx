@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Utensils, CheckCircle2, Clock, ArrowLeft, Plus, Minus, ChefHat, ShoppingBag, Receipt,
   Sparkles, Zap, Star, Coffee, Heart, MessageCircle, Flame, CupSoda,
-  ArrowRight, Wifi, Play, Pause, Volume2, VolumeX, Eye, FlameKindling,
-  ChevronLeft, ChevronRight, Check, Award
+  ArrowRight, Wifi, Check, Award
 } from 'lucide-react';
 import { CallWaiterButton } from '../../components/customer/CallWaiterButton';
 import { DishDetailModal } from '../../components/menu/DishDetailModal';
@@ -56,65 +55,7 @@ const QUICK_ADD_SUGGESTIONS = [
   { id: 'BITES', icon: Utensils, label: 'Quick Bites', categorySlug: 'burgers-sandwiches', keywords: ['burger', 'sandwich', 'pasta', 'maggie', 'noodles', 'chowmein'] },
 ];
 
-// Curated Chai Addaa Signature Live Reels (Real menu items from Siliguri's Chai Addaa)
-const CHAI_ADDAA_REELS = [
-  {
-    id: 20,
-    categoryId: 5,
-    categoryName: 'Crispy Fries & Appetisers',
-    name: 'Peri Peri Fries',
-    tagline: 'Crispy Golden Fries Tossed in Fiery Peri Peri',
-    price: 120,
-    chefNote: 'Fries heavily seasoned with orange Peri Peri spice, presented hot, crispy & crunchy in a wooden tray.',
-    gifSrc: '/reels/curry_simmer_reel.gif',
-    fallbackGif: 'https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=800&q=80',
-    poster: 'https://images.unsplash.com/photo-1585109649139-366815a0d713?auto=format&fit=crop&w=800&q=80',
-    badge: 'Bestseller',
-    loopDurationMs: 3500,
-  },
-  {
-    id: 1,
-    categoryId: 1,
-    categoryName: 'Chai & Hot Teas',
-    name: 'Masala Tea',
-    tagline: 'Clay-Cup Simmered Whole Spices & Fresh Milk',
-    price: 40,
-    chefNote: 'A hot glass of milk tea, rich with visible whole cardamom, cloves, fresh ginger and aromatics.',
-    gifSrc: '/reels/dal_simmer_reel.gif',
-    fallbackGif: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80',
-    poster: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=800&q=80',
-    badge: 'Signature Chai',
-    loopDurationMs: 3500,
-  },
-  {
-    id: 14,
-    categoryId: 3,
-    categoryName: 'Matcha, Boba & Shakes',
-    name: 'Oreo Blast Milkshake',
-    tagline: 'Thick Belgian Chocolate & Crushed Oreo Blend',
-    price: 130,
-    chefNote: 'A thick, chocolatey milkshake with a heavy topping of crushed Oreo cookies and chocolate drizzle.',
-    gifSrc: '/reels/dessert_reel.gif',
-    fallbackGif: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=800&q=80',
-    poster: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=800&q=80',
-    badge: 'Sweet Special',
-    loopDurationMs: 3800,
-  },
-  {
-    id: 17,
-    categoryId: 4,
-    categoryName: 'Burgers & Sandwiches',
-    name: 'Veg Cheese Burger (with Fries)',
-    tagline: 'Toasted Sesame Bun with Melting Cheese & Golden Fries',
-    price: 100,
-    chefNote: 'A hearty vegetable burger stacked with lettuce, tomato, and cheese, served with a large portion of classic fries.',
-    gifSrc: '/reels/pizza_reel.gif',
-    fallbackGif: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
-    poster: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80',
-    badge: "Chef's Special",
-    loopDurationMs: 4000,
-  },
-];
+
 
 
 export const OrderTrackingPage: React.FC = () => {
@@ -132,11 +73,6 @@ export const OrderTrackingPage: React.FC = () => {
   const [allMenuItems, setAllMenuItems] = useState<MenuItem[]>([]);
   const [selectedWaitFilter, setSelectedWaitFilter] = useState<'ALL' | 'FRIES' | 'TEA' | 'DRINK' | 'BITES'>('ALL');
 
-  // Chai Addaa Video Reel State
-  const [activeReelIdx, setActiveReelIdx] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [currentPlayCount, setCurrentPlayCount] = useState(1);
-  const [reelProgress, setReelProgress] = useState(0);
   const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const suggestedScrollRef = useRef<HTMLDivElement>(null);
@@ -149,39 +85,6 @@ export const OrderTrackingPage: React.FC = () => {
       });
     }
   };
-
-  // Auto-advance reel after playing exactly 2 times
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const currentReel = CHAI_ADDAA_REELS[activeReelIdx];
-    const loopDuration = currentReel.loopDurationMs || 3500;
-    const totalDuration = loopDuration * 2;
-    const tickInterval = 50;
-    let elapsed = 0;
-
-    setReelProgress(0);
-    setCurrentPlayCount(1);
-
-    const timer = setInterval(() => {
-      elapsed += tickInterval;
-      const progress = Math.min(100, (elapsed / totalDuration) * 100);
-      setReelProgress(progress);
-
-      if (elapsed < loopDuration) {
-        setCurrentPlayCount(1);
-      } else {
-        setCurrentPlayCount(2);
-      }
-
-      if (elapsed >= totalDuration) {
-        // Automatically move to the next reel after 2 complete plays
-        setActiveReelIdx((prev) => (prev + 1) % CHAI_ADDAA_REELS.length);
-      }
-    }, tickInterval);
-
-    return () => clearInterval(timer);
-  }, [activeReelIdx, isPlaying]);
 
   // Always open page at the very top
   useEffect(() => {
@@ -288,42 +191,7 @@ export const OrderTrackingPage: React.FC = () => {
   }, [tableId, orderId, activeStoreTableId]);
 
 
-  const handlePrevReel = () => {
-    setActiveReelIdx((prev) => (prev === 0 ? CHAI_ADDAA_REELS.length - 1 : prev - 1));
-    setIsPlaying(true);
-    setReelProgress(0);
-    setCurrentPlayCount(1);
-  };
 
-  const handleNextReel = () => {
-    setActiveReelIdx((prev) => (prev === CHAI_ADDAA_REELS.length - 1 ? 0 : prev + 1));
-    setIsPlaying(true);
-    setReelProgress(0);
-    setCurrentPlayCount(1);
-  };
-
-  const handleAddReelItem = (reel: typeof CHAI_ADDAA_REELS[0]) => {
-    const realDish = SILIGURI_MENU_ITEMS.find((it) => it.id === reel.id);
-    if (realDish) {
-      setSelectedDish(realDish);
-      return;
-    }
-    const dishItem: MenuItem = {
-      id: reel.id,
-      categoryId: reel.categoryId,
-      categoryName: reel.categoryName,
-      name: reel.name,
-      description: reel.chefNote,
-      price: reel.price,
-      imageUrl: reel.poster,
-      isVegetarian: true,
-      isGlutenFree: false,
-      isAvailable: true,
-      preparationTimeMinutes: 10,
-      spiceLevel: 1,
-    };
-    setSelectedDish(dishItem);
-  };
 
   // 3-step live kitchen progress (Received -> Preparing -> Ready)
   const steps = [
@@ -382,8 +250,6 @@ export const OrderTrackingPage: React.FC = () => {
   const latestElapsedSecs = latestOrder && latestOrder.createdAt ? Math.floor((tickTime - new Date(latestOrder.createdAt).getTime()) / 1000) : 0;
   const latestRemainingSecs = latestPipeline ? Math.max(0, latestPipeline.totalEstimatedSeconds - latestElapsedSecs) : 0;
   const latestRemainingMins = Math.ceil(latestRemainingSecs / 60);
-
-  const activeReel = CHAI_ADDAA_REELS[activeReelIdx];
 
   return (
     <div className="page-theme-customer min-h-screen bg-[#F4F6F8] text-slate-800 pb-36 font-sans">
@@ -563,251 +429,7 @@ export const OrderTrackingPage: React.FC = () => {
               </div>
             )}
 
-            {/* === 2. CHAI ADDAA LIVE REELS & VIDEO SHOWCASE (Holding Guests & Driving Orders) === */}
-            <div className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-sm space-y-3 p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="p-1.5 bg-rose-100 text-rose-600 rounded-xl">
-                    <Flame className="w-4 h-4" />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-black text-slate-900 leading-tight">Chai Addaa Live Reels</h3>
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                    {activeReelIdx + 1} of {CHAI_ADDAA_REELS.length}
-                  </span>
-                </div>
-              </div>
-
-              {/* Video/GIF Player Display Container - Optimal Vertical Ratio */}
-              <div
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="relative rounded-3xl overflow-hidden bg-black w-full max-w-lg mx-auto h-[480px] sm:h-[530px] shadow-2xl group border-2 border-slate-800 select-none cursor-pointer flex items-center justify-center"
-              >
-                {/* Active Animated Food GIF Reel */}
-                <img
-                  key={activeReel.id}
-                  src={isPlaying ? activeReel.gifSrc : activeReel.poster}
-                  onError={(e) => {
-                    // Fallback to online CDN GIF if local file path fails
-                    (e.currentTarget as HTMLImageElement).src = activeReel.fallbackGif;
-                  }}
-                  alt={activeReel.name}
-                  className={`w-full h-full object-cover transition-all duration-300 ${
-                    isPlaying ? 'opacity-100 scale-100' : 'opacity-75 scale-95 brightness-75'
-                  }`}
-                />
-
-                {/* Video Overlay Gradient (Top and Bottom so text & controls pop) */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/60 pointer-events-none" />
-
-                {/* Centered Pause / Play Badge if user paused */}
-                {!isPlaying && (
-                  <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                    <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-2xl">
-                      <Play className="w-8 h-8 fill-white translate-x-0.5" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Top Instagram-Style Segmented Progress Bars (Segmented by Reel, 2 Plays each) */}
-                <div className="absolute top-2.5 left-3.5 right-3.5 flex space-x-1.5 z-20">
-                  {CHAI_ADDAA_REELS.map((_, i) => {
-                    let fillWidth = '0%';
-                    if (i < activeReelIdx) {
-                      fillWidth = '100%';
-                    } else if (i === activeReelIdx) {
-                      fillWidth = `${reelProgress}%`;
-                    }
-                    return (
-                      <div
-                        key={i}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveReelIdx(i);
-                          setIsPlaying(true);
-                          setReelProgress(0);
-                          setCurrentPlayCount(1);
-                        }}
-                        className="h-1 flex-1 rounded-full bg-white/30 overflow-hidden cursor-pointer backdrop-blur-xs relative hover:h-1.5 transition-all"
-                        title={`Reel ${i + 1}: ${CHAI_ADDAA_REELS[i].name}`}
-                      >
-                        <div
-                          className="h-full bg-white rounded-full transition-[width] duration-75 ease-linear shadow-xs"
-                          style={{ width: fillWidth }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Top Overlay Badges & Controls */}
-                <div className="absolute top-6 left-3.5 right-3.5 flex items-center justify-between z-20">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-bold border border-amber-400/30 shadow-xs flex items-center space-x-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>{activeReel.badge}</span>
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full bg-rose-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider shadow-xs flex items-center space-x-1">
-                      <span>LIVE REEL</span>
-                      <span className="opacity-90 font-mono">• Play {currentPlayCount}/2</span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center space-x-1.5">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsPlaying(!isPlaying);
-                      }}
-                      className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 transition-all cursor-pointer border border-white/20"
-                      title={isPlaying ? 'Pause Reel' : 'Play Reel'}
-                    >
-                      {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Side Navigation Arrows to Swipe/Cycle Reels (Manual Icon Switcher) */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePrevReel();
-                  }}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-lg transition-all active:scale-90 cursor-pointer"
-                  title="Previous Reel"
-                >
-                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleNextReel();
-                  }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-lg transition-all active:scale-90 cursor-pointer"
-                  title="Next Reel"
-                >
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-
-                {/* Bottom Overlay Dish Information (Name & Price ONLY - Clickable to open card) */}
-                <div className="absolute bottom-4 left-4 right-4 z-20 flex items-end justify-between gap-3">
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddReelItem(activeReel);
-                    }}
-                    className="text-white space-y-0.5 min-w-0 flex-1 cursor-pointer"
-                  >
-                    <h4 className="text-base sm:text-lg font-black tracking-tight leading-snug drop-shadow-md text-white truncate hover:text-emerald-300 transition-colors">
-                      {activeReel.name}
-                    </h4>
-                    <p className="text-sm font-black text-emerald-400 font-mono">
-                      ₹{activeReel.price}
-                    </p>
-                  </div>
-
-                  {/* View & Add / Direct Stepper */}
-                  {(() => {
-                    const inCart = items.find((it) => it.menuItem.id === activeReel.id);
-                    if (inCart) {
-                      return (
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center space-x-1.5 bg-[#0C831F] text-white px-2.5 py-1.5 rounded-xl shadow-md shrink-0 border border-emerald-400"
-                        >
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQuantity(activeReel.id, inCart.quantity - 1);
-                            }}
-                            className="w-7 h-7 hover:bg-black/20 rounded-lg flex items-center justify-center transition-colors cursor-pointer active:scale-90"
-                            title="Decrease quantity"
-                          >
-                            <Minus className="w-4 h-4 stroke-[3]" />
-                          </button>
-                          <span className="font-mono font-black text-sm min-w-[20px] text-center">
-                            {inCart.quantity}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateQuantity(activeReel.id, inCart.quantity + 1);
-                            }}
-                            className="w-7 h-7 hover:bg-black/20 rounded-lg flex items-center justify-center transition-colors cursor-pointer active:scale-90"
-                            title="Increase quantity"
-                          >
-                            <Plus className="w-4 h-4 stroke-[3]" />
-                          </button>
-                        </div>
-                      );
-                    }
-                    return (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddReelItem(activeReel);
-                        }}
-                        className="px-3.5 py-2 bg-[#0C831F] hover:bg-[#096918] text-white font-black rounded-xl text-xs uppercase tracking-wider transition-all duration-150 shadow-md flex items-center space-x-1.5 shrink-0 active:scale-95 cursor-pointer border border-emerald-400"
-                      >
-                        <span>View &amp; Add</span>
-                        <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
-                      </button>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* Reel Switcher Thumbnails (4-Column Layout) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                {CHAI_ADDAA_REELS.map((reel, idx) => (
-                  <button
-                    key={reel.id}
-                    onClick={() => {
-                      setActiveReelIdx(idx);
-                      setIsPlaying(true);
-                      setReelProgress(0);
-                      setCurrentPlayCount(1);
-                    }}
-                    className={`p-1.5 rounded-2xl text-left border transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative ${
-                      idx === activeReelIdx
-                        ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="h-16 w-full rounded-xl overflow-hidden mb-1.5 bg-slate-100 relative">
-                      <img
-                        src={reel.gifSrc}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = reel.fallbackGif;
-                        }}
-                        alt={reel.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-black/10" />
-                      {idx === activeReelIdx ? (
-                        <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-[#0C831F] text-white text-[8px] font-black rounded-full shadow-2xs flex items-center space-x-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                          <span>LIVE</span>
-                        </span>
-                      ) : (
-                        <span className="absolute bottom-1 right-1 px-1 py-0.5 bg-black/60 text-white text-[8px] font-bold rounded">
-                          GIF
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] font-bold text-slate-900 truncate leading-snug">{reel.name}</p>
-                    <p className="text-[10px] font-mono font-black text-[#0C831F]">₹{reel.price}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* === 3. WHILE YOU WAIT: QUICK ADD SUGGESTIONS (Chai Addaa Themed & Full Text Visible) === */}
             {latestOrder && ['received', 'preparing'].includes(latestOrder.status) && (

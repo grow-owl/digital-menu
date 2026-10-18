@@ -28,11 +28,11 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'image/gif', 'image/svg+xml'];
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'image/gif'];
   if (allowed.includes(file.mimetype.toLowerCase())) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files (JPEG, PNG, WEBP, GIF, SVG) are allowed.'), false);
+    cb(new Error('Only photo image files (JPEG, PNG, WEBP, GIF) are allowed for menu dishes.'), false);
   }
 };
 
@@ -49,7 +49,7 @@ const router = express.Router();
  * @route   POST /api/upload
  * @access  Protected (Owner, Chef)
  */
-router.post('/', (req, res) => {
+router.post('/', protect, requireRole('owner', 'chef'), (req, res) => {
   // Use multer single file parser
   upload.single('image')(req, res, (err) => {
     if (err instanceof multer.MulterError) {

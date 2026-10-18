@@ -49,7 +49,9 @@ export const useCartStore = create<CartState>()(
 
       fetchServerCart: async (tableId: string, force = false) => {
         try {
-          const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
+          if (!tableId || tableId === 'Admin') return;
+          const cleanTableNum = String(tableId || '').match(/\d+/)?.[0];
+          if (!cleanTableNum) return;
           const res = await apiClient.get(`/tables/table-number/${cleanTableNum}/cart`);
           if (res.data && Array.isArray(res.data.data)) {
             const rawServerItems = res.data.data;
@@ -59,10 +61,10 @@ export const useCartStore = create<CartState>()(
                 if (it.menuItem && it.menuItem.price !== undefined) return it;
                 return {
                   menuItem: it.menuItem || {
-                    id: it.menuItemId || it.id || 1,
+                    id: Number(it.menuItemId) || it.id || 1,
                     name: it.name || 'Dish',
                     price: it.price || it.unitPrice || 0,
-                    imageUrl: it.imageUrl || '',
+                    imageUrl: it.imageUrl || it.image || '',
                     isAvailable: true,
                     categoryId: it.categoryId || 1,
                   },
@@ -91,7 +93,9 @@ export const useCartStore = create<CartState>()(
 
       syncWithServer: async (tableId: string, items: CartItem[]) => {
         try {
-          const cleanTableNum = String(tableId || '').match(/\d+/)?.[0] || '1';
+          if (!tableId || tableId === 'Admin' || tableId === 'null') return;
+          const cleanTableNum = String(tableId || '').match(/\d+/)?.[0];
+          if (!cleanTableNum) return;
           const sanitized = (items || []).filter((it) => it && it.menuItem);
           await apiClient.put(`/tables/table-number/${cleanTableNum}/cart`, { items: sanitized });
         } catch (e) {
@@ -129,10 +133,11 @@ export const useCartStore = create<CartState>()(
             ];
           }
 
-          const targetTableId = state.tableId || '10';
-          get().syncWithServer(targetTableId, updatedItems);
+          if (state.tableId && state.tableId !== 'Admin') {
+            get().syncWithServer(state.tableId, updatedItems);
+          }
 
-          return { items: updatedItems, tableId: targetTableId };
+          return { items: updatedItems };
         });
       },
 
@@ -142,10 +147,11 @@ export const useCartStore = create<CartState>()(
             (item) => item?.menuItem && item.menuItem.id !== menuItemId
           );
 
-          const targetTableId = state.tableId || '10';
-          get().syncWithServer(targetTableId, updatedItems);
+          if (state.tableId && state.tableId !== 'Admin') {
+            get().syncWithServer(state.tableId, updatedItems);
+          }
 
-          return { items: updatedItems, tableId: targetTableId };
+          return { items: updatedItems };
         });
       },
 
@@ -169,10 +175,11 @@ export const useCartStore = create<CartState>()(
                 : item
             );
 
-          const targetTableId = state.tableId || '10';
-          get().syncWithServer(targetTableId, updatedItems);
+          if (state.tableId && state.tableId !== 'Admin') {
+            get().syncWithServer(state.tableId, updatedItems);
+          }
 
-          return { items: updatedItems, tableId: targetTableId };
+          return { items: updatedItems };
         });
       },
 
@@ -186,10 +193,11 @@ export const useCartStore = create<CartState>()(
                 : item
             );
 
-          const targetTableId = state.tableId || '10';
-          get().syncWithServer(targetTableId, updatedItems);
+          if (state.tableId && state.tableId !== 'Admin') {
+            get().syncWithServer(state.tableId, updatedItems);
+          }
 
-          return { items: updatedItems, tableId: targetTableId };
+          return { items: updatedItems };
         });
       },
 
@@ -213,10 +221,11 @@ export const useCartStore = create<CartState>()(
                 : item
             );
 
-          const targetTableId = state.tableId || '10';
-          get().syncWithServer(targetTableId, updatedItems);
+          if (state.tableId && state.tableId !== 'Admin') {
+            get().syncWithServer(state.tableId, updatedItems);
+          }
 
-          return { items: updatedItems, tableId: targetTableId };
+          return { items: updatedItems };
         });
       },
 

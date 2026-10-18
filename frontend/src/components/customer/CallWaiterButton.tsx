@@ -3,6 +3,7 @@ import { Bell, CheckCircle2 } from 'lucide-react';
 import { useToast } from '../feedback/ToastContainer';
 import { tableService } from '../../services/table.service';
 import { useCartStore } from '../../store/use-cart-store';
+import { useTableStore } from '../../store/use-table-store';
 
 interface CallWaiterButtonProps {
   tableId?: string;
@@ -10,18 +11,21 @@ interface CallWaiterButtonProps {
 
 const SERVICE_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes (120,000 ms)
 
-export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '14' }) => {
+export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId: propTableId }) => {
+  const activeTableId = useTableStore((state) => state.activeTableId);
+  const tableId = propTableId || activeTableId || '';
   const [secondsRemaining, setSecondsRemaining] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const { showToast } = useToast();
   const itemCount = useCartStore((state) => state.getItemCount());
   const hasCart = itemCount > 0;
 
-  const storageKey = `aura_call_service_timestamp_${tableId}`;
+  const storageKey = tableId ? `aura_call_service_timestamp_${tableId}` : 'aura_call_service_timestamp_none';
 
   // Check remaining cooldown seconds from localStorage
   const getRemainingSeconds = (): number => {
     try {
+      if (!tableId) return 0;
       const savedTime = localStorage.getItem(storageKey);
       if (!savedTime) return 0;
       const elapsed = Date.now() - parseInt(savedTime, 10);
@@ -34,6 +38,11 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
 
   // Sync remaining time on mount, tableId change, and storage events
   useEffect(() => {
+    if (!tableId) {
+      setSecondsRemaining(0);
+      return;
+    }
+
     const syncCooldown = () => {
       const remaining = getRemainingSeconds();
       setSecondsRemaining(remaining);
@@ -69,6 +78,11 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
   const isRequested = secondsRemaining > 0;
 
   const handleCallWaiter = async () => {
+    if (!tableId || tableId === 'Admin') {
+      showToast('No dining table detected. Please scan your table QR code first to call a waiter.', 'error');
+      return;
+    }
+
     if (isRequested || isLoading) return;
 
     setIsLoading(true);
@@ -96,14 +110,10 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ tableId = '1
       window.dispatchEvent(new Event('storage'));
 
       showToast(`Waiter alerted for Table ${tableId}! Staff will attend shortly.`, 'success');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to dispatch waiter call:', err);
-      // Even if network fails, lock for 2 minutes to prevent repeated spam
-      const now = Date.now();
-      localStorage.setItem(storageKey, now.toString());
-      setSecondsRemaining(120);
-      window.dispatchEvent(new Event('storage'));
-      showToast(`Waiter alerted for Table ${tableId}!`, 'success');
+      const errMsg = err.response?.data?.message || `Unable to reach waiter for Table ${tableId}. Please call a staff member directly.`;
+      showToast(errMsg, 'error');
     } finally {
       setIsLoading(false);
     }

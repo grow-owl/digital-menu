@@ -52,7 +52,7 @@ export const MenuPage: React.FC = () => {
     return false;
   }, [user, isAuthenticated, authToken, refreshToken]);
 
-  const tableId = activeStoreTableId || paramTableId || (isAdmin ? 'Admin' : '10');
+  const tableId = activeStoreTableId || paramTableId || (isAdmin ? 'Admin' : '');
   const navigate = useNavigate();
 
   // Core Data State

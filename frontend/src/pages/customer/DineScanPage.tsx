@@ -31,7 +31,13 @@ export const DineScanPage: React.FC = () => {
 
         if (!isMounted) return;
 
-        const tableNum = String(data.tableNumber || '10');
+        if (!data || !data.tableNumber) {
+          setStatus('error');
+          setErrorMessage('Could not determine dining table number from this QR code. Please scan an official table QR stand.');
+          return;
+        }
+
+        const tableNum = String(data.tableNumber);
         const sessId = data.sessionId || `SESS-T${tableNum}-${Date.now()}`;
         const qrTok = data.qrToken || token;
 

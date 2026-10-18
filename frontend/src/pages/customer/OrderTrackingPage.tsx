@@ -15,6 +15,7 @@ import { useAuthStore } from '../../store/use-auth-store';
 import { useTableStore } from '../../store/use-table-store';
 import { useToast } from '../../components/feedback/ToastContainer';
 import { orderService } from '../../services/order.service';
+import { tableService } from '../../services/table.service';
 import { menuService } from '../../services/menu.service';
 import { MenuItem } from '../../types/menu.types';
 import { SILIGURI_MENU_ITEMS } from '../../data/siliguriMenuData';
@@ -63,7 +64,8 @@ const QUICK_ADD_SUGGESTIONS = [
 export const OrderTrackingPage: React.FC = () => {
   const { tableId: paramTableId, orderId } = useParams<{ tableId?: string; orderId?: string }>();
   const activeStoreTableId = useTableStore((state) => state.activeTableId);
-  const tableId = activeStoreTableId || paramTableId || '10';
+  const [detectedTableId, setDetectedTableId] = useState<string | null>(null);
+  const tableId = activeStoreTableId || paramTableId || detectedTableId || '';
   const navigate = useNavigate();
   const { items, addItem, updateQuantity, clearCart, getItemCount } = useCartStore();
   const { showToast } = useToast();
@@ -77,7 +79,24 @@ export const OrderTrackingPage: React.FC = () => {
 
   const [selectedDish, setSelectedDish] = useState<MenuItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isRequestingBill, setIsRequestingBill] = useState(false);
   const suggestedScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleRequestBill = async () => {
+    if (!tableId) {
+      showToast('No dining table detected. Please scan your table QR code first to request the bill.', 'error');
+      return;
+    }
+    setIsRequestingBill(true);
+    try {
+      const res = await tableService.checkoutSession(tableId);
+      showToast(res?.message || `Bill requested for Table ${tableId}! Waiter will arrive shortly with your invoice.`, 'success');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Cannot request bill at this time.', 'error');
+    } finally {
+      setIsRequestingBill(false);
+    }
+  };
 
   const scrollSuggested = (dir: 'left' | 'right') => {
     if (suggestedScrollRef.current) {
@@ -132,15 +151,29 @@ export const OrderTrackingPage: React.FC = () => {
   // Fetch active orders for this table's session
   const fetchTableOrders = async () => {
     try {
-      const activeTable = activeStoreTableId || paramTableId || '10';
-      const promises: Promise<any>[] = [orderService.getOrdersByTable(activeTable)];
+      const activeTable = activeStoreTableId || paramTableId || detectedTableId;
+      const promises: Promise<any>[] = [];
+      if (activeTable) {
+        promises.push(orderService.getOrdersByTable(activeTable).catch(() => []));
+      }
       
       // If tracking a specific order ID, fetch it directly as well to guarantee sync
       if (orderId && orderId !== 'active') {
         promises.push(orderService.getOrder(orderId).catch(() => null));
       }
 
-      const [tableData, specificOrder] = await Promise.all(promises);
+      if (promises.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      const results = await Promise.all(promises);
+      const tableData = activeTable ? results[0] : [];
+      const specificOrder = activeTable ? results[1] : results[0];
+
+      if (specificOrder && specificOrder.tableId && !detectedTableId) {
+        setDetectedTableId(String(specificOrder.tableId));
+      }
 
       let combined: any[] = Array.isArray(tableData) ? [...tableData] : [];
       if (specificOrder && specificOrder.orderId) {
@@ -771,7 +804,7 @@ export const OrderTrackingPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Receipt className="w-4 h-4 text-emerald-800" />
-                  <span className="font-bold text-xs text-emerald-900 uppercase">Table {tableId} Cumulative Total</span>
+                  <span className="font-bold text-xs text-emerald-900 uppercase">{tableId ? `Table ${tableId} ` : ''}Cumulative Total</span>
                 </div>
                 <span className="font-mono font-black text-lg text-emerald-900">
                   ₹{grandSessionTotal.toFixed(2)}
@@ -779,14 +812,25 @@ export const OrderTrackingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* === 8. BIG CTA: ADD MORE DISHES === */}
-            <button
-              onClick={() => navigate('/menu')}
-              className="w-full py-4 bg-[#0C831F] hover:bg-[#096918] text-white font-black rounded-2xl text-sm uppercase tracking-wider transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add More Dishes To Table {tableId}</span>
-            </button>
+            {/* === 7. ACTIONS: ADD MORE DISHES & REQUEST BILL === */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <button
+                onClick={() => navigate('/menu')}
+                className="w-full py-3.5 bg-[#0C831F] hover:bg-[#096918] text-white font-black rounded-2xl text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add More Dishes</span>
+              </button>
+
+              <button
+                onClick={handleRequestBill}
+                disabled={isRequestingBill}
+                className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-black rounded-2xl text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center space-x-2 shadow-lg shadow-amber-600/20 cursor-pointer active:scale-95 disabled:opacity-60"
+              >
+                <Receipt className="w-4 h-4" />
+                <span>{isRequestingBill ? 'Requesting...' : 'Request Final Bill'}</span>
+              </button>
+            </div>
           </>
         )}
       </div>

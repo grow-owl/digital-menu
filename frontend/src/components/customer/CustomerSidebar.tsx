@@ -38,8 +38,13 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
   const { showToast } = useToast();
 
   const handleRequestBill = async () => {
+    const targetTable = tableId;
+    if (!targetTable || targetTable === 'Admin') {
+      showToast('No table detected. Please scan your dining table QR code first to request the bill.', 'error');
+      return;
+    }
     try {
-      const res = await tableService.checkoutSession(tableId || activeSessionId || '10');
+      const res = await tableService.checkoutSession(targetTable);
       showToast(res.message || 'Bill requested! Waiter will bring invoice to table.', 'success');
       onClose();
     } catch (error: any) {
@@ -49,14 +54,19 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
   };
 
   const handleCallWaiter = async (reason: string = 'Call Waiter to Table') => {
+    const targetTable = tableId;
+    if (!targetTable || targetTable === 'Admin') {
+      showToast('No table detected. Please scan your dining table QR code first to call a waiter.', 'error');
+      return;
+    }
     try {
       const now = Date.now();
-      localStorage.setItem(`aura_call_service_timestamp_${tableId}`, now.toString());
-      await tableService.callWaiter(tableId, reason);
+      localStorage.setItem(`aura_call_service_timestamp_${targetTable}`, now.toString());
+      await tableService.callWaiter(targetTable, reason);
       const existingAlerts = JSON.parse(localStorage.getItem('aura_waiter_alerts') || '[]');
       const newAlert = {
         id: now,
-        tableId,
+        tableId: targetTable,
         reason,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'PENDING',
@@ -65,13 +75,12 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
       window.dispatchEvent(new CustomEvent('service_called', { detail: newAlert }));
       window.dispatchEvent(new CustomEvent('waiter_called', { detail: newAlert }));
       window.dispatchEvent(new Event('storage'));
-      showToast(`Waiter assistance requested for Table ${tableId}!`, 'success');
+      showToast(`Waiter assistance requested for Table ${targetTable}!`, 'success');
       onClose();
-    } catch (e) {
-      const now = Date.now();
-      localStorage.setItem(`aura_call_service_timestamp_${tableId}`, now.toString());
-      window.dispatchEvent(new Event('storage'));
-      showToast(`Waiter call sent for Table ${tableId}.`, 'info');
+    } catch (e: any) {
+      console.error('Failed to dispatch waiter call:', e);
+      const errMsg = e.response?.data?.message || `Unable to reach waiter for Table ${targetTable}. Please contact staff directly.`;
+      showToast(errMsg, 'error');
       onClose();
     }
   };

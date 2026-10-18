@@ -689,18 +689,22 @@ export const updateTableCart = asyncHandler(async (req, res) => {
   const sanitizedItems = rawItems.map(item => {
     const rawQty = parseInt(item?.quantity, 10);
     const quantity = (!isNaN(rawQty) && rawQty >= 1) ? Math.min(rawQty, 50) : 1;
+    const mItem = item?.menuItem || {};
+    const priceVal = Number(item?.price ?? item?.unitPrice ?? mItem.price ?? 0);
     return {
-      menuItemId: String(item?.menuItemId || '').slice(0, 50),
-      name: String(item?.name || '').slice(0, 100),
-      price: Number(item?.price) > 0 ? Number(item?.price) : 0,
+      menuItemId: String(item?.menuItemId || mItem.id || item?.id || '').slice(0, 50),
+      name: String(item?.name || mItem.name || '').slice(0, 100),
+      price: priceVal > 0 ? priceVal : 0,
       quantity,
-      image: String(item?.image || '').slice(0, 300),
-      notes: String(item?.notes || '').slice(0, 200),
+      image: String(item?.image || mItem.imageUrl || '').slice(0, 300),
+      notes: String(item?.notes || item?.specialNotes || '').slice(0, 200),
       selectedAddons: Array.isArray(item?.selectedAddons)
         ? item.selectedAddons.slice(0, 10).map(a => ({
             name: String(a?.name || '').slice(0, 50),
             price: Number(a?.price) > 0 ? Number(a?.price) : 0,
           }))
+        : Array.isArray(item?.addonNames)
+        ? item.addonNames.slice(0, 10).map(a => ({ name: String(a).slice(0, 50), price: 0 }))
         : []
     };
   });

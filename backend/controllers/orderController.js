@@ -263,22 +263,26 @@ export const createOrder = asyncHandler(async (req, res) => {
   }
 
   const itemIds = items.map(it => it.menuItemId || it.id).filter(Boolean);
+  const itemNames = items.map(it => it.name).filter(Boolean);
   const dbMenuItems = await MenuItem.find({
     $or: [
       { id: { $in: itemIds.map(Number).filter(n => !isNaN(n)) } },
-      { _id: { $in: itemIds.filter(id => mongoose.isValidObjectId(id)) } }
+      { _id: { $in: itemIds.filter(id => mongoose.isValidObjectId(id)) } },
+      { name: { $in: itemNames } }
     ]
   });
   const dbMenuMap = new Map();
   dbMenuItems.forEach(item => {
     dbMenuMap.set(String(item.id), item);
     dbMenuMap.set(String(item._id), item);
+    if (item.name) dbMenuMap.set(item.name.toLowerCase().trim(), item);
   });
 
   // Strict Catalog Validation & Availability Guard: Block non-existent or 86'd items
   for (const it of items) {
     const targetId = String(it.menuItemId || it.id || '');
-    const dbItem = dbMenuMap.get(targetId);
+    const normName = String(it.name || '').toLowerCase().trim();
+    const dbItem = dbMenuMap.get(targetId) || dbMenuMap.get(normName);
     if (!dbItem) {
       return res.status(400).json({
         success: false,
@@ -296,7 +300,8 @@ export const createOrder = asyncHandler(async (req, res) => {
   let verifiedSubtotal = 0;
   const verifiedNewItems = items.map(it => {
     const targetId = String(it.menuItemId || it.id || '');
-    const dbItem = dbMenuMap.get(targetId);
+    const normName = String(it.name || '').toLowerCase().trim();
+    const dbItem = dbMenuMap.get(targetId) || dbMenuMap.get(normName);
     
     // Strict Quantity Guard: prevent NaN, negative, zero, or overflow quantities
     const rawQty = parseInt(it.quantity || it.qty || 1, 10);

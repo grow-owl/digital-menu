@@ -256,7 +256,7 @@ export const LandingPage: React.FC = () => {
 
             <div className="pt-2">
               <button
-                onClick={() => navigate('/menu')}
+                onClick={() => setIsTableQrScanOpen(true)}
                 className="w-full xs:w-auto px-6 py-3 bg-[#9d785e] hover:bg-[#86644d] text-white text-xs font-semibold tracking-widest uppercase rounded shadow transition-all flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <span>Launch Table Menu Now</span>
@@ -330,7 +330,7 @@ export const LandingPage: React.FC = () => {
               {/* Action Buttons for Guest */}
               <div className="pt-2 border-t border-[#e3ddd4] grid grid-cols-2 gap-2 text-xs">
                 <button
-                  onClick={() => navigate('/menu')}
+                  onClick={() => setIsTableQrScanOpen(true)}
                   className="py-2.5 px-2 rounded bg-[#9d785e] hover:bg-[#86644d] text-white font-semibold transition-colors cursor-pointer text-center truncate"
                 >
                   Order More

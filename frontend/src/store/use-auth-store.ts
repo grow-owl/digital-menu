@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User } from '../types/user.types';
+import { useTableStore } from './use-table-store';
+import { useCartStore } from './use-cart-store';
 
 interface AuthState {
   user: User | null;
@@ -41,14 +43,26 @@ export const useAuthStore = create<AuthState>()(
         set((state) => ({
           user: { ...state.user, ...user },
         })),
-      logout: () =>
+      logout: () => {
+        try {
+          useTableStore.getState().clearSession();
+          useCartStore.getState().clearCart();
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('aura_station_terminal_key');
+            localStorage.removeItem('aura-table-session');
+            localStorage.removeItem('aura-cart-storage');
+          }
+        } catch (e) {
+          console.warn('Error clearing table/cart session on logout:', e);
+        }
         set({
           user: null,
           token: null,
           refreshToken: null,
           tableId: null,
           isAuthenticated: false,
-        }),
+        });
+      },
     }),
     {
       name: 'aura-auth-storage',

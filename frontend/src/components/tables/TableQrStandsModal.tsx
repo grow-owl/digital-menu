@@ -70,7 +70,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
   const [downloadingTable, setDownloadingTable] = useState<string | number | null>(null);
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
-  const [printingTableNumber, setPrintingTableNumber] = useState<number | string | 'ALL' | null>(null);
+  const [printingTableNumber, setPrintingTableNumber] = useState<number | string | null>(null);
 
   // Cache of locally generated QR code data URLs (tableNumber -> dataUrl)
   const [qrCache, setQrCache] = useState<{ [key: string]: string }>({});
@@ -213,13 +213,6 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
     }
   };
 
-  const handlePrintAll = () => {
-    setPrintingTableNumber('ALL');
-    setTimeout(() => {
-      window.print();
-    }, 150);
-  };
-
   const handlePrintSingle = (tableNumber: number | string) => {
     setPrintingTableNumber(tableNumber);
     setTimeout(() => {
@@ -306,17 +299,6 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                 <Settings className={`w-3.5 h-3.5 ${isConfigOpen ? 'rotate-90 transition-transform' : ''}`} />
                 <span>Venue &amp; Domain Setup</span>
                 {isConfigOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={handlePrintAll}
-                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer border border-slate-700"
-                title="Print All Table Stands"
-              >
-                <Printer className="w-3.5 h-3.5 text-sky-400" />
-                <span className="hidden sm:inline">Print All Stands</span>
-                <span className="sm:hidden">Print</span>
               </button>
 
               <button

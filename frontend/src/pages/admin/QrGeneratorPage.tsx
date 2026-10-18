@@ -83,9 +83,9 @@ export const QrGeneratorPage: React.FC = () => {
 
 
 
-  // Print Mode State ('STAND_SINGLE', 'POSTER_SINGLE', 'STICKER_SINGLE', 'ALL_STANDS', 'ALL_POSTERS', 'STICKER_SHEET')
+  // Print Mode State ('STAND_SINGLE', 'POSTER_SINGLE', 'STICKER_SINGLE')
   const [printTarget, setPrintTarget] = useState<{
-    mode: 'STAND_SINGLE' | 'POSTER_SINGLE' | 'STICKER_SINGLE' | 'ALL_STANDS' | 'ALL_POSTERS' | 'STICKER_SHEET' | null;
+    mode: 'STAND_SINGLE' | 'POSTER_SINGLE' | 'STICKER_SINGLE' | null;
     tableNumber?: number | string;
   }>({ mode: null });
 
@@ -248,12 +248,10 @@ export const QrGeneratorPage: React.FC = () => {
 
   // Print Handlers
   const triggerPrint = async (
-    mode: 'STAND_SINGLE' | 'POSTER_SINGLE' | 'STICKER_SINGLE' | 'ALL_STANDS' | 'ALL_POSTERS' | 'STICKER_SHEET',
+    mode: 'STAND_SINGLE' | 'POSTER_SINGLE' | 'STICKER_SINGLE',
     tableNumber?: number | string
   ) => {
-    const targetTables = (mode === 'STAND_SINGLE' || mode === 'POSTER_SINGLE' || mode === 'STICKER_SINGLE')
-      ? tables.filter((t) => String(t.tableNumber) === String(tableNumber))
-      : tables;
+    const targetTables = tables.filter((t) => String(t.tableNumber) === String(tableNumber));
 
     // Ensure all target QR images are in qrCache before opening print dialog
     const newCache = { ...qrCache };
@@ -358,17 +356,8 @@ export const QrGeneratorPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Action Navigation & Global Print/Download buttons */}
+          {/* Quick Action Navigation & Global Download button */}
           <div className="flex items-center space-x-2 flex-wrap gap-y-2">
-            <button
-              onClick={() => triggerPrint('ALL_STANDS')}
-              className="px-3 py-1.5 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/40 text-sky-300 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-sm"
-              title="Print all QR codes"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Print All QRs ({tables.length})</span>
-            </button>
-
             <button
               onClick={() => handleBatchDownload('STAND')}
               disabled={isBatchRunning || filteredTables.length === 0}
@@ -920,92 +909,29 @@ export const QrGeneratorPage: React.FC = () => {
         )}
 
         {/* ─────────────────────────────────────────────────────────────
-            TAB 3: BATCH PRINT STATION & STICKER SHEETS
+            TAB 3: BATCH DOWNLOAD STATION (PNG)
         ───────────────────────────────────────────────────────────── */}
         {activeTab === 'BATCH_PRINT' && (
           <div className="p-3 sm:p-6 max-w-6xl mx-auto w-full space-y-6">
             <div className="bg-[#0B1020] border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-xl">
               <div className="flex items-center space-x-3 mb-2">
-                <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400">
-                  <Printer className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <Download className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-serif text-lg sm:text-xl font-bold text-white">
-                    Direct Print &amp; Multi-Sheet Station
+                    Batch Download Station (HD PNG Images)
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Send table stands directly to your office printer, print a 12-sticker sheet, or batch-download high-DPI boards.
+                    Batch-download high-resolution print-ready PNG files for all restaurant dining tables in one click.
                   </p>
                 </div>
               </div>
 
-              {/* Print Modes Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                {/* Mode 1: All Table Stand Cards */}
-                <div className="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all">
-                  <div>
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
-                      <Layers className="w-4 h-4" />
-                    </div>
-                    <h4 className="font-bold text-sm text-white">All Table Stand Cards</h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Prints 1 luxury acrylic stand tent card per page with automatic clean page breaks.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => triggerPrint('ALL_STANDS')}
-                    className="w-full mt-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 shadow-md cursor-pointer"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print All Stands ({tables.length})</span>
-                  </button>
-                </div>
-
-                {/* Mode 2: 12-Sticker A4 Sheet */}
-                <div className="bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all">
-                  <div>
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
-                      <CreditCard className="w-4 h-4" />
-                    </div>
-                    <h4 className="font-bold text-sm text-white">12-Sticker Sheet (A4)</h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Prints 12 table QR badges arranged in a 3x4 grid on a single A4 page for adhesive paper.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => triggerPrint('STICKER_SHEET')}
-                    className="w-full mt-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 shadow-md cursor-pointer"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print 12-Sticker Sheet</span>
-                  </button>
-                </div>
-
-                {/* Mode 3: Large Board Posters */}
-                <div className="bg-slate-900/80 border border-slate-800 hover:border-sky-500/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition-all">
-                  <div>
-                    <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center mb-3">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <h4 className="font-bold text-sm text-white">Full Board Posters (A4)</h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Large format display poster with 3-step ordering guide and Wi-Fi badge.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => triggerPrint('ALL_POSTERS')}
-                    className="w-full mt-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center space-x-1.5 shadow-md cursor-pointer"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print All Posters ({tables.length})</span>
-                  </button>
-                </div>
-              </div>
-
               {/* Batch Download Station */}
-              <div className="mt-8 pt-6 border-t border-slate-800">
+              <div className="mt-6 pt-4 border-t border-slate-800">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">
-                  Batch Download HD Image Files (PNG)
+                  Download Formats (PNG)
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <button
@@ -1240,162 +1166,133 @@ export const QrGeneratorPage: React.FC = () => {
           `}
         </style>
 
-        {/* PRINT MODE: ALL STANDS or SINGLE STAND */}
-        {(printTarget.mode === 'ALL_STANDS' || printTarget.mode === 'STAND_SINGLE') && (
+        {/* PRINT MODE: SINGLE STAND */}
+        {printTarget.mode === 'STAND_SINGLE' && (
           <div>
-            {(printTarget.mode === 'STAND_SINGLE'
-              ? tables.filter((t) => String(t.tableNumber) === String(printTarget.tableNumber))
-              : tables
-            ).map((t) => {
-              const qrUrl = qrCache[String(t.tableNumber)];
-
-              return (
-                <div
-                  key={t.tableNumber}
-                  className="printable-qr-card page-break w-full max-w-lg mx-auto border-4 border-black rounded-3xl p-8 text-center flex flex-col items-center justify-between min-h-[90vh] my-4"
-                >
-                  <div>
-                    <h2 className="font-serif text-lg font-bold tracking-widest uppercase">
-                      ✦ {config.brandName || "SILIGURI'S CHAI ADDAA"} ✦
-                    </h2>
-                    <p className="text-xs italic text-gray-700 mt-1">
-                      {config.tagline || 'Scan with Camera to Explore Menu & Order Instantly'}
-                    </p>
-                  </div>
-
-                  {/* Table Plaque */}
-                  <div className="border-2 border-black rounded-2xl py-3 px-8 my-4 bg-gray-100 w-full">
-                    <div className="font-serif font-black text-4xl">TABLE {t.tableNumber}</div>
-                    <div className="text-xs font-mono font-bold tracking-wider mt-1 text-gray-700">
-                      DINE-IN ORDERING
-                    </div>
-                  </div>
-
-                  {/* QR Box */}
-                  <div className="border-2 border-black rounded-2xl p-4 my-2">
-                    {qrUrl && <img src={qrUrl} alt={`Table ${t.tableNumber}`} className="w-64 h-64 mx-auto" />}
-                  </div>
-
-                  {/* 3 Steps */}
-                  <div className="border border-gray-400 rounded-xl p-3 grid grid-cols-3 gap-2 text-xs w-full my-3">
-                    <div>
-                      <div className="font-bold">📷 STEP 1</div>
-                      <div>Open Camera</div>
-                    </div>
-                    <div className="border-x border-gray-300">
-                      <div className="font-bold">🎯 STEP 2</div>
-                      <div>Point at QR</div>
-                    </div>
-                    <div>
-                      <div className="font-bold">🍽️ STEP 3</div>
-                      <div>Order Dishes</div>
-                    </div>
-                  </div>
-
-                  {/* Wi-Fi */}
-                  {config.showWifi && config.wifiSsid && (
-                    <div className="border border-black rounded-lg py-1.5 px-4 text-xs font-bold my-1">
-                      📶 Wi-Fi: {config.wifiSsid} • Password: {config.wifiPassword || 'None'}
-                    </div>
-                  )}
-
-                  <div className="text-xs font-serif font-bold tracking-widest uppercase text-gray-800 mt-3">
-                    ✦ {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {t.tableNumber} ✦
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* PRINT MODE: 12-STICKER SHEET */}
-        {printTarget.mode === 'STICKER_SHEET' && (
-          <div className="p-4">
-            <h2 className="text-center font-serif text-lg font-bold uppercase mb-4">
-              {config.brandName || "SILIGURI'S CHAI ADDAA"}: TABLE QR STICKER SHEET
-            </h2>
-            <div className="grid grid-cols-3 gap-4">
-              {tables.slice(0, 12).map((t) => {
+            {tables
+              .filter((t) => String(t.tableNumber) === String(printTarget.tableNumber))
+              .map((t) => {
                 const qrUrl = qrCache[String(t.tableNumber)];
+
                 return (
                   <div
                     key={t.tableNumber}
-                    className="printable-qr-card border-2 border-black rounded-2xl p-3 text-center flex flex-col items-center justify-between aspect-square"
+                    className="printable-qr-card page-break w-full max-w-lg mx-auto border-4 border-black rounded-3xl p-8 text-center flex flex-col items-center justify-between min-h-[90vh] my-4"
                   >
                     <div>
-                      <div className="text-[10px] font-bold font-serif">✦ AURA ✦</div>
-                      <div className="text-lg font-black font-serif">TABLE {t.tableNumber}</div>
+                      <h2 className="font-serif text-lg font-bold tracking-widest uppercase">
+                        ✦ {config.brandName || "SILIGURI'S CHAI ADDAA"} ✦
+                      </h2>
+                      <p className="text-xs italic text-gray-700 mt-1">
+                        {config.tagline || 'Scan with Camera to Explore Menu & Order Instantly'}
+                      </p>
                     </div>
-                    {qrUrl && <img src={qrUrl} alt={`Table ${t.tableNumber}`} className="w-28 h-28 mx-auto" />}
-                    <div className="text-[8px] font-bold tracking-wider">SCAN TO ORDER</div>
+
+                    {/* Table Plaque */}
+                    <div className="border-2 border-black rounded-2xl py-3 px-8 my-4 bg-gray-100 w-full">
+                      <div className="font-serif font-black text-4xl">TABLE {t.tableNumber}</div>
+                      <div className="text-xs font-mono font-bold tracking-wider mt-1 text-gray-700">
+                        DINE-IN ORDERING
+                      </div>
+                    </div>
+
+                    {/* QR Box */}
+                    <div className="border-2 border-black rounded-2xl p-4 my-2">
+                      {qrUrl && <img src={qrUrl} alt={`Table ${t.tableNumber}`} className="w-64 h-64 mx-auto" />}
+                    </div>
+
+                    {/* 3 Steps */}
+                    <div className="border border-gray-400 rounded-xl p-3 grid grid-cols-3 gap-2 text-xs w-full my-3">
+                      <div>
+                        <div className="font-bold">📷 STEP 1</div>
+                        <div>Open Camera</div>
+                      </div>
+                      <div className="border-x border-gray-300">
+                        <div className="font-bold">🎯 STEP 2</div>
+                        <div>Point at QR</div>
+                      </div>
+                      <div>
+                        <div className="font-bold">🍽️ STEP 3</div>
+                        <div>Order Dishes</div>
+                      </div>
+                    </div>
+
+                    {/* Wi-Fi */}
+                    {config.showWifi && config.wifiSsid && (
+                      <div className="border border-black rounded-lg py-1.5 px-4 text-xs font-bold my-1">
+                        📶 Wi-Fi: {config.wifiSsid} • Password: {config.wifiPassword || 'None'}
+                      </div>
+                    )}
+
+                    <div className="text-xs font-serif font-bold tracking-widest uppercase text-gray-800 mt-3">
+                      ✦ {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {t.tableNumber} ✦
+                    </div>
                   </div>
                 );
               })}
-            </div>
           </div>
         )}
 
-        {/* PRINT MODE: ALL POSTERS or SINGLE POSTER */}
-        {(printTarget.mode === 'ALL_POSTERS' || printTarget.mode === 'POSTER_SINGLE') && (
+        {/* PRINT MODE: SINGLE POSTER */}
+        {printTarget.mode === 'POSTER_SINGLE' && (
           <div>
-            {(printTarget.mode === 'POSTER_SINGLE'
-              ? tables.filter((t) => String(t.tableNumber) === String(printTarget.tableNumber))
-              : tables
-            ).map((t) => {
-              const qrUrl = qrCache[String(t.tableNumber)];
+            {tables
+              .filter((t) => String(t.tableNumber) === String(printTarget.tableNumber))
+              .map((t) => {
+                const qrUrl = qrCache[String(t.tableNumber)];
 
-              return (
-                <div
-                  key={t.tableNumber}
-                  className="printable-qr-card page-break w-full max-w-2xl mx-auto border-8 border-black rounded-3xl p-10 text-center flex flex-col items-center justify-between min-h-[92vh] my-4"
-                >
-                  <div>
-                    <h1 className="font-serif text-3xl font-black uppercase tracking-wider">
-                      {config.brandName || "SILIGURI'S CHAI ADDAA"}
-                    </h1>
-                    <p className="text-sm italic text-gray-700 mt-1">
-                      {config.tagline || 'Scan with Camera to Explore Menu & Order Instantly'}
-                    </p>
-                  </div>
-
-                  <div className="border-4 border-black rounded-2xl py-4 px-12 my-6 bg-gray-100 w-full">
-                    <div className="font-serif font-black text-5xl">TABLE {t.tableNumber}</div>
-                    <div className="text-sm font-mono font-bold mt-1 text-gray-700">
-                      MOUNTED BOARD &amp; ORDER DISPATCH
-                    </div>
-                  </div>
-
-                  <div className="border-4 border-black rounded-3xl p-6 my-4">
-                    {qrUrl && <img src={qrUrl} alt={`Table ${t.tableNumber}`} className="w-80 h-80 mx-auto" />}
-                  </div>
-
-                  <div className="border-2 border-gray-500 rounded-2xl p-4 grid grid-cols-3 gap-4 text-sm w-full my-4">
+                return (
+                  <div
+                    key={t.tableNumber}
+                    className="printable-qr-card page-break w-full max-w-2xl mx-auto border-8 border-black rounded-3xl p-10 text-center flex flex-col items-center justify-between min-h-[92vh] my-4"
+                  >
                     <div>
-                      <div className="font-bold">📷 STEP 1</div>
-                      <div>Open Camera</div>
+                      <h1 className="font-serif text-3xl font-black uppercase tracking-wider">
+                        {config.brandName || "SILIGURI'S CHAI ADDAA"}
+                      </h1>
+                      <p className="text-sm italic text-gray-700 mt-1">
+                        {config.tagline || 'Scan with Camera to Explore Menu & Order Instantly'}
+                      </p>
                     </div>
-                    <div className="border-x-2 border-gray-400">
-                      <div className="font-bold">🎯 STEP 2</div>
-                      <div>Point at QR</div>
+
+                    <div className="border-4 border-black rounded-2xl py-4 px-12 my-6 bg-gray-100 w-full">
+                      <div className="font-serif font-black text-5xl">TABLE {t.tableNumber}</div>
+                      <div className="text-sm font-mono font-bold mt-1 text-gray-700">
+                        MOUNTED BOARD &amp; ORDER DISPATCH
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-bold">🍽️ STEP 3</div>
-                      <div>Order Dishes</div>
+
+                    <div className="border-4 border-black rounded-3xl p-6 my-4">
+                      {qrUrl && <img src={qrUrl} alt={`Table ${t.tableNumber}`} className="w-80 h-80 mx-auto" />}
+                    </div>
+
+                    <div className="border-2 border-gray-500 rounded-2xl p-4 grid grid-cols-3 gap-4 text-sm w-full my-4">
+                      <div>
+                        <div className="font-bold">📷 STEP 1</div>
+                        <div>Open Camera</div>
+                      </div>
+                      <div className="border-x-2 border-gray-400">
+                        <div className="font-bold">🎯 STEP 2</div>
+                        <div>Point at QR</div>
+                      </div>
+                      <div>
+                        <div className="font-bold">🍽️ STEP 3</div>
+                        <div>Order Dishes</div>
+                      </div>
+                    </div>
+
+                    {config.showWifi && config.wifiSsid && (
+                      <div className="border-2 border-black rounded-xl py-2 px-6 text-sm font-bold my-2">
+                        📶 Free Dining Wi-Fi: {config.wifiSsid} • Password: {config.wifiPassword || 'None'}
+                      </div>
+                    )}
+
+                    <div className="text-sm font-serif font-bold tracking-widest uppercase text-gray-800 mt-3">
+                      ✦ {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {t.tableNumber} ✦
                     </div>
                   </div>
-
-                  {config.showWifi && config.wifiSsid && (
-                    <div className="border-2 border-black rounded-xl py-2 px-6 text-sm font-bold my-2">
-                      📶 Free Dining Wi-Fi: {config.wifiSsid} • Password: {config.wifiPassword || 'None'}
-                    </div>
-                  )}
-
-                  <div className="text-sm font-serif font-bold tracking-widest uppercase text-gray-800 mt-3">
-                    ✦ {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {t.tableNumber} ✦
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         )}
       </div>

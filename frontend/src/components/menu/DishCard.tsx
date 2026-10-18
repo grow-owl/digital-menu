@@ -11,7 +11,6 @@ interface DishCardProps {
 }
 
 export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
-  const [imageLoaded, setImageLoaded] = React.useState(false);
   const { items, addItem, updateQuantity, removeItem } = useCartStore();
 
   const cartItem = items.find((it) => it.menuItem.id === item.id);
@@ -45,14 +44,12 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
 
   React.useEffect(() => {
     setCurrentSrc(item.imageUrl || fallbackSrc);
-    setImageLoaded(false);
   }, [item.imageUrl, fallbackSrc]);
 
   const handleImageError = () => {
     if (currentSrc !== fallbackSrc) {
       setCurrentSrc(fallbackSrc);
     }
-    setImageLoaded(true);
   };
 
   return (
@@ -69,10 +66,6 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
     >
       {/* Top Image Box */}
       <div className="relative h-36 sm:h-48 w-full bg-slate-900/5 border-b border-slate-100 overflow-hidden flex items-center justify-center">
-        {!imageLoaded && (
-          <div className="absolute inset-0 bg-slate-200/70 animate-pulse z-0" />
-        )}
-
         {/* Ambient Blur Backdrop: Generates a soft matching halo/glow from the dish colors */}
         <img
           src={currentSrc}
@@ -90,11 +83,8 @@ export const DishCard: React.FC<DishCardProps> = ({ item, onAdd, onClick }) => {
           alt={item.name}
           loading="lazy"
           decoding="async"
-          onLoad={() => setImageLoaded(true)}
           onError={handleImageError}
-          className={`relative z-1 w-full h-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="relative z-[1] w-full h-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm"
         />
 
         {/* Out of Stock Overlay */}

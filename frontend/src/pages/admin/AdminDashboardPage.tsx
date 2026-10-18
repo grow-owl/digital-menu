@@ -1062,8 +1062,8 @@ export const AdminDashboardPage: React.FC = () => {
                             <td className="py-3 px-3 text-slate-400 text-[11px]">{dateStr}</td>
                             <td className="py-3 px-3 text-slate-300 font-bold">{ord.paymentMethod || 'UPI_QR'}</td>
                             <td className="py-3 px-3 text-emerald-400 font-bold text-sm">
-                              ₹{net.toLocaleString('en-IN')}
-                              {ord.refundAmount && ord.refundAmount > 0 && (
+                              ₹{Number(net).toLocaleString('en-IN', { minimumFractionDigits: Number.isInteger(net) ? 0 : 2, maximumFractionDigits: 2 })}
+                              {Boolean(ord.refundAmount && ord.refundAmount > 0) && (
                                 <span className="block text-[9px] text-rose-400 font-normal">
                                   Ref: -₹{ord.refundAmount.toLocaleString('en-IN')}
                                 </span>
@@ -1125,7 +1125,9 @@ export const AdminDashboardPage: React.FC = () => {
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-bold text-theme-primary">#{ord.invoiceNumber || ord.orderId}</span>
-                          <span className="font-black text-emerald-400 text-sm">₹{net.toLocaleString('en-IN')}</span>
+                          <span className="font-black text-emerald-400 text-sm">
+                            ₹{Number(net).toLocaleString('en-IN', { minimumFractionDigits: Number.isInteger(net) ? 0 : 2, maximumFractionDigits: 2 })}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between text-slate-400 text-[11px]">

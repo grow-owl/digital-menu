@@ -886,12 +886,29 @@ export const AdminDashboardPage: React.FC = () => {
                         <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                           {tbl.items.map((it: any, idx: number) => {
                             const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+                            const itemPrice = it.price || it.unitPrice || 0;
+                            let totalAddonsPrice = 0;
+                            if (parsed.hasAddons) {
+                              parsed.addons.forEach((ad) => {
+                                const match = String(ad.raw || '').match(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/i);
+                                if (match) totalAddonsPrice += (parseFloat(match[1]) || 0);
+                              });
+                            }
+                            const basePrice = (itemPrice > totalAddonsPrice && totalAddonsPrice > 0)
+                              ? (itemPrice - totalAddonsPrice)
+                              : (it.basePrice || itemPrice);
+
                             return (
                               <div key={idx} className="space-y-0.5 border-b border-theme-border/30 pb-1 last:border-b-0 last:pb-0">
                                 <div className="flex justify-between items-center text-[11px] text-slate-300">
-                                  <span className="truncate max-w-[170px] font-medium">{it.quantity || it.qty || 1}x {it.name}</span>
+                                  <span className="truncate max-w-[170px] font-medium">
+                                    {it.quantity || it.qty || 1}x {it.name}
+                                    {basePrice > 0 && (
+                                      <span className="text-slate-400 font-normal ml-1">(₹{basePrice.toLocaleString('en-IN')})</span>
+                                    )}
+                                  </span>
                                   <span className="font-mono text-white font-semibold">
-                                    ₹{((it.quantity || it.qty || 1) * (it.price || it.unitPrice || 0)).toLocaleString('en-IN')}
+                                    ₹{((it.quantity || it.qty || 1) * itemPrice).toLocaleString('en-IN')}
                                   </span>
                                 </div>
                                 {parsed.hasAddons && (
@@ -1618,11 +1635,28 @@ export const AdminDashboardPage: React.FC = () => {
                     <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                       {selectedTableForBilling.items.map((it: any, idx: number) => {
                         const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+                        const itemPrice = it.price || it.unitPrice || 0;
+                        let totalAddonsPrice = 0;
+                        if (parsed.hasAddons) {
+                          parsed.addons.forEach((ad) => {
+                            const match = String(ad.raw || '').match(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/i);
+                            if (match) totalAddonsPrice += (parseFloat(match[1]) || 0);
+                          });
+                        }
+                        const basePrice = (itemPrice > totalAddonsPrice && totalAddonsPrice > 0)
+                          ? (itemPrice - totalAddonsPrice)
+                          : (it.basePrice || itemPrice);
+
                         return (
                           <div key={idx} className="space-y-0.5 border-b border-theme-border/30 pb-1.5 last:border-b-0 last:pb-0">
                             <div className="flex justify-between items-center text-slate-200 font-mono text-[11px]">
-                              <span className="font-medium">{it.quantity || it.qty || 1}x {it.name}</span>
-                              <span className="font-bold">₹{((it.quantity || it.qty || 1) * (it.price || it.unitPrice || 0)).toLocaleString('en-IN')}</span>
+                              <span className="font-medium">
+                                {it.quantity || it.qty || 1}x {it.name}
+                                {basePrice > 0 && (
+                                  <span className="text-slate-400 font-normal ml-1">(₹{basePrice.toLocaleString('en-IN')})</span>
+                                )}
+                              </span>
+                              <span className="font-bold">₹{((it.quantity || it.qty || 1) * itemPrice).toLocaleString('en-IN')}</span>
                             </div>
                             {parsed.hasAddons && (
                               <div className="pl-3 space-y-0.5 text-[10px] text-emerald-400 font-mono">
@@ -1822,7 +1856,6 @@ export const AdminDashboardPage: React.FC = () => {
                 <Utensils className="w-5 h-5 text-amber-600" />
                 <h2 className="font-serif font-black text-xl text-gray-900 tracking-wider">SILIGURI'S CHAI ADDAA</h2>
               </div>
-              <p className="text-[10px] text-gray-500 font-sans">Artisan Tea House &amp; Comfort Dining</p>
               <p className="text-[10px] text-gray-600 font-mono">Champasari, Siliguri • Ph: +917585877937</p>
             </div>
 
@@ -1852,10 +1885,29 @@ export const AdminDashboardPage: React.FC = () => {
                 const price = it.price || it.unitPrice || 0;
                 const total = it.totalPrice || (qty * price);
                 const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+
+                let totalAddonsPrice = 0;
+                if (parsed.hasAddons) {
+                  parsed.addons.forEach((ad) => {
+                    const match = String(ad.raw || '').match(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/i);
+                    if (match) totalAddonsPrice += (parseFloat(match[1]) || 0);
+                  });
+                }
+                const basePrice = (price > totalAddonsPrice && totalAddonsPrice > 0)
+                  ? (price - totalAddonsPrice)
+                  : (it.basePrice || price);
+
                 return (
                   <div key={i} className="border-b border-gray-100 py-1 last:border-b-0">
                     <div className="grid grid-cols-12 text-xs py-0.5 text-gray-800">
-                      <span className="col-span-6 truncate font-medium">{it.name || it.itemName || 'Dish Item'}</span>
+                      <span className="col-span-6 truncate font-medium">
+                        {it.name || it.itemName || 'Dish Item'}
+                        {basePrice > 0 && (
+                          <span className="text-gray-500 font-normal ml-1">
+                            (₹{basePrice.toLocaleString('en-IN')})
+                          </span>
+                        )}
+                      </span>
                       <span className="col-span-2 text-center text-gray-500">{qty}</span>
                       <span className="col-span-4 text-right font-bold">
                         ₹{total.toLocaleString('en-IN')}
@@ -2283,10 +2335,29 @@ export const AdminDashboardPage: React.FC = () => {
               const price = it.price || it.unitPrice || 0;
               const total = it.totalPrice || (qty * price);
               const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+
+              let totalAddonsPrice = 0;
+              if (parsed.hasAddons) {
+                parsed.addons.forEach((ad) => {
+                  const match = String(ad.raw || '').match(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/i);
+                  if (match) totalAddonsPrice += (parseFloat(match[1]) || 0);
+                });
+              }
+              const basePrice = (price > totalAddonsPrice && totalAddonsPrice > 0)
+                ? (price - totalAddonsPrice)
+                : (it.basePrice || price);
+
               return (
                 <div key={i} className="border-b border-dashed border-gray-200 py-1 last:border-b-0">
                   <div className="grid grid-cols-12 text-[11px] py-0.5 text-gray-900">
-                    <span className="col-span-6 truncate font-medium">{name}</span>
+                    <span className="col-span-6 truncate font-medium">
+                      {name}
+                      {basePrice > 0 && (
+                        <span className="text-gray-600 font-normal ml-1">
+                          (₹{basePrice.toLocaleString('en-IN')})
+                        </span>
+                      )}
+                    </span>
                     <span className="col-span-2 text-center text-gray-700">{qty}</span>
                     <span className="col-span-4 text-right font-bold">
                       ₹{total.toLocaleString('en-IN')}

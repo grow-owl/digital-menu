@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Utensils, CheckCircle2, Clock, ArrowLeft, Plus, Minus, ChefHat, ShoppingBag, Receipt,
   Sparkles, Zap, Star, Coffee, Heart, MessageCircle, Flame, CupSoda,
-  ArrowRight, Wifi, Check, Award
+  ArrowRight, Wifi, Check, Award,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { CallWaiterButton } from '../../components/customer/CallWaiterButton';
 import { DishDetailModal } from '../../components/menu/DishDetailModal';
@@ -685,6 +687,21 @@ export const OrderTrackingPage: React.FC = () => {
                               <div className="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
                                 <p className={`font-semibold ${isCancelled ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                                   {it.quantity}x {it.name}
+                                  {(() => {
+                                    const parsed = parseItemAddonsAndNotes(it.notes, it.addonNames);
+                                    if (!parsed.hasAddons) return null;
+                                    let totalAddonsPrice = 0;
+                                    parsed.addons.forEach((ad) => {
+                                      const match = String(ad.raw || '').match(/\(\+\s*(?:₹|Rs\.?|INR)?\s*([\d,.]+)\s*\)/i);
+                                      if (match) totalAddonsPrice += (parseFloat(match[1]) || 0);
+                                    });
+                                    const basePrice = (it.price > totalAddonsPrice && totalAddonsPrice > 0)
+                                      ? (it.price - totalAddonsPrice)
+                                      : it.price;
+                                    return basePrice > 0 ? (
+                                      <span className="text-slate-500 font-normal ml-1 text-[11px]">(₹{basePrice.toLocaleString('en-IN')})</span>
+                                    ) : null;
+                                  })()}
                                 </p>
                                 {!isCancelled && (
                                   <span className="text-[9px] font-mono text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded font-semibold">

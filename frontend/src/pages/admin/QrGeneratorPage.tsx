@@ -440,9 +440,9 @@ export const QrGeneratorPage: React.FC = () => {
                             />
                             {/* Center Favicon Badge */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="w-8 h-8 p-0.5 bg-white rounded-lg shadow-md border border-amber-400/90 flex items-center justify-center">
+                              <div className="w-8 h-8 sm:w-9 sm:h-9 p-0.5 bg-[#FAF7F2] rounded-lg shadow-md border border-[#b58d63] flex items-center justify-center">
                                 <img
-                                  src="/favicon.svg"
+                                  src="/images/chai_adda_logo_white_bg.png"
                                   alt="Siliguri's Chai Addaa"
                                   className="w-full h-full object-contain rounded-md select-none"
                                 />
@@ -598,9 +598,9 @@ export const QrGeneratorPage: React.FC = () => {
                         )}
                         {/* Center Favicon Badge */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-12 h-12 p-1 bg-white rounded-xl shadow-xl border-2 border-amber-400 flex items-center justify-center">
+                          <div className="w-12 h-12 p-1 bg-[#FAF7F2] rounded-xl shadow-xl border-2 border-[#b58d63] flex items-center justify-center">
                             <img
-                              src="/favicon.svg"
+                              src="/images/chai_adda_logo_white_bg.png"
                               alt="Siliguri's Chai Addaa"
                               className="w-full h-full object-contain rounded-lg select-none"
                             />

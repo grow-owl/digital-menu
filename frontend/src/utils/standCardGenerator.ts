@@ -97,7 +97,7 @@ export const getGoogleReviewsQrDataUrl = async (size = 300): Promise<string> => 
 let cachedFaviconImg: HTMLImageElement | null = null;
 
 /**
- * Loads the brand favicon SVG image into an HTMLImageElement for canvas rendering (cached in-memory).
+ * Loads the brand logo image into an HTMLImageElement for canvas rendering (cached in-memory).
  */
 const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
   if (cachedFaviconImg) return Promise.resolve(cachedFaviconImg);
@@ -112,8 +112,17 @@ const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
       cachedFaviconImg = img;
       resolve(img);
     };
-    img.onerror = () => resolve(null);
-    img.src = '/favicon.svg';
+    img.onerror = () => {
+      const fallbackImg = new Image();
+      fallbackImg.crossOrigin = 'anonymous';
+      fallbackImg.onload = () => {
+        cachedFaviconImg = fallbackImg;
+        resolve(fallbackImg);
+      };
+      fallbackImg.onerror = () => resolve(null);
+      fallbackImg.src = '/favicon.svg';
+    };
+    img.src = '/images/chai_adda_logo_white_bg.png';
   });
 };
 
@@ -185,23 +194,62 @@ export const generateStandCardCanvas = async (
 
   ctx.drawImage(tableQrImg, tableQrX, tableQrY, tableQrSize, tableQrSize);
 
-  // 3. Constant Google Reviews QR Code in Lower Small White Space
-  // Base template center: (421, 1291), Size 184x184
-  // Scaled 2x: Center (842, 2582), Size 368x368
-  const reviewQrSize = 184 * scale; // 368
-  const reviewQrX = 421 * scale - reviewQrSize / 2; // 658
-  const reviewQrY = 1291 * scale - reviewQrSize / 2; // 2398
+  // 3. Center Brand Logo Badge on Table QR Code (Chai Adda Logo)
+  const brandLogoImg = await loadFaviconImage();
+  if (brandLogoImg) {
+    const badgeSize = 220; // 21% of 1040px QR, keeps Level-H error correction scan rate at 100%
+    const badgeRadius = 38;
+    const badgeX = 512 * scale - badgeSize / 2;
+    const badgeY = 672 * scale - badgeSize / 2;
 
-  const reviewQrDataUrl = await getGoogleReviewsQrDataUrl(reviewQrSize);
-  const reviewQrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = reviewQrDataUrl;
-  });
+    // Solid rounded parchment/white backdrop
+    ctx.fillStyle = '#FAF7F2';
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, badgeRadius);
+    ctx.fill();
 
-  ctx.drawImage(reviewQrImg, reviewQrX, reviewQrY, reviewQrSize, reviewQrSize);
+    // Elegant brand border matching template terracotta/caramel palette
+    ctx.strokeStyle = '#b58d63';
+    ctx.lineWidth = 6;
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, badgeRadius);
+    ctx.stroke();
+
+    // Draw brand logo image centered inside badge
+    const badgePad = 12;
+    ctx.drawImage(
+      brandLogoImg,
+      badgeX + badgePad,
+      badgeY + badgePad,
+      badgeSize - badgePad * 2,
+      badgeSize - badgePad * 2
+    );
+  }
+
+  // 3b. Small Table Number Badge below the QR code / menu banner
+  ctx.save();
+  const calloutCx = 512 * scale; // 1024
+  const calloutCy = 1285 * scale; // 2570
+  const pillW = 160 * scale; // 320 px
+  const pillH = 38 * scale;  // 76 px
+  const pillRadius = 19 * scale;
+
+  ctx.fillStyle = '#FAF7F2';
+  roundRect(ctx, calloutCx - pillW / 2, calloutCy - pillH / 2, pillW, pillH, pillRadius);
+  ctx.fill();
+
+  ctx.strokeStyle = '#4B2616';
+  ctx.lineWidth = 2.5 * scale;
+  roundRect(ctx, calloutCx - pillW / 2, calloutCy - pillH / 2, pillW, pillH, pillRadius);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#4B2616';
+  ctx.font = `bold ${18 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
+  if ('letterSpacing' in ctx) {
+    (ctx as any).letterSpacing = `${2 * scale}px`;
+  }
+  ctx.fillText(`TABLE ${tableNum}`, calloutCx, calloutCy + 1 * scale);
+  ctx.restore();
 
   // 4. Dynamic Footer Table Line & Number
   // Seamlessly clone pristine parchment background texture from y=1422 to cover existing text & divider line
@@ -638,22 +686,52 @@ export const downloadTableSticker = async (table: TableResponse, config: VenueQr
 };
 
 /**
- * Downloads only the raw high-resolution QR code PNG (1024x1024).
+ * Downloads only the raw high-resolution QR code PNG (1024x1024) with brand logo center emblem.
  */
 export const downloadQrOnly = async (table: TableResponse, config: VenueQrConfig): Promise<void> => {
   const token = getTablePermanentToken(table);
   const dineUrl = computeTableDineUrl(token, config);
   const dataUrl = await generateQrDataUrl(dineUrl, { size: 1024 });
 
-  const cleanBrand = (config.brandName || 'Aura').replace(/[^a-zA-Z0-9_-]/g, '_');
-  const filename = `${cleanBrand}_Table_${table.tableNumber}_QR_Raw.png`;
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-  const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const qrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+
+  ctx.drawImage(qrImg, 0, 0, 1024, 1024);
+
+  const logoImg = await loadFaviconImage();
+  if (logoImg) {
+    const badgeSize = 216;
+    const badgeX = (1024 - badgeSize) / 2;
+    const badgeY = (1024 - badgeSize) / 2;
+    const badgeRadius = 38;
+
+    ctx.fillStyle = '#FAF7F2';
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, badgeRadius);
+    ctx.fill();
+
+    ctx.strokeStyle = '#b58d63';
+    ctx.lineWidth = 6;
+    roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, badgeRadius);
+    ctx.stroke();
+
+    const pad = 12;
+    ctx.drawImage(logoImg, badgeX + pad, badgeY + pad, badgeSize - pad * 2, badgeSize - pad * 2);
+  }
+
+  const cleanBrand = (config.brandName || 'Chai_Addaa').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `${cleanBrand}_Table_${table.tableNumber}_QR_Raw.png`;
+  downloadCanvasAsPng(canvas, filename);
 };
 
 /**

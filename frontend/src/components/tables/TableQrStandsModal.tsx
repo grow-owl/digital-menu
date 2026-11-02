@@ -625,11 +625,23 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                         }}
                       >
                         {qrDataUrl ? (
-                          <img
-                            src={qrDataUrl}
-                            alt={`Table ${table.tableNumber} QR`}
-                            className="w-full h-full object-contain"
-                          />
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            <img
+                              src={qrDataUrl}
+                              alt={`Table ${table.tableNumber} QR`}
+                              className="w-full h-full object-contain"
+                            />
+                            {/* Center Brand Logo Badge */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 p-0.5 bg-[#FAF7F2] rounded-lg shadow-md border border-[#b58d63] flex items-center justify-center">
+                                <img
+                                  src="/images/chai_adda_logo_white_bg.png"
+                                  alt="Siliguri's Chai Addaa"
+                                  className="w-full h-full object-contain rounded-md select-none"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <div className="w-full h-full bg-white/80 rounded-lg animate-pulse flex items-center justify-center text-slate-400">
                             <QrCode className="w-8 h-8 animate-spin" />
@@ -637,25 +649,20 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                         )}
                       </div>
 
-                      {/* Lower Small White Box: Constant Google Reviews QR */}
+                      {/* Middle Small Table Number Badge */}
                       <div
                         className="absolute flex items-center justify-center pointer-events-none"
                         style={{
-                          top: '78.0%',
-                          left: '32.1%',
-                          width: '18.0%',
-                          height: '12.0%',
+                          top: '83.5%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
                         }}
                       >
-                        {reviewQrDataUrl ? (
-                          <img
-                            src={reviewQrDataUrl}
-                            alt="Google Reviews QR"
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-white/80 rounded-md animate-pulse" />
-                        )}
+                        <div className="px-3 py-0.5 bg-[#FAF7F2] border border-[#4B2616] rounded-full shadow-xs flex items-center justify-center">
+                          <span className="font-serif font-black text-[9px] sm:text-[10px] text-[#4B2616] tracking-widest uppercase">
+                            TABLE {table.tableNumber}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Bottom Footer: Dynamic Table Number with seamless parchment background */}

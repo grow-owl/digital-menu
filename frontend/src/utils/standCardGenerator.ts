@@ -11,15 +11,17 @@ export const generateQrDataUrl = async (
     size?: number;
     darkColor?: string;
     lightColor?: string;
+    margin?: number;
   }
 ): Promise<string> => {
   const size = options?.size || 600;
   const dark = options?.darkColor || '#000000';
   const light = options?.lightColor || '#ffffff';
+  const margin = options?.margin !== undefined ? options.margin : 0;
 
   return QRCode.toDataURL(text, {
     width: size,
-    margin: 2,
+    margin,
     errorCorrectionLevel: 'H', // Level H gives 30% error recovery for center emblem overlay
     color: {
       dark,
@@ -49,7 +51,7 @@ function roundRect(
 }
 
 export const GOOGLE_REVIEWS_URL = 'https://share.google/fpQYpNSriMbsBasZS';
-export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.jpeg';
+export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png';
 
 let cachedTemplateImg: HTMLImageElement | null = null;
 let cachedGoogleReviewQrDataUrl: string | null = null;
@@ -127,11 +129,11 @@ const loadFaviconImage = (): Promise<HTMLImageElement | null> => {
 };
 
 /**
- * Generates an ultra high-resolution printable Table QR Stand Card rendered on an HTML5 Canvas (2048 x 3072 px).
- * Renders the authentic Siliguri's Chai Addaa vintage parchment template:
- * 1. Upper large white space: Table-specific customer dine ordering QR code (Center: 1024, 1344; Size: 1040x1040).
- * 2. Lower small white space: Constant Google Reviews QR code (Center: 842, 2582; Size: 368x368).
- * 3. Bottom footer: Seamlessly cloned parchment background with dynamic table number: SILIGURI'S CHAI ADDAA • TABLE {num}.
+ * Generates an ultra high-resolution printable Table QR Stand Card rendered on an HTML5 Canvas (2046 x 3072 px, 3x scale).
+ * Renders the authentic Siliguri's CA / The Rooftop Cafeteria vintage parchment template:
+ * 1. Central large white card: Table-specific customer dine ordering QR code (Center: 1023, 1519.5; Size: 1458x1458).
+ * 2. Center brand logo badge on QR code (Chai Adda logo, Size: 312x312).
+ * 3. Bottom footer: Dynamically rendered table number and decorative divider lines: SILIGURI'S CHAI ADDA • TABLE {num}.
  */
 export const getTablePermanentToken = (table: TableResponse): string => {
   return (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
@@ -141,10 +143,10 @@ export const generateStandCardCanvas = async (
   table: TableResponse,
   config: VenueQrConfig
 ): Promise<HTMLCanvasElement> => {
-  // Ultra high-definition canvas (2x of 1024x1536 base template = 2048x3072 px)
-  const scale = 2;
-  const width = 1024 * scale;
-  const height = 1536 * scale;
+  // Ultra high-definition canvas (3x of 682x1024 base template = 2046x3072 px)
+  const scale = 3;
+  const width = 682 * scale;
+  const height = 1024 * scale;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -171,15 +173,17 @@ export const generateStandCardCanvas = async (
     ctx.stroke();
   }
 
-  // 2. High-Resolution Table QR Code in Upper Large White Space (Menu QR)
-  // Base template center: (512, 672), Size 520x520
-  // Scaled 2x: Center (1024, 1344), Size 1040x1040
-  const tableQrSize = 520 * scale; // 1040
-  const tableQrX = 512 * scale - tableQrSize / 2; // 504
-  const tableQrY = 672 * scale - tableQrSize / 2; // 824
+  // 2. High-Resolution Table QR Code in Central White Card Space (Menu QR)
+  // Base template white box: X: 71..610 (W: 540), Y: 253..760 (H: 508), Center: (341, 506.5)
+  // Maximized QR size to completely fill the central white card space (leaving ~8px clean breathing margin inside frame)
+  const tableQrW = 524 * scale; // 1572 px
+  const tableQrH = 494 * scale; // 1482 px
+  const tableQrX = 341 * scale - tableQrW / 2; // 240 px
+  const tableQrY = 506.5 * scale - tableQrH / 2; // 778.5 px
 
   const tableQrDataUrl = await generateQrDataUrl(dineUrl, {
-    size: tableQrSize,
+    size: tableQrW,
+    margin: 0,
     darkColor: '#000000',
     lightColor: '#FFFFFF',
   });
@@ -192,15 +196,15 @@ export const generateStandCardCanvas = async (
     img.src = tableQrDataUrl;
   });
 
-  ctx.drawImage(tableQrImg, tableQrX, tableQrY, tableQrSize, tableQrSize);
+  ctx.drawImage(tableQrImg, tableQrX, tableQrY, tableQrW, tableQrH);
 
   // 3. Center Brand Logo Badge on Table QR Code (Chai Adda Logo)
   const brandLogoImg = await loadFaviconImage();
   if (brandLogoImg) {
-    const badgeSize = 220; // 21% of 1040px QR, keeps Level-H error correction scan rate at 100%
-    const badgeRadius = 38;
-    const badgeX = 512 * scale - badgeSize / 2;
-    const badgeY = 672 * scale - badgeSize / 2;
+    const badgeSize = 104 * scale; // 312 px (~21% of 1458px QR, Level-H error correction scannable)
+    const badgeRadius = 18 * scale;
+    const badgeX = 341 * scale - badgeSize / 2;
+    const badgeY = 506.5 * scale - badgeSize / 2;
 
     // Solid rounded parchment/white backdrop
     ctx.fillStyle = '#FAF7F2';
@@ -209,12 +213,12 @@ export const generateStandCardCanvas = async (
 
     // Elegant brand border matching template terracotta/caramel palette
     ctx.strokeStyle = '#b58d63';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 2.5 * scale;
     roundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, badgeRadius);
     ctx.stroke();
 
     // Draw brand logo image centered inside badge
-    const badgePad = 12;
+    const badgePad = 6 * scale;
     ctx.drawImage(
       brandLogoImg,
       badgeX + badgePad,
@@ -224,85 +228,58 @@ export const generateStandCardCanvas = async (
     );
   }
 
-  // 3b. Small Table Number Badge below the QR code / menu banner
-  ctx.save();
-  const calloutCx = 512 * scale; // 1024
-  const calloutCy = 1285 * scale; // 2570
-  const pillW = 160 * scale; // 320 px
-  const pillH = 38 * scale;  // 76 px
-  const pillRadius = 19 * scale;
-
-  ctx.fillStyle = '#FAF7F2';
-  roundRect(ctx, calloutCx - pillW / 2, calloutCy - pillH / 2, pillW, pillH, pillRadius);
-  ctx.fill();
-
-  ctx.strokeStyle = '#4B2616';
-  ctx.lineWidth = 2.5 * scale;
-  roundRect(ctx, calloutCx - pillW / 2, calloutCy - pillH / 2, pillW, pillH, pillRadius);
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#4B2616';
-  ctx.font = `bold ${18 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
-  if ('letterSpacing' in ctx) {
-    (ctx as any).letterSpacing = `${2 * scale}px`;
-  }
-  ctx.fillText(`TABLE ${tableNum}`, calloutCx, calloutCy + 1 * scale);
-  ctx.restore();
-
   // 4. Dynamic Footer Table Line & Number
-  // Seamlessly clone pristine parchment background texture from y=1422 to cover existing text & divider line
+  // Seamlessly clone pristine parchment background texture to cover any static footer text
   if (templateImg) {
     ctx.drawImage(
       canvas,
-      160 * scale,
-      1422 * scale,
-      704 * scale,
-      26 * scale,
-      160 * scale,
-      1448 * scale,
-      704 * scale,
-      26 * scale
+      140 * scale,
+      948 * scale,
+      400 * scale,
+      14 * scale,
+      140 * scale,
+      966 * scale,
+      400 * scale,
+      14 * scale
     );
   }
 
-  const brandName = (config.brandName || "SILIGURI'S CHAI ADDAA").toUpperCase();
+  const brandName = (config.brandName || "SILIGURI'S CHAI ADDA").toUpperCase();
   const footerText = `${brandName}  •  TABLE ${tableNum}`;
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#4B2616';
-  ctx.font = `bold ${18 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
+  ctx.font = `bold ${12.5 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
   if ('letterSpacing' in ctx) {
     (ctx as any).letterSpacing = `${1.5 * scale}px`;
   }
 
-  const cx = 512 * scale; // 1024
-  const cy = 1461 * scale; // 2922
+  const cx = 341 * scale; // 1023
+  const cy = 973 * scale; // 2919
   const textMetrics = ctx.measureText(footerText);
   const textWidth = textMetrics.width;
   const textStartX = cx - textWidth / 2;
   const textEndX = cx + textWidth / 2;
-  const linePadding = 16 * scale;
+  const linePadding = 8 * scale;
 
   ctx.strokeStyle = '#4B2616';
-  ctx.lineWidth = 3 * scale;
+  ctx.lineWidth = 1.5 * scale;
 
-  // Left decorative divider line (x: 168 * scale to textStartX - linePadding)
-  if (textStartX - linePadding > 168 * scale) {
+  // Left decorative divider line (x: 98 * scale to textStartX - linePadding)
+  if (textStartX - linePadding > 98 * scale) {
     ctx.beginPath();
-    ctx.moveTo(168 * scale, cy);
+    ctx.moveTo(98 * scale, cy);
     ctx.lineTo(textStartX - linePadding, cy);
     ctx.stroke();
   }
 
-  // Right decorative divider line (x: textEndX + linePadding to 858 * scale)
-  if (858 * scale > textEndX + linePadding) {
+  // Right decorative divider line (x: textEndX + linePadding to 570 * scale)
+  if (570 * scale > textEndX + linePadding) {
     ctx.beginPath();
     ctx.moveTo(textEndX + linePadding, cy);
-    ctx.lineTo(858 * scale, cy);
+    ctx.lineTo(570 * scale, cy);
     ctx.stroke();
   }
 

@@ -97,7 +97,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
         const token = (table as any).qrToken || table.qrCodeToken || `table-${table.tableNumber}`;
         const url = computeTableDineUrl(token, config);
         try {
-          const dataUrl = await generateQrDataUrl(url, { size: 400 });
+          const dataUrl = await generateQrDataUrl(url, { size: 600, margin: 0 });
           newCache[String(table.tableNumber)] = dataUrl;
         } catch (e) {
           console.error(`Failed to generate QR for Table ${table.tableNumber}:`, e);
@@ -609,35 +609,35 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                     <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-amber-900/40 bg-[#FAF7F2] select-none group-hover:shadow-amber-500/10 transition-shadow">
                       {/* Stand Template Background */}
                       <img
-                        src="/images/chai_addaa_stand_template.jpeg"
+                        src="/images/chai_addaa_stand_template.png"
                         alt="Stand Template"
                         className="w-full h-full object-cover pointer-events-none"
                       />
 
-                      {/* Upper White Box: Table-Specific Dine QR (Menu QR) */}
+                      {/* Central White Card: Table-Specific Dine QR (Menu QR) */}
                       <div
                         className="absolute flex items-center justify-center pointer-events-none"
                         style={{
-                          top: '26.8%',
-                          left: '24.6%',
-                          width: '50.8%',
-                          height: '33.9%',
+                          top: '25.0%',
+                          left: '11.0%',
+                          width: '78.0%',
+                          height: '49.0%',
                         }}
                       >
                         {qrDataUrl ? (
-                          <div className="relative w-full h-full flex items-center justify-center">
+                          <div className="relative w-full h-full flex items-center justify-center p-0.5">
                             <img
                               src={qrDataUrl}
                               alt={`Table ${table.tableNumber} QR`}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-fill rounded-lg"
                             />
                             {/* Center Brand Logo Badge */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <div className="w-7 h-7 sm:w-8 sm:h-8 p-0.5 bg-[#FAF7F2] rounded-lg shadow-md border border-[#b58d63] flex items-center justify-center">
+                              <div className="w-9 h-9 sm:w-11 sm:h-11 p-0.5 sm:p-1 bg-[#FAF7F2] rounded-xl shadow-md border border-[#b58d63] flex items-center justify-center">
                                 <img
                                   src="/images/chai_adda_logo_white_bg.png"
-                                  alt="Siliguri's Chai Addaa"
-                                  className="w-full h-full object-contain rounded-md select-none"
+                                  alt="Siliguri's Chai Adda"
+                                  className="w-full h-full object-contain rounded-lg select-none"
                                 />
                               </div>
                             </div>
@@ -649,33 +649,17 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                         )}
                       </div>
 
-                      {/* Middle Small Table Number Badge */}
-                      <div
-                        className="absolute flex items-center justify-center pointer-events-none"
-                        style={{
-                          top: '83.5%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                        }}
-                      >
-                        <div className="px-3 py-0.5 bg-[#FAF7F2] border border-[#4B2616] rounded-full shadow-xs flex items-center justify-center">
-                          <span className="font-serif font-black text-[9px] sm:text-[10px] text-[#4B2616] tracking-widest uppercase">
-                            TABLE {table.tableNumber}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Bottom Footer: Dynamic Table Number with seamless parchment background */}
+                      {/* Bottom Footer: Dynamic Table Number */}
                       <div
                         className="absolute w-full flex items-center justify-center text-center pointer-events-none px-4"
-                        style={{ top: '95.1%', transform: 'translateY(-50%)', left: 0, right: 0 }}
+                        style={{ top: '95.0%', transform: 'translateY(-50%)', left: 0, right: 0 }}
                       >
-                        <div className="flex items-center justify-center space-x-1.5 w-full bg-[#F2E5CE]/95 py-0.5 px-2 rounded-sm shadow-xs">
-                          <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[50px] sm:max-w-[70px]" />
+                        <div className="flex items-center justify-center space-x-1.5 w-full py-0.5 px-2">
+                          <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[40px] sm:max-w-[55px]" />
                           <span className="font-serif font-black text-[9px] sm:text-[10px] text-[#4B2616] tracking-wider uppercase truncate">
-                            {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {table.tableNumber}
+                            {config.brandName || "SILIGURI'S CHAI ADDA"} • TABLE {table.tableNumber}
                           </span>
-                          <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[50px] sm:max-w-[70px]" />
+                          <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[40px] sm:max-w-[55px]" />
                         </div>
                       </div>
                     </div>
@@ -819,48 +803,45 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                 style={{ pageBreakAfter: 'always' }}
               >
                 <img
-                  src="/images/chai_addaa_stand_template.jpeg"
+                  src="/images/chai_addaa_stand_template.png"
                   alt="Stand Template"
                   className="w-full h-full object-cover"
                 />
 
-                {/* Table Dine QR in Upper White Box */}
+                {/* Table Dine QR in Central White Card Space */}
                 <div
-                  className="absolute flex items-center justify-center"
-                  style={{ top: '26.8%', left: '24.6%', width: '50.8%', height: '33.9%' }}
+                  className="absolute flex items-center justify-center p-1"
+                  style={{ top: '25.0%', left: '11.0%', width: '78.0%', height: '49.0%' }}
                 >
                   {qrDataUrl && (
-                    <img
-                      src={qrDataUrl}
-                      alt={`Table ${table.tableNumber} QR`}
-                      className="w-full h-full object-contain"
-                    />
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <img
+                        src={qrDataUrl}
+                        alt={`Table ${table.tableNumber} QR`}
+                        className="w-full h-full object-fill rounded-lg"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-14 h-14 p-1 bg-[#FAF7F2] rounded-xl border border-[#b58d63] flex items-center justify-center">
+                          <img
+                            src="/images/chai_adda_logo_white_bg.png"
+                            alt="Siliguri's Chai Adda"
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                {/* Google Reviews QR in Lower Small White Box */}
-                <div
-                  className="absolute flex items-center justify-center"
-                  style={{ top: '78.0%', left: '32.1%', width: '18.0%', height: '12.0%' }}
-                >
-                  {reviewQrDataUrl && (
-                    <img
-                      src={reviewQrDataUrl}
-                      alt="Google Reviews QR"
-                      className="w-full h-full object-contain"
-                    />
-                  )}
-                </div>
-
-                {/* Dynamic Footer Table Label with seamless parchment background */}
+                {/* Dynamic Footer Table Label */}
                 <div
                   className="absolute w-full flex items-center justify-center text-center px-8"
-                  style={{ top: '95.1%', transform: 'translateY(-50%)', left: 0, right: 0 }}
+                  style={{ top: '95.0%', transform: 'translateY(-50%)', left: 0, right: 0 }}
                 >
-                  <div className="flex items-center justify-center space-x-2 w-full bg-[#F2E5CE] py-0.5 px-2 rounded-sm">
+                  <div className="flex items-center justify-center space-x-2 w-full py-0.5 px-2">
                     <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[80px]" />
                     <span className="font-serif font-black text-xs text-[#4B2616] tracking-wider uppercase truncate">
-                      {config.brandName || "SILIGURI'S CHAI ADDAA"} • TABLE {table.tableNumber}
+                      {config.brandName || "SILIGURI'S CHAI ADDA"} • TABLE {table.tableNumber}
                     </span>
                     <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[80px]" />
                   </div>

@@ -609,7 +609,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                     <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-amber-900/40 bg-[#FAF7F2] select-none group-hover:shadow-amber-500/10 transition-shadow">
                       {/* Stand Template Background */}
                       <img
-                        src="/images/chai_addaa_stand_template.png?v=3"
+                        src="/images/chai_addaa_stand_template.png?v=4"
                         alt="Stand Template"
                         className="w-full h-full object-cover pointer-events-none"
                       />
@@ -654,12 +654,12 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                         className="absolute w-full flex items-center justify-center text-center pointer-events-none px-4"
                         style={{ top: '94.5%', transform: 'translateY(-50%)', left: 0, right: 0 }}
                       >
-                        <div className="flex items-center justify-center space-x-2.5 w-full py-0.5 px-2">
-                          <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[50px] sm:max-w-[70px]" />
-                          <span className="font-serif text-sm sm:text-base text-[#6E431B] tracking-normal font-bold truncate">
+                        <div className="flex items-center justify-center space-x-2 w-full py-0.5 px-2">
+                          <span className="h-[2px] bg-[#6E431B] flex-1 max-w-[45px] sm:max-w-[65px]" />
+                          <span className="font-serif text-base sm:text-lg text-[#6E431B] tracking-normal font-bold truncate">
                             Table {table.tableNumber}
                           </span>
-                          <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[50px] sm:max-w-[70px]" />
+                          <span className="h-[2px] bg-[#6E431B] flex-1 max-w-[45px] sm:max-w-[65px]" />
                         </div>
                       </div>
                     </div>
@@ -803,7 +803,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                 style={{ pageBreakAfter: 'always' }}
               >
                 <img
-                  src="/images/chai_addaa_stand_template.png?v=3"
+                  src="/images/chai_addaa_stand_template.png?v=4"
                   alt="Stand Template"
                   className="w-full h-full object-cover"
                 />
@@ -839,11 +839,11 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                   style={{ top: '94.5%', transform: 'translateY(-50%)', left: 0, right: 0 }}
                 >
                   <div className="flex items-center justify-center space-x-3 w-full py-0.5 px-2">
-                    <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[80px]" />
-                    <span className="font-serif text-base text-[#6E431B] tracking-normal font-bold truncate">
+                    <span className="h-[2px] bg-[#6E431B] flex-1 max-w-[80px]" />
+                    <span className="font-serif text-lg text-[#6E431B] tracking-normal font-bold truncate">
                       Table {table.tableNumber}
                     </span>
-                    <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[80px]" />
+                    <span className="h-[2px] bg-[#6E431B] flex-1 max-w-[80px]" />
                   </div>
                 </div>
               </div>

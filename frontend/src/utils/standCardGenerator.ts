@@ -51,7 +51,7 @@ function roundRect(
 }
 
 export const GOOGLE_REVIEWS_URL = 'https://share.google/fpQYpNSriMbsBasZS';
-export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png?v=3';
+export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png?v=4';
 
 let cachedTemplateImg: HTMLImageElement | null = null;
 let cachedGoogleReviewQrDataUrl: string | null = null;
@@ -164,13 +164,13 @@ export const generateStandCardCanvas = async (
     ctx.drawImage(templateImg, 0, 0, width, height);
 
     // Defensive wipe: in case a cached template or browser buffer had previous static marks/text,
-    // clone a clean parchment strip from y = 880 * scale over the footer line region (930..995 * scale)
+    // clone a clean parchment strip from y = 932 * scale over the footer line region (940..995 * scale)
     try {
-      const wipeX = 150 * scale;
-      const wipeY = 930 * scale;
-      const wipeW = (580 - 150) * scale;
-      const wipeH = (995 - 930) * scale;
-      const srcY = 880 * scale;
+      const wipeX = 155 * scale;
+      const wipeY = 940 * scale;
+      const wipeW = (575 - 155) * scale;
+      const wipeH = (995 - 940) * scale;
+      const srcY = 932 * scale;
       ctx.drawImage(canvas, wipeX, srcY, wipeW, wipeH, wipeX, wipeY, wipeW, wipeH);
     } catch {
       // Ignore if drawImage on same canvas is not allowed in current context
@@ -249,7 +249,7 @@ export const generateStandCardCanvas = async (
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#6E431B';
-  ctx.font = `bold ${18 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
+  ctx.font = `bold ${32 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
 
   const cx = 341 * scale; // 1023
   const cy = 968 * scale; // 2904
@@ -257,10 +257,10 @@ export const generateStandCardCanvas = async (
   const textWidth = textMetrics.width;
   const textStartX = cx - textWidth / 2;
   const textEndX = cx + textWidth / 2;
-  const linePadding = 14 * scale;
+  const linePadding = 16 * scale;
 
   ctx.strokeStyle = '#6E431B';
-  ctx.lineWidth = 1.35 * scale;
+  ctx.lineWidth = 1.6 * scale;
 
   // Left decorative divider line (x: 168 * scale to textStartX - linePadding)
   if (textStartX - linePadding > 168 * scale) {

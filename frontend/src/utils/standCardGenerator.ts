@@ -51,7 +51,7 @@ function roundRect(
 }
 
 export const GOOGLE_REVIEWS_URL = 'https://share.google/fpQYpNSriMbsBasZS';
-export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png';
+export const STAND_TEMPLATE_IMAGE_URL = '/images/chai_addaa_stand_template.png?v=3';
 
 let cachedTemplateImg: HTMLImageElement | null = null;
 let cachedGoogleReviewQrDataUrl: string | null = null;
@@ -162,6 +162,19 @@ export const generateStandCardCanvas = async (
   const templateImg = await loadStandTemplateImage();
   if (templateImg) {
     ctx.drawImage(templateImg, 0, 0, width, height);
+
+    // Defensive wipe: in case a cached template or browser buffer had previous static marks/text,
+    // clone a clean parchment strip from y = 880 * scale over the footer line region (930..995 * scale)
+    try {
+      const wipeX = 150 * scale;
+      const wipeY = 930 * scale;
+      const wipeW = (580 - 150) * scale;
+      const wipeH = (995 - 930) * scale;
+      const srcY = 880 * scale;
+      ctx.drawImage(canvas, wipeX, srcY, wipeW, wipeH, wipeX, wipeY, wipeW, wipeH);
+    } catch {
+      // Ignore if drawImage on same canvas is not allowed in current context
+    }
   } else {
     // Graceful fallback if background template image is unavailable
     ctx.fillStyle = '#FAF7F2';
@@ -229,57 +242,39 @@ export const generateStandCardCanvas = async (
   }
 
   // 4. Dynamic Footer Table Line & Number
-  // Seamlessly clone pristine parchment background texture to cover any static footer text
-  if (templateImg) {
-    ctx.drawImage(
-      canvas,
-      140 * scale,
-      948 * scale,
-      400 * scale,
-      14 * scale,
-      140 * scale,
-      966 * scale,
-      400 * scale,
-      14 * scale
-    );
-  }
-
-  const brandName = (config.brandName || "SILIGURI'S CHAI ADDA").toUpperCase();
-  const footerText = `${brandName}  •  TABLE ${tableNum}`;
+  // Base template has 100% pure parchment in footer, drawing clean bold Table {tableNum}
+  const footerText = `Table ${tableNum}`;
 
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#4B2616';
-  ctx.font = `bold ${12.5 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
-  if ('letterSpacing' in ctx) {
-    (ctx as any).letterSpacing = `${1.5 * scale}px`;
-  }
+  ctx.fillStyle = '#6E431B';
+  ctx.font = `bold ${18 * scale}px "Georgia", "Playfair Display", "Times New Roman", serif`;
 
   const cx = 341 * scale; // 1023
-  const cy = 973 * scale; // 2919
+  const cy = 968 * scale; // 2904
   const textMetrics = ctx.measureText(footerText);
   const textWidth = textMetrics.width;
   const textStartX = cx - textWidth / 2;
   const textEndX = cx + textWidth / 2;
-  const linePadding = 8 * scale;
+  const linePadding = 14 * scale;
 
-  ctx.strokeStyle = '#4B2616';
-  ctx.lineWidth = 1.5 * scale;
+  ctx.strokeStyle = '#6E431B';
+  ctx.lineWidth = 1.35 * scale;
 
-  // Left decorative divider line (x: 98 * scale to textStartX - linePadding)
-  if (textStartX - linePadding > 98 * scale) {
+  // Left decorative divider line (x: 168 * scale to textStartX - linePadding)
+  if (textStartX - linePadding > 168 * scale) {
     ctx.beginPath();
-    ctx.moveTo(98 * scale, cy);
+    ctx.moveTo(168 * scale, cy);
     ctx.lineTo(textStartX - linePadding, cy);
     ctx.stroke();
   }
 
-  // Right decorative divider line (x: textEndX + linePadding to 570 * scale)
-  if (570 * scale > textEndX + linePadding) {
+  // Right decorative divider line (x: textEndX + linePadding to 569 * scale)
+  if (569 * scale > textEndX + linePadding) {
     ctx.beginPath();
     ctx.moveTo(textEndX + linePadding, cy);
-    ctx.lineTo(570 * scale, cy);
+    ctx.lineTo(569 * scale, cy);
     ctx.stroke();
   }
 

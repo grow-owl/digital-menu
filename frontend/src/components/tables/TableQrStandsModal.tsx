@@ -609,7 +609,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                     <div className="relative w-full aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-amber-900/40 bg-[#FAF7F2] select-none group-hover:shadow-amber-500/10 transition-shadow">
                       {/* Stand Template Background */}
                       <img
-                        src="/images/chai_addaa_stand_template.png"
+                        src="/images/chai_addaa_stand_template.png?v=3"
                         alt="Stand Template"
                         className="w-full h-full object-cover pointer-events-none"
                       />
@@ -652,14 +652,14 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                       {/* Bottom Footer: Dynamic Table Number */}
                       <div
                         className="absolute w-full flex items-center justify-center text-center pointer-events-none px-4"
-                        style={{ top: '95.0%', transform: 'translateY(-50%)', left: 0, right: 0 }}
+                        style={{ top: '94.5%', transform: 'translateY(-50%)', left: 0, right: 0 }}
                       >
-                        <div className="flex items-center justify-center space-x-1.5 w-full py-0.5 px-2">
-                          <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[40px] sm:max-w-[55px]" />
-                          <span className="font-serif font-black text-[9px] sm:text-[10px] text-[#4B2616] tracking-wider uppercase truncate">
-                            {config.brandName || "SILIGURI'S CHAI ADDA"} • TABLE {table.tableNumber}
+                        <div className="flex items-center justify-center space-x-2.5 w-full py-0.5 px-2">
+                          <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[50px] sm:max-w-[70px]" />
+                          <span className="font-serif text-sm sm:text-base text-[#6E431B] tracking-normal font-bold truncate">
+                            Table {table.tableNumber}
                           </span>
-                          <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[40px] sm:max-w-[55px]" />
+                          <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[50px] sm:max-w-[70px]" />
                         </div>
                       </div>
                     </div>
@@ -803,7 +803,7 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                 style={{ pageBreakAfter: 'always' }}
               >
                 <img
-                  src="/images/chai_addaa_stand_template.png"
+                  src="/images/chai_addaa_stand_template.png?v=3"
                   alt="Stand Template"
                   className="w-full h-full object-cover"
                 />
@@ -836,14 +836,14 @@ export const TableQrStandsModal: React.FC<TableQrStandsModalProps> = ({
                 {/* Dynamic Footer Table Label */}
                 <div
                   className="absolute w-full flex items-center justify-center text-center px-8"
-                  style={{ top: '95.0%', transform: 'translateY(-50%)', left: 0, right: 0 }}
+                  style={{ top: '94.5%', transform: 'translateY(-50%)', left: 0, right: 0 }}
                 >
-                  <div className="flex items-center justify-center space-x-2 w-full py-0.5 px-2">
-                    <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[80px]" />
-                    <span className="font-serif font-black text-xs text-[#4B2616] tracking-wider uppercase truncate">
-                      {config.brandName || "SILIGURI'S CHAI ADDA"} • TABLE {table.tableNumber}
+                  <div className="flex items-center justify-center space-x-3 w-full py-0.5 px-2">
+                    <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[80px]" />
+                    <span className="font-serif text-base text-[#6E431B] tracking-normal font-bold truncate">
+                      Table {table.tableNumber}
                     </span>
-                    <span className="h-[1.5px] bg-[#4B2616] flex-1 max-w-[80px]" />
+                    <span className="h-[1.5px] bg-[#6E431B] flex-1 max-w-[80px]" />
                   </div>
                 </div>
               </div>
